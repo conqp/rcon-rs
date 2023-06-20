@@ -83,13 +83,13 @@ impl TryFrom<&mut &mut TcpStream> for Packet {
     type Error = Either<Error, String>;
 
     fn try_from(stream: &mut &mut TcpStream) -> Result<Self, Self::Error> {
-        let mut buf: [u8; 4] = [0, 0, 0, 0];
-        stream.read_exact(&mut buf).map_err(Left)?;
-        let size = i32::from_le_bytes(buf);
-        stream.read_exact(&mut buf).map_err(Left)?;
-        let id = i32::from_le_bytes(buf);
-        stream.read_exact(&mut buf).map_err(Left)?;
-        let typ = ServerData::try_from(i32::from_le_bytes(buf)).map_err(Right)?;
+        let mut i32buf: [u8; 4] = [0, 0, 0, 0];
+        stream.read_exact(&mut i32buf).map_err(Left)?;
+        let size = i32::from_le_bytes(i32buf);
+        stream.read_exact(&mut i32buf).map_err(Left)?;
+        let id = i32::from_le_bytes(i32buf);
+        stream.read_exact(&mut i32buf).map_err(Left)?;
+        let typ = ServerData::try_from(i32::from_le_bytes(i32buf)).map_err(Right)?;
         let mut sep: [u8; 2] = [0, 0];
         stream.read_exact(&mut sep).map_err(Left)?;
         let mut payload = vec![0u8; (size - 10) as usize];
