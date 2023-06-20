@@ -37,6 +37,10 @@ impl Packet {
         self.typ
     }
 
+    pub fn payload(&self) -> &[u8] {
+        self.payload.as_slice()
+    }
+
     pub fn text(&self) -> String {
         self.payload.iter().map(|byte| *byte as char).collect()
     }
