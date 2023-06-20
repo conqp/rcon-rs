@@ -11,7 +11,7 @@ struct Args {
     #[arg(long)]
     passwd: Option<String>,
 
-    #[arg(index = 1)]
+    #[arg(index = 0)]
     command: Vec<String>,
 }
 
