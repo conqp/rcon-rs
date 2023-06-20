@@ -71,14 +71,6 @@ impl From<Packet> for Vec<u8> {
     }
 }
 
-impl TryFrom<&mut TcpStream> for Packet {
-    type Error = Either<Error, String>;
-
-    fn try_from(mut stream: &mut TcpStream) -> Result<Self, Self::Error> {
-        Self::try_from(&mut stream)
-    }
-}
-
 impl TryFrom<&mut &mut TcpStream> for Packet {
     type Error = Either<Error, String>;
 
