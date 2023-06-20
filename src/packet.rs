@@ -3,7 +3,7 @@ use either::{Either, Left, Right};
 use rand::random;
 use std::io::{Error, Read};
 use std::net::TcpStream;
-use std::ops::Add;
+use std::ops::AddAssign;
 
 const TERMINATOR: [u8; 2] = [0, 0];
 
@@ -32,17 +32,9 @@ impl Packet {
     }
 }
 
-impl Add for Packet {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        let mut payload = self.payload.clone();
-        payload.extend_from_slice(&rhs.payload);
-        Self::Output {
-            id: self.id,
-            typ: self.typ,
-            payload,
-        }
+impl AddAssign for Packet {
+    fn add_assign(&mut self, rhs: Self) {
+        self.payload.extend_from_slice(&rhs.payload);
     }
 }
 
@@ -82,7 +74,15 @@ impl From<Packet> for Vec<u8> {
 impl TryFrom<&mut TcpStream> for Packet {
     type Error = Either<Error, String>;
 
-    fn try_from(stream: &mut TcpStream) -> Result<Self, Self::Error> {
+    fn try_from(mut stream: &mut TcpStream) -> Result<Self, Self::Error> {
+        Self::try_from(&mut stream)
+    }
+}
+
+impl TryFrom<&mut &mut TcpStream> for Packet {
+    type Error = Either<Error, String>;
+
+    fn try_from(stream: &mut &mut TcpStream) -> Result<Self, Self::Error> {
         let mut buf: [u8; 4] = [0, 0, 0, 0];
         stream.read_exact(&mut buf).map_err(Left)?;
         let size = i32::from_le_bytes(buf);

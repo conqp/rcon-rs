@@ -5,18 +5,36 @@ use either::{Either, Left};
 use std::io::{Error, Write};
 use std::net::TcpStream;
 
-pub fn rcon(host: &str, passwd: &str, command: &[&str]) -> Result<String, Either<Error, String>> {
+pub fn rcon(
+    host: &str,
+    passwd: &str,
+    command: &[&str],
+    fragmentation_threshold: Option<usize>,
+) -> Result<String, Either<Error, String>> {
     let mut stream = TcpStream::connect(host).map_err(Left)?;
-    communicate(&mut stream, Packet::from(passwd))?;
-    let command_response = communicate(&mut stream, Packet::from(command))?;
+    communicate(&mut stream, Packet::from(passwd), fragmentation_threshold)?;
+    let command_response =
+        communicate(&mut stream, Packet::from(command), fragmentation_threshold)?;
     Ok(command_response.text())
 }
 
 pub fn communicate(
-    stream: &mut TcpStream,
+    mut stream: &mut TcpStream,
     packet: Packet,
+    fragmentation_threshold: Option<usize>,
 ) -> Result<Packet, Either<Error, String>> {
     let bytes: Vec<u8> = packet.into();
     stream.write(bytes.as_slice()).map_err(Left)?;
-    Packet::try_from(stream)
+    let mut response = Packet::try_from(&mut stream)?;
+
+    if response.text().len() < fragmentation_threshold.unwrap_or(4096) {
+        return Ok(response);
+    }
+
+    while let Ok(packet) = Packet::try_from(&mut stream) {
+        response += packet;
+        eprint!("Added packet");
+    }
+
+    Ok(response)
 }
