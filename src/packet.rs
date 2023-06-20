@@ -90,9 +90,7 @@ impl TryFrom<&mut &mut TcpStream> for Packet {
         let id = i32::from_le_bytes(i32buf);
         stream.read_exact(&mut i32buf).map_err(Left)?;
         let typ = ServerData::try_from(i32::from_le_bytes(i32buf)).map_err(Right)?;
-        let mut sep: [u8; 2] = [0, 0];
-        stream.read_exact(&mut sep).map_err(Left)?;
-        let mut payload = vec![0u8; (size - 10) as usize];
+        let mut payload = vec![0u8; (size - 8) as usize];
         stream.read_exact(&mut payload).map_err(Left)?;
         Ok(Self { id, typ, payload })
     }
