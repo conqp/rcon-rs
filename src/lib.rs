@@ -33,7 +33,6 @@ pub fn communicate(
 
     while let Ok(packet) = Packet::try_from(&mut stream) {
         response += packet;
-        eprint!("Added packet");
     }
 
     Ok(response)
