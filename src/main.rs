@@ -18,8 +18,8 @@ fn main() {
     let args = Args::parse();
 
     match rcon(
-        args.host.unwrap_or("localhost:25566".to_string()).as_str(),
-        args.passwd.unwrap_or("".to_string()).as_str(),
+        args.host.as_deref().unwrap_or("localhost:25566"),
+        args.passwd.as_deref().unwrap_or(""),
         args.command
             .iter()
             .map(|string| string.as_str())
