@@ -1,6 +1,7 @@
 mod packet;
 mod server_data;
 use crate::packet::Packet;
+use crate::server_data::ServerData;
 use either::{Either, Left};
 use std::io::{Error, Write};
 use std::net::TcpStream;
@@ -31,8 +32,8 @@ pub fn communicate(
         return Ok(response);
     }
 
-    while let Ok(packet) = Packet::try_from(&mut stream) {
-        response += packet;
+    while response.typ() != ServerData::AuthResponse {
+        response += Packet::try_from(&mut stream)?;
     }
 
     Ok(response)

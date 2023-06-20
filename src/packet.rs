@@ -7,7 +7,7 @@ use std::ops::AddAssign;
 
 const TERMINATOR: [u8; 2] = [0, 0];
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Packet {
     id: i32,
     typ: ServerData,
@@ -25,6 +25,14 @@ impl Packet {
 
     pub fn with_random_id(typ: ServerData, payload: &[u8]) -> Self {
         Self::new(random(), typ, payload)
+    }
+
+    pub fn id(&self) -> i32 {
+        self.id
+    }
+
+    pub fn typ(&self) -> ServerData {
+        self.typ
     }
 
     pub fn text(&self) -> String {
