@@ -48,7 +48,6 @@ impl Packet {
 
 impl AddAssign for Packet {
     fn add_assign(&mut self, rhs: Self) {
-        self.typ = rhs.typ;
         self.payload.extend_from_slice(&rhs.payload);
     }
 }
