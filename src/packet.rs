@@ -3,6 +3,7 @@ use either::{Either, Left, Right};
 use rand::random;
 use std::io::{Error, Read};
 use std::net::TcpStream;
+use std::ops::Add;
 
 const TERMINATOR: [u8; 2] = [0, 0];
 
@@ -31,6 +32,20 @@ impl Packet {
     }
 }
 
+impl Add for Packet {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let mut payload = self.payload.clone();
+        payload.extend_from_slice(&rhs.payload);
+        Self::Output {
+            id: self.id,
+            typ: self.typ,
+            payload,
+        }
+    }
+}
+
 impl From<&[&str]> for Packet {
     fn from(value: &[&str]) -> Self {
         Self::with_random_id(
@@ -46,6 +61,21 @@ impl From<&str> for Packet {
             ServerData::Auth,
             &value.to_string().bytes().collect::<Vec<_>>(),
         )
+    }
+}
+
+impl From<Packet> for Vec<u8> {
+    fn from(packet: Packet) -> Vec<u8> {
+        let mut payload = Vec::new();
+        payload.extend_from_slice(&packet.id.to_le_bytes());
+        let type_id: i32 = packet.typ.into();
+        payload.extend_from_slice(&type_id.to_le_bytes());
+        payload.extend_from_slice(&packet.payload);
+        payload.extend_from_slice(&TERMINATOR);
+        let size = payload.len() as i32;
+        let mut bytes = Vec::from(size.to_le_bytes());
+        bytes.append(&mut payload);
+        bytes
     }
 }
 
@@ -65,20 +95,5 @@ impl TryFrom<&mut TcpStream> for Packet {
         let mut payload = vec![0u8; (size - 10) as usize];
         stream.read_exact(&mut payload).map_err(Left)?;
         Ok(Self { id, typ, payload })
-    }
-}
-
-impl From<Packet> for Vec<u8> {
-    fn from(packet: Packet) -> Vec<u8> {
-        let mut payload = Vec::new();
-        payload.extend_from_slice(&packet.id.to_le_bytes());
-        let type_id: i32 = packet.typ.into();
-        payload.extend_from_slice(&type_id.to_le_bytes());
-        payload.extend_from_slice(&packet.payload);
-        payload.extend_from_slice(&TERMINATOR);
-        let size = payload.len() as i32;
-        let mut bytes = Vec::from(size.to_le_bytes());
-        bytes.append(&mut payload);
-        bytes
     }
 }
