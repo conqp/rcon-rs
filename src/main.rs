@@ -1,3 +1,8 @@
+use rcon_rs::rcon;
+
 fn main() {
-    println!("Hello, world!");
+    match rcon("srv.richard-neumann.de:5000", "ZXYRdwrXkLD38hGt", &["list"]) {
+        Ok(response) => println!("Server replied: {}", response),
+        Err(error) => eprint!("Error: {}", error),
+    }
 }
