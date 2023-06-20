@@ -5,21 +5,21 @@ use std::str::FromStr;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    #[arg(long)]
-    host: Option<String>,
+    #[arg(long, default_value = "localhost:25566")]
+    host: String,
 
     #[arg(long)]
-    passwd: Option<String>,
+    passwd: String,
 
-    #[arg(index = 0)]
+    #[arg(index = 1)]
     command: Vec<String>,
 }
 
 fn main() {
     let args = Args::parse();
 
-    match Client::from_str(args.host.as_deref().unwrap_or("localhost:25566")) {
-        Ok(mut client) => match client.login(args.passwd.as_deref().unwrap_or("")) {
+    match Client::from_str(args.host.as_str()) {
+        Ok(mut client) => match client.login(args.passwd.as_str()) {
             Ok(success) => {
                 if success {
                     match client.exec(
