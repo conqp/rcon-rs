@@ -1,7 +1,9 @@
 use crate::server_data::ServerData;
+use crate::Error;
 use either::{Either, Left, Right};
 use rand::random;
-use std::io::{Error, Read};
+use std::io;
+use std::io::Read;
 use std::net::TcpStream;
 use std::ops::AddAssign;
 
@@ -81,7 +83,7 @@ impl From<Packet> for Vec<u8> {
 }
 
 impl TryFrom<&mut &mut TcpStream> for Packet {
-    type Error = Either<Error, String>;
+    type Error = Either<io::Error, Error>;
 
     fn try_from(stream: &mut &mut TcpStream) -> Result<Self, Self::Error> {
         let mut i32buf: [u8; 4] = [0, 0, 0, 0];

@@ -1,3 +1,5 @@
+use crate::Error;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ServerData {
     Auth,
@@ -18,14 +20,14 @@ impl From<ServerData> for i32 {
 }
 
 impl TryFrom<i32> for ServerData {
-    type Error = String;
+    type Error = Error;
 
     fn try_from(value: i32) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(Self::ResponseValue),
             2 => Ok(Self::AuthResponse),
             3 => Ok(Self::Auth),
-            value => Err(format!("Invalid ServerData value: {}", value)),
+            value => Err(Error::InvalidServerData(value)),
         }
     }
 }

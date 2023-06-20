@@ -1,5 +1,6 @@
 use clap::Parser;
-use rcon_rs::rcon;
+use rcon_rs::Client;
+use std::str::FromStr;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -17,17 +18,26 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    match rcon(
-        args.host.as_deref().unwrap_or("localhost:25566"),
-        args.passwd.as_deref().unwrap_or(""),
-        args.command
-            .iter()
-            .map(|string| string.as_str())
-            .collect::<Vec<_>>()
-            .as_slice(),
-        None,
-    ) {
-        Ok(response) => println!("Server replied: {}", response),
-        Err(error) => eprint!("Error: {}", error),
+    match Client::from_str(args.host.as_deref().unwrap_or("localhost:25566")) {
+        Ok(mut client) => match client.login(args.passwd.as_deref().unwrap_or("")) {
+            Ok(success) => {
+                if success {
+                    match client.exec(
+                        args.command
+                            .iter()
+                            .map(|string| string.as_str())
+                            .collect::<Vec<_>>()
+                            .as_slice(),
+                    ) {
+                        Ok(response) => println!("{}", response),
+                        Err(error) => eprintln!("{}", error),
+                    }
+                } else {
+                    eprintln!("Login failed.");
+                }
+            }
+            Err(error) => eprintln!("{}", error),
+        },
+        Err(error) => eprintln!("{}", error),
     }
 }
