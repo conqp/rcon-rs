@@ -25,7 +25,7 @@ impl TryFrom<i32> for ServerData {
             0 => Ok(Self::ResponseValue),
             2 => Ok(Self::AuthResponse),
             3 => Ok(Self::Auth),
-            value => Err(format!("Invalid type value: {}", value)),
+            value => Err(format!("Invalid ServerData value: {}", value)),
         }
     }
 }
