@@ -25,19 +25,19 @@ fn main() {
                     match client.exec(
                         args.command
                             .iter()
-                            .map(|string| string.as_str())
+                            .map(String::as_str)
                             .collect::<Vec<_>>()
                             .as_slice(),
                     ) {
-                        Ok(response) => println!("{}", response),
-                        Err(error) => eprintln!("{}", error),
+                        Ok(response) => println!("{response}"),
+                        Err(error) => eprintln!("{error}"),
                     }
                 } else {
                     eprintln!("Login failed.");
                 }
             }
-            Err(error) => eprintln!("{}", error),
+            Err(error) => eprintln!("{error}"),
         },
-        Err(error) => eprintln!("{}", error),
+        Err(error) => eprintln!("{error}"),
     }
 }

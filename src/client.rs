@@ -15,6 +15,7 @@ pub struct Client {
 }
 
 impl Client {
+    #[must_use]
     pub fn new(stream: TcpStream, fragmentation_threshold: Option<usize>) -> Self {
         Self {
             stream,
@@ -23,17 +24,22 @@ impl Client {
         }
     }
 
+    /// Send a login request to the server
+    /// # Errors
+    /// Returns `Either<io::Error, rcon_rs::Error>` on either I/O or protocol errors
     pub fn login(&mut self, passwd: &str) -> Result<bool, Either<io::Error, Error>> {
         let login = Packet::new(self.rng.gen(), ServerData::Auth, passwd.as_bytes());
         let id = login.id();
-        Ok(communicate(&mut self.stream, login, self.fragmentation_threshold)?.id() == id)
+        Ok(communicate(&mut self.stream, &login, self.fragmentation_threshold)?.id() == id)
     }
 
+    /// Executes a command on the server and returns the reply as `Result<String, _>`
+    /// # Errors
+    /// Returns `Either<io::Error, rcon_rs::Error>` on either I/O or protocol errors
     pub fn exec(&mut self, command: &[&str]) -> Result<String, Either<io::Error, Error>> {
         let command = Packet::from(command);
-        let id = command.id();
-        let response = communicate(&mut self.stream, command, self.fragmentation_threshold)?;
-        if response.id() == id {
+        let response = communicate(&mut self.stream, &command, self.fragmentation_threshold)?;
+        if response.id() == command.id() {
             Ok(response.text())
         } else {
             Err(Right(Error::NotLoggedIn))
@@ -59,6 +65,6 @@ impl TryFrom<(&str, u16)> for Client {
     type Error = io::Error;
 
     fn try_from((host, port): (&str, u16)) -> Result<Self, Self::Error> {
-        Self::from_str(format!("{}:{}", host, port).as_str())
+        Self::from_str(format!("{host}:{port}").as_str())
     }
 }

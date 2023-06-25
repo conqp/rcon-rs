@@ -12,8 +12,7 @@ impl From<ServerData> for i32 {
     fn from(packet_type: ServerData) -> Self {
         match packet_type {
             ServerData::Auth => 3,
-            ServerData::AuthResponse => 2,
-            ServerData::ExecCommand => 2,
+            ServerData::AuthResponse | ServerData::ExecCommand => 2,
             ServerData::ResponseValue => 0,
         }
     }
