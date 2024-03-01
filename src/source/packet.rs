@@ -1,4 +1,5 @@
 use super::server_data::ServerData;
+use super::util::invalid_data;
 use log::debug;
 use rand::{thread_rng, Rng};
 use std::io;
@@ -71,7 +72,7 @@ impl Packet {
         source.read_exact(&mut buffer)?;
         let size: usize = i32::from_le_bytes(buffer)
             .try_into()
-            .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+            .map_err(invalid_data)?;
         debug!("Packet size is {size}.");
         debug!("Reading packet ID.");
         source.read_exact(&mut buffer)?;
@@ -79,21 +80,17 @@ impl Packet {
         debug!("Packet ID is {id}.");
         debug!("Reading packet type.");
         source.read_exact(&mut buffer)?;
-        let typ: ServerData = i32::from_le_bytes(buffer).try_into().map_err(|value| {
-            io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("Invalid packet type: {value}"),
-            )
-        })?;
+        let typ: ServerData = i32::from_le_bytes(buffer)
+            .try_into()
+            .map_err(|value| invalid_data(format!("Invalid packet type: {value}")))?;
         debug!("Packet type is {typ:?}.");
         debug!("Reading payload.");
-        let mut payload = vec![
-            0;
-            size.checked_sub(OFFSET).ok_or_else(|| io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("Invalid payload size: {size}")
-            ))?
-        ];
+        let mut payload =
+            vec![
+                0;
+                size.checked_sub(OFFSET)
+                    .ok_or_else(|| invalid_data(format!("Invalid payload size: {size}")))?
+            ];
         source.read_exact(&mut payload)?;
         debug!("Packet payload is {payload:?}.");
         debug!("Reading terminator.");

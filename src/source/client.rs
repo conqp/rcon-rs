@@ -1,6 +1,7 @@
 use super::fixes::Fixes;
 use super::packet::Packet;
 use super::server_data::ServerData;
+use super::util::invalid_data;
 use log::debug;
 use std::io;
 use std::io::Write;
@@ -89,9 +90,7 @@ impl Client {
     }
 
     fn send(&mut self, packet: Packet) -> io::Result<()> {
-        let bytes: Vec<_> = packet
-            .try_into()
-            .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+        let bytes: Vec<_> = packet.try_into().map_err(invalid_data)?;
         debug!("Sending bytes: {bytes:?}");
         self.tcp_stream.write_all(bytes.as_slice())
     }
@@ -118,10 +117,10 @@ impl Client {
         if matches!(self.fixes, Some(Fixes::Palworld)) {
             Ok(packet)
         } else if packet.id != id {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("Packet ID mismatch: {} != {id}", packet.id),
-            ));
+            return Err(invalid_data(format!(
+                "Packet ID mismatch: {} != {id}",
+                packet.id
+            )));
         } else {
             Ok(packet)
         }
