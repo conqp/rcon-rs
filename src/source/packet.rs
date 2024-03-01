@@ -1,7 +1,7 @@
 use super::server_data::ServerData;
 use super::util::invalid_data;
 use futures::AsyncReadExt;
-use log::{debug, trace};
+use log::{debug, trace, warn};
 use rand::{thread_rng, Rng};
 use std::num::TryFromIntError;
 
@@ -93,6 +93,11 @@ impl Packet {
         let mut terminator = [0; 2];
         source.read_exact(&mut terminator).await?;
         trace!("Packet terminator is {terminator:?}.");
+
+        if terminator != TERMINATOR {
+            warn!("Received non-standard terminator: {terminator:?}");
+        }
+
         Ok(Self::new(id, typ, payload, terminator))
     }
 
