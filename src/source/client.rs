@@ -2,6 +2,7 @@ use super::fixes::Fixes;
 use super::packet::Packet;
 use super::server_data::ServerData;
 use super::util::invalid_data;
+use crate::Rcon;
 use log::debug;
 use std::collections::HashSet;
 use std::io;
@@ -62,44 +63,6 @@ impl Client {
         self.followup_timeout = followup_timeout;
     }
 
-    /// Perform a login.
-    ///
-    /// # Errors
-    /// Returns an [`io::Error`] on errors.
-    pub fn login(&mut self, password: &str) -> io::Result<bool> {
-        self.send(Packet::login(password))?;
-        let mut packet;
-
-        loop {
-            debug!("Reading response packet.");
-            packet = Packet::read_from(&mut self.tcp_stream)?;
-            if packet.typ == ServerData::AuthResponse {
-                break;
-            }
-        }
-
-        Ok(packet.id >= 0)
-    }
-
-    /// Run a command.
-    ///
-    /// # Errors
-    /// Returns an [`io::Error`] on errors.
-    pub fn run<T>(&mut self, args: &[T]) -> io::Result<Vec<u8>>
-    where
-        T: AsRef<str>,
-    {
-        let command = Packet::command(args);
-        let id = command.id;
-        self.send(command)?;
-        self.read_responses(id).map(|responses| {
-            responses
-                .into_iter()
-                .flat_map(|response| response.payload)
-                .collect()
-        })
-    }
-
     fn send(&mut self, packet: Packet) -> io::Result<()> {
         let bytes: Vec<_> = packet.try_into().map_err(invalid_data)?;
         debug!("Sending bytes: {bytes:?}");
@@ -147,5 +110,37 @@ impl Client {
 impl From<TcpStream> for Client {
     fn from(tcp_stream: TcpStream) -> Self {
         Self::new(tcp_stream, HashSet::new(), FOLLOWUP_TIMEOUT)
+    }
+}
+
+impl Rcon for Client {
+    fn login(&mut self, password: &str) -> io::Result<bool> {
+        self.send(Packet::login(password))?;
+        let mut packet;
+
+        loop {
+            debug!("Reading response packet.");
+            packet = Packet::read_from(&mut self.tcp_stream)?;
+            if packet.typ == ServerData::AuthResponse {
+                break;
+            }
+        }
+
+        Ok(packet.id >= 0)
+    }
+
+    fn run<T>(&mut self, args: &[T]) -> io::Result<Vec<u8>>
+    where
+        T: AsRef<str>,
+    {
+        let command = Packet::command(args);
+        let id = command.id;
+        self.send(command)?;
+        self.read_responses(id).map(|responses| {
+            responses
+                .into_iter()
+                .flat_map(|response| response.payload)
+                .collect()
+        })
     }
 }
