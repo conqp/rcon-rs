@@ -51,6 +51,15 @@ impl Client {
         self.fixes = fixes;
     }
 
+    #[must_use]
+    pub const fn followup_timeout(&self) -> Duration {
+        self.followup_timeout
+    }
+
+    pub fn set_followup_timeout(&mut self, followup_timeout: Duration) {
+        self.followup_timeout = followup_timeout;
+    }
+
     /// Perform a login.
     ///
     /// # Errors
