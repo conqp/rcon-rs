@@ -10,7 +10,7 @@ const TERMINATOR: [u8; 2] = [0, 0];
 const I32_BYTES: usize = 4;
 const OFFSET: usize = 10;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Packet {
     pub(crate) id: i32,
     pub(crate) typ: ServerData,
