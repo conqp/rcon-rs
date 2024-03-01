@@ -5,4 +5,4 @@ mod server_data;
 mod util;
 
 pub use client::Client;
-pub use fixes::Fixes;
+pub use fixes::Fix;
