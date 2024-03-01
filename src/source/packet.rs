@@ -3,6 +3,7 @@ use log::debug;
 use rand::{thread_rng, Rng};
 use std::io;
 use std::io::Read;
+use std::num::TryFromIntError;
 
 const TERMINATOR: [u8; 2] = [0, 0];
 const I32_BYTES: usize = 4;
@@ -107,19 +108,17 @@ impl Packet {
     }
 }
 
-impl From<Packet> for Vec<u8> {
-    fn from(packet: Packet) -> Self {
+impl TryFrom<Packet> for Vec<u8> {
+    type Error = TryFromIntError;
+
+    fn try_from(packet: Packet) -> Result<Self, Self::Error> {
         let mut bytes = Self::with_capacity(packet.size() + I32_BYTES);
-        bytes.extend_from_slice(
-            &i32::try_from(packet.size())
-                .expect("Packet size does not fit into i32")
-                .to_le_bytes(),
-        );
+        bytes.extend_from_slice(&i32::try_from(packet.size())?.to_le_bytes());
         bytes.extend_from_slice(&packet.id.to_le_bytes());
         bytes.extend_from_slice(&i32::from(packet.typ).to_le_bytes());
         bytes.extend_from_slice(&packet.payload);
         bytes.extend_from_slice(&packet.terminator);
-        bytes
+        Ok(bytes)
     }
 }
 

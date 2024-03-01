@@ -89,7 +89,9 @@ impl Client {
     }
 
     fn send(&mut self, packet: Packet) -> io::Result<()> {
-        let bytes: Vec<_> = packet.into();
+        let bytes: Vec<_> = packet
+            .try_into()
+            .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
         debug!("Sending bytes: {bytes:?}");
         self.tcp_stream.write_all(bytes.as_slice())
     }
