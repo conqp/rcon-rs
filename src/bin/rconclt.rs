@@ -1,6 +1,6 @@
 use clap::Parser;
 use log::error;
-use rcon::{source::Client, Rcon};
+use rcon::{source::Client, RCon};
 use std::io::{stdout, Write};
 use std::net::TcpStream;
 use std::process::exit;

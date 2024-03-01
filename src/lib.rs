@@ -2,7 +2,7 @@ use std::io;
 
 pub mod source;
 
-pub trait Rcon {
+pub trait RCon {
     /// Perform a login.
     ///
     /// # Errors

@@ -2,7 +2,7 @@ use super::fixes::Fixes;
 use super::packet::Packet;
 use super::server_data::ServerData;
 use super::util::invalid_data;
-use crate::Rcon;
+use crate::RCon;
 use log::debug;
 use std::collections::HashSet;
 use std::io;
@@ -113,7 +113,7 @@ impl From<TcpStream> for Client {
     }
 }
 
-impl Rcon for Client {
+impl RCon for Client {
     fn login(&mut self, password: &str) -> io::Result<bool> {
         self.send(Packet::login(password))?;
         let mut packet;
