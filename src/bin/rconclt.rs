@@ -1,7 +1,7 @@
 use async_std::net::TcpStream;
 use clap::Parser;
 use log::error;
-use rcon::source::Fix;
+use rcon::source::Quirk;
 use rcon::{source::Client, RCon};
 use std::io::{stdout, Write};
 use std::process::exit;
@@ -17,7 +17,7 @@ struct Args {
         help = "timeout in milliseconds for multi-packet responses"
     )]
     multi_packet_timeout: Option<u64>,
-    #[arg(short = 'P', long, help = "use fixes for Palword servers")]
+    #[arg(short = 'P', long, help = "use quirks for Palword servers")]
     palworld: bool,
     #[arg(index = 1)]
     server: String,
@@ -39,7 +39,7 @@ async fn main() {
     let mut client: Client = tcp_stream.into();
 
     if args.palworld {
-        client.fixes_mut().insert(Fix::Palworld);
+        client = client.with_quirk(Quirk::Palworld);
     }
 
     let logged_in = client.login(&args.password).await.unwrap_or_else(|error| {

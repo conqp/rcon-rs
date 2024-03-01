@@ -1,5 +1,5 @@
-use super::fixes::{Fix, Fixes};
 use super::packet::Packet;
+use super::quirks::{Quirk, Quirks};
 use super::server_data::ServerData;
 use super::util::invalid_data;
 use crate::RCon;
@@ -14,22 +14,28 @@ use std::time::Duration;
 #[derive(Debug)]
 pub struct Client {
     tcp_stream: TcpStream,
-    fixes: Fixes,
+    quirks: Quirks,
 }
 
 impl Client {
     #[must_use]
-    pub const fn new(tcp_stream: TcpStream, fixes: Fixes) -> Self {
-        Self { tcp_stream, fixes }
+    pub const fn new(tcp_stream: TcpStream, quirks: Quirks) -> Self {
+        Self { tcp_stream, quirks }
     }
 
     #[must_use]
-    pub const fn fixes(&self) -> &HashSet<Fix> {
-        &self.fixes.0
+    pub const fn quirks(&self) -> &HashSet<Quirk> {
+        &self.quirks.0
     }
 
-    pub fn fixes_mut(&mut self) -> &mut HashSet<Fix> {
-        &mut self.fixes.0
+    pub fn quirks_mut(&mut self) -> &mut HashSet<Quirk> {
+        &mut self.quirks.0
+    }
+
+    #[must_use]
+    pub fn with_quirk(mut self, quirk: Quirk) -> Self {
+        self.quirks.0.insert(quirk);
+        self
     }
 
     async fn send(&mut self, packet: Packet) -> io::Result<()> {
@@ -60,7 +66,7 @@ impl Client {
     async fn read_packet(&mut self, id: i32) -> io::Result<Packet> {
         let packet = Packet::read_from(&mut self.tcp_stream).await?;
 
-        if self.fixes.packet_is_valid(&packet, id) {
+        if self.quirks.packet_is_valid(&packet, id) {
             Ok(packet)
         } else {
             Err(invalid_data(format!(
@@ -73,7 +79,7 @@ impl Client {
 
 impl From<TcpStream> for Client {
     fn from(tcp_stream: TcpStream) -> Self {
-        Self::new(tcp_stream, Fixes::default())
+        Self::new(tcp_stream, Quirks::default())
     }
 }
 
@@ -85,7 +91,7 @@ impl RCon for Client {
     {
         TcpStream::connect(address)
             .await
-            .map(|tcp_stream| Self::new(tcp_stream, Fixes::default()))
+            .map(|tcp_stream| Self::new(tcp_stream, Quirks::default()))
     }
 
     async fn login(&mut self, password: &str) -> io::Result<bool> {
