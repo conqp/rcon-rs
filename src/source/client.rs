@@ -1,8 +1,7 @@
+use super::fixes::{Fix, Fixes};
 use super::packet::Packet;
 use super::server_data::ServerData;
 use super::util::invalid_data;
-use crate::source::fixes::Fix;
-use crate::source::Fixes;
 use crate::RCon;
 use async_std::io::{timeout, WriteExt};
 use async_std::net::{TcpStream, ToSocketAddrs};

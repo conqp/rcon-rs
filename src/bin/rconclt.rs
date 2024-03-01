@@ -12,12 +12,12 @@ struct Args {
     #[arg(short, long)]
     password: String,
     #[arg(
-        short,
+        short = 't',
         long,
         help = "timeout in milliseconds for multi-packet responses"
     )]
     multi_packet_timeout: Option<u64>,
-    #[arg(short, long, help = "use fixes for Palword servers")]
+    #[arg(short = 'P', long, help = "use fixes for Palword servers")]
     palworld: bool,
     #[arg(index = 1)]
     server: String,
