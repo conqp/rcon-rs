@@ -1,6 +1,7 @@
 use async_std::net::ToSocketAddrs;
 use std::io;
 use std::sync::Arc;
+use std::time::Duration;
 
 pub mod source;
 
@@ -30,6 +31,7 @@ pub trait RCon: Sized {
     fn run<T>(
         &mut self,
         args: &[T],
+        multi_packet_timeout: Option<Duration>,
     ) -> impl std::future::Future<Output = io::Result<Arc<[u8]>>> + Send
     where
         T: AsRef<str> + Send + Sync;

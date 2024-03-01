@@ -15,21 +15,12 @@ use std::time::Duration;
 pub struct Client {
     tcp_stream: TcpStream,
     fixes: Fixes,
-    multi_packet_timeout: Option<Duration>,
 }
 
 impl Client {
     #[must_use]
-    pub const fn new(
-        tcp_stream: TcpStream,
-        fixes: Fixes,
-        followup_timeout: Option<Duration>,
-    ) -> Self {
-        Self {
-            tcp_stream,
-            fixes,
-            multi_packet_timeout: followup_timeout,
-        }
+    pub const fn new(tcp_stream: TcpStream, fixes: Fixes) -> Self {
+        Self { tcp_stream, fixes }
     }
 
     #[must_use]
@@ -41,27 +32,24 @@ impl Client {
         &mut self.fixes.0
     }
 
-    #[must_use]
-    pub const fn multi_packet_timeout(&self) -> Option<Duration> {
-        self.multi_packet_timeout
-    }
-
-    pub fn set_multi_packet_timeout(&mut self, followup_timeout: Option<Duration>) {
-        self.multi_packet_timeout = followup_timeout;
-    }
-
     async fn send(&mut self, packet: Packet) -> io::Result<()> {
         let bytes: Vec<_> = packet.try_into().map_err(invalid_data)?;
         debug!("Sending bytes: {bytes:?}");
         self.tcp_stream.write_all(bytes.as_slice()).await
     }
 
-    async fn read_responses(&mut self, id: i32) -> io::Result<Vec<Packet>> {
+    async fn read_responses(
+        &mut self,
+        id: i32,
+        multi_packet_timeout: Option<Duration>,
+    ) -> io::Result<Vec<Packet>> {
         let response = self.read_packet(id).await?;
         let mut responses = vec![response];
 
-        if let Some(duration) = self.multi_packet_timeout {
-            while let Ok(response) = timeout(duration, async { self.read_packet(id).await }).await {
+        if let Some(multi_packet_timeout) = multi_packet_timeout {
+            while let Ok(response) =
+                timeout(multi_packet_timeout, async { self.read_packet(id).await }).await
+            {
                 responses.push(response);
             }
         }
@@ -85,7 +73,7 @@ impl Client {
 
 impl From<TcpStream> for Client {
     fn from(tcp_stream: TcpStream) -> Self {
-        Self::new(tcp_stream, Fixes::default(), None)
+        Self::new(tcp_stream, Fixes::default())
     }
 }
 
@@ -97,7 +85,7 @@ impl RCon for Client {
     {
         TcpStream::connect(address)
             .await
-            .map(|tcp_stream| Self::new(tcp_stream, Fixes::default(), None))
+            .map(|tcp_stream| Self::new(tcp_stream, Fixes::default()))
     }
 
     async fn login(&mut self, password: &str) -> io::Result<bool> {
@@ -115,18 +103,24 @@ impl RCon for Client {
         Ok(packet.id >= 0)
     }
 
-    async fn run<T>(&mut self, args: &[T]) -> io::Result<Arc<[u8]>>
+    async fn run<T>(
+        &mut self,
+        args: &[T],
+        multi_packet_timeout: Option<Duration>,
+    ) -> io::Result<Arc<[u8]>>
     where
         T: AsRef<str> + Send + Sync,
     {
         let command = Packet::command(args);
         let id = command.id;
         self.send(command).await?;
-        self.read_responses(id).await.map(|responses| {
-            responses
-                .into_iter()
-                .flat_map(|response| response.payload)
-                .collect()
-        })
+        self.read_responses(id, multi_packet_timeout)
+            .await
+            .map(|responses| {
+                responses
+                    .into_iter()
+                    .flat_map(|response| response.payload)
+                    .collect()
+            })
     }
 }

@@ -37,7 +37,6 @@ async fn main() {
         });
 
     let mut client: Client = tcp_stream.into();
-    client.set_multi_packet_timeout(args.multi_packet_timeout.map(Duration::from_millis));
 
     if args.palworld {
         client.fixes_mut().insert(Fix::Palworld);
@@ -48,10 +47,16 @@ async fn main() {
         exit(3);
     });
     if logged_in {
-        let result = client.run(&args.command).await.unwrap_or_else(|error| {
-            error!("{error}");
-            exit(5);
-        });
+        let result = client
+            .run(
+                &args.command,
+                args.multi_packet_timeout.map(Duration::from_millis),
+            )
+            .await
+            .unwrap_or_else(|error| {
+                error!("{error}");
+                exit(5);
+            });
         stdout()
             .lock()
             .write_all(&result)
