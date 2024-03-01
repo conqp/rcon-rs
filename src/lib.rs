@@ -1,9 +1,19 @@
+use async_std::net::ToSocketAddrs;
 use std::io;
 use std::sync::Arc;
 
 pub mod source;
 
-pub trait RCon {
+pub trait RCon: Sized {
+    /// Connect to the given socket address.
+    ///
+    /// # Errors
+    /// Returns an [`io::Error`] on errors.
+    fn connect<T>(address: T) -> impl std::future::Future<Output = io::Result<Self>> + Send
+    where
+        T: ToSocketAddrs + Send + Sync,
+        <T as ToSocketAddrs>::Iter: Send + Sync;
+
     /// Perform a login.
     ///
     /// # Errors

@@ -29,20 +29,6 @@ impl Client {
         }
     }
 
-    /// Connect to the given socket address.
-    ///
-    /// # Errors
-    /// Returns an [`io::Error`] on errors.
-    pub async fn connect<T>(address: T) -> io::Result<Self>
-    where
-        T: ToSocketAddrs + Send + Sync,
-        <T as ToSocketAddrs>::Iter: Send + Sync,
-    {
-        TcpStream::connect(address)
-            .await
-            .map(|tcp_stream| Self::new(tcp_stream, Fixes::default(), FOLLOWUP_TIMEOUT))
-    }
-
     #[must_use]
     pub const fn fixes(&self) -> &Fixes {
         &self.fixes
@@ -101,6 +87,16 @@ impl From<TcpStream> for Client {
 }
 
 impl RCon for Client {
+    async fn connect<T>(address: T) -> io::Result<Self>
+    where
+        T: ToSocketAddrs + Send + Sync,
+        <T as ToSocketAddrs>::Iter: Send + Sync,
+    {
+        TcpStream::connect(address)
+            .await
+            .map(|tcp_stream| Self::new(tcp_stream, Fixes::default(), FOLLOWUP_TIMEOUT))
+    }
+
     async fn login(&mut self, password: &str) -> io::Result<bool> {
         self.send(Packet::login(password)).await?;
         let mut packet;
