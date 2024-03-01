@@ -7,25 +7,12 @@ pub enum Fix {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct Fixes(HashSet<Fix>);
+pub struct Fixes(pub(crate) HashSet<Fix>);
 
 impl Fixes {
     #[must_use]
     pub fn new() -> Self {
         Self(HashSet::new())
-    }
-
-    #[must_use]
-    pub const fn get(&self) -> &HashSet<Fix> {
-        &self.0
-    }
-
-    pub fn add(&mut self, fix: Fix) -> bool {
-        self.0.insert(fix)
-    }
-
-    pub fn remove(&mut self, fix: &Fix) -> bool {
-        self.0.remove(fix)
     }
 
     #[must_use]

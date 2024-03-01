@@ -1,11 +1,13 @@
 use super::packet::Packet;
 use super::server_data::ServerData;
 use super::util::invalid_data;
+use crate::source::fixes::Fix;
 use crate::source::Fixes;
 use crate::RCon;
 use async_std::io::{timeout, WriteExt};
 use async_std::net::{TcpStream, ToSocketAddrs};
 use log::debug;
+use std::collections::HashSet;
 use std::io;
 use std::sync::Arc;
 use std::time::Duration;
@@ -30,12 +32,12 @@ impl Client {
     }
 
     #[must_use]
-    pub const fn fixes(&self) -> &Fixes {
-        &self.fixes
+    pub const fn fixes(&self) -> &HashSet<Fix> {
+        &self.fixes.0
     }
 
-    pub fn fixes_mut(&mut self) -> &mut Fixes {
-        &mut self.fixes
+    pub fn fixes_mut(&mut self) -> &mut HashSet<Fix> {
+        &mut self.fixes.0
     }
 
     #[must_use]
