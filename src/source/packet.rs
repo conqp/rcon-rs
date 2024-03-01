@@ -5,7 +5,7 @@ use std::io;
 use std::io::Read;
 
 const TERMINATOR: [u8; 2] = [0, 0];
-const I32_SIZE: usize = 4;
+const I32_BYTES: usize = 4;
 const OFFSET: usize = 10;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -65,7 +65,7 @@ impl Packet {
     where
         T: Read,
     {
-        let mut buffer = [0; I32_SIZE];
+        let mut buffer = [0; I32_BYTES];
         debug!("Reading payload size.");
         source.read_exact(&mut buffer)?;
         let size: usize = i32::from_le_bytes(buffer)
@@ -109,7 +109,7 @@ impl Packet {
 
 impl From<Packet> for Vec<u8> {
     fn from(packet: Packet) -> Self {
-        let mut bytes = Self::with_capacity(packet.size() + I32_SIZE);
+        let mut bytes = Self::with_capacity(packet.size() + I32_BYTES);
         bytes.extend_from_slice(
             &i32::try_from(packet.size())
                 .expect("Packet size does not fit into i32")
