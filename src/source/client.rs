@@ -16,7 +16,7 @@ use std::time::Duration;
 pub struct Client {
     tcp_stream: TcpStream,
     fixes: Fixes,
-    followup_timeout: Option<Duration>,
+    multi_packet_timeout: Option<Duration>,
 }
 
 impl Client {
@@ -29,7 +29,7 @@ impl Client {
         Self {
             tcp_stream,
             fixes,
-            followup_timeout,
+            multi_packet_timeout: followup_timeout,
         }
     }
 
@@ -43,12 +43,12 @@ impl Client {
     }
 
     #[must_use]
-    pub const fn followup_timeout(&self) -> Option<Duration> {
-        self.followup_timeout
+    pub const fn multi_packet_timeout(&self) -> Option<Duration> {
+        self.multi_packet_timeout
     }
 
-    pub fn set_followup_timeout(&mut self, followup_timeout: Option<Duration>) {
-        self.followup_timeout = followup_timeout;
+    pub fn set_multi_packet_timeout(&mut self, followup_timeout: Option<Duration>) {
+        self.multi_packet_timeout = followup_timeout;
     }
 
     async fn send(&mut self, packet: Packet) -> io::Result<()> {
@@ -61,10 +61,8 @@ impl Client {
         let response = self.read_packet(id).await?;
         let mut responses = vec![response];
 
-        if let Some(followup_timeout) = self.followup_timeout {
-            while let Ok(response) =
-                timeout(followup_timeout, async { self.read_packet(id).await }).await
-            {
+        if let Some(duration) = self.multi_packet_timeout {
+            while let Ok(response) = timeout(duration, async { self.read_packet(id).await }).await {
                 responses.push(response);
             }
         }

@@ -34,7 +34,7 @@ async fn main() {
         });
 
     let mut client: Client = tcp_stream.into();
-    client.set_followup_timeout(args.multi_packet_timeout.map(Duration::from_millis));
+    client.set_multi_packet_timeout(args.multi_packet_timeout.map(Duration::from_millis));
     let logged_in = client.login(&args.password).await.unwrap_or_else(|error| {
         error!("{error}");
         exit(3);
