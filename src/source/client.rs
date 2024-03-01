@@ -12,18 +12,20 @@ use std::io;
 use std::sync::Arc;
 use std::time::Duration;
 
-const FOLLOWUP_TIMEOUT: Duration = Duration::from_millis(1);
-
 #[derive(Debug)]
 pub struct Client {
     tcp_stream: TcpStream,
     fixes: Fixes,
-    followup_timeout: Duration,
+    followup_timeout: Option<Duration>,
 }
 
 impl Client {
     #[must_use]
-    pub const fn new(tcp_stream: TcpStream, fixes: Fixes, followup_timeout: Duration) -> Self {
+    pub const fn new(
+        tcp_stream: TcpStream,
+        fixes: Fixes,
+        followup_timeout: Option<Duration>,
+    ) -> Self {
         Self {
             tcp_stream,
             fixes,
@@ -41,11 +43,11 @@ impl Client {
     }
 
     #[must_use]
-    pub const fn followup_timeout(&self) -> Duration {
+    pub const fn followup_timeout(&self) -> Option<Duration> {
         self.followup_timeout
     }
 
-    pub fn set_followup_timeout(&mut self, followup_timeout: Duration) {
+    pub fn set_followup_timeout(&mut self, followup_timeout: Option<Duration>) {
         self.followup_timeout = followup_timeout;
     }
 
@@ -59,10 +61,12 @@ impl Client {
         let response = self.read_packet(id).await?;
         let mut responses = vec![response];
 
-        while let Ok(response) =
-            timeout(self.followup_timeout, async { self.read_packet(id).await }).await
-        {
-            responses.push(response);
+        if let Some(followup_timeout) = self.followup_timeout {
+            while let Ok(response) =
+                timeout(followup_timeout, async { self.read_packet(id).await }).await
+            {
+                responses.push(response);
+            }
         }
 
         Ok(responses)
@@ -84,7 +88,7 @@ impl Client {
 
 impl From<TcpStream> for Client {
     fn from(tcp_stream: TcpStream) -> Self {
-        Self::new(tcp_stream, Fixes::default(), FOLLOWUP_TIMEOUT)
+        Self::new(tcp_stream, Fixes::default(), None)
     }
 }
 
@@ -96,7 +100,7 @@ impl RCon for Client {
     {
         TcpStream::connect(address)
             .await
-            .map(|tcp_stream| Self::new(tcp_stream, Fixes::default(), FOLLOWUP_TIMEOUT))
+            .map(|tcp_stream| Self::new(tcp_stream, Fixes::default(), None))
     }
 
     async fn login(&mut self, password: &str) -> io::Result<bool> {

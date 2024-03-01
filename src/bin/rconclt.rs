@@ -4,11 +4,18 @@ use log::error;
 use rcon::{source::Client, RCon};
 use std::io::{stdout, Write};
 use std::process::exit;
+use std::time::Duration;
 
 #[derive(Debug, Parser)]
 struct Args {
     #[arg(short, long)]
     password: String,
+    #[arg(
+        short,
+        long,
+        help = "follow-up timeout in milliseconds for multi-packet responses"
+    )]
+    timeout: Option<u64>,
     #[arg(index = 1)]
     server: String,
     #[arg(index = 2)]
@@ -27,6 +34,7 @@ async fn main() {
         });
 
     let mut client: Client = tcp_stream.into();
+    client.set_followup_timeout(args.timeout.map(Duration::from_millis));
     let logged_in = client.login(&args.password).await.unwrap_or_else(|error| {
         error!("{error}");
         exit(3);
