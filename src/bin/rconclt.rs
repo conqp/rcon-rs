@@ -10,7 +10,7 @@ use std::time::Duration;
 struct Args {
     #[arg(short, long)]
     password: String,
-    #[arg(index = 2, help = "timeout in milliseconds")]
+    #[arg(short, long, help = "timeout in milliseconds")]
     timeout: Option<u64>,
     #[arg(index = 1)]
     server: String,
