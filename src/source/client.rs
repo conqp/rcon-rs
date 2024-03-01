@@ -3,6 +3,7 @@ use super::packet::Packet;
 use super::server_data::ServerData;
 use super::util::invalid_data;
 use log::debug;
+use std::collections::HashSet;
 use std::io;
 use std::io::Write;
 use std::net::{TcpStream, ToSocketAddrs};
@@ -13,7 +14,7 @@ const FOLLOWUP_TIMEOUT: Duration = Duration::from_millis(1);
 #[derive(Debug)]
 pub struct Client {
     tcp_stream: TcpStream,
-    fixes: Option<Fixes>,
+    fixes: HashSet<Fixes>,
     followup_timeout: Duration,
 }
 
@@ -21,7 +22,7 @@ impl Client {
     #[must_use]
     pub const fn new(
         tcp_stream: TcpStream,
-        fixes: Option<Fixes>,
+        fixes: HashSet<Fixes>,
         followup_timeout: Duration,
     ) -> Self {
         Self {
@@ -39,16 +40,17 @@ impl Client {
     where
         T: ToSocketAddrs,
     {
-        TcpStream::connect(address).map(|tcp_stream| Self::new(tcp_stream, None, FOLLOWUP_TIMEOUT))
+        TcpStream::connect(address)
+            .map(|tcp_stream| Self::new(tcp_stream, HashSet::new(), FOLLOWUP_TIMEOUT))
     }
 
     #[must_use]
-    pub const fn fixes(&self) -> Option<Fixes> {
-        self.fixes
+    pub const fn fixes(&self) -> &HashSet<Fixes> {
+        &self.fixes
     }
 
-    pub fn set_fixes(&mut self, fixes: Option<Fixes>) {
-        self.fixes = fixes;
+    pub fn fixes_mut(&mut self) -> &mut HashSet<Fixes> {
+        &mut self.fixes
     }
 
     #[must_use]
@@ -123,21 +125,27 @@ impl Client {
     fn read_packet(&mut self, id: i32) -> io::Result<Packet> {
         let packet = Packet::read_from(&mut self.tcp_stream)?;
 
-        if matches!(self.fixes, Some(Fixes::Palworld)) {
+        if self.packet_is_valid(&packet, id) {
             Ok(packet)
-        } else if packet.id != id {
-            return Err(invalid_data(format!(
+        } else {
+            Err(invalid_data(format!(
                 "Packet ID mismatch: {} != {id}",
                 packet.id
-            )));
-        } else {
-            Ok(packet)
+            )))
         }
+    }
+
+    fn packet_is_valid(&self, packet: &Packet, id: i32) -> bool {
+        if self.fixes.contains(&Fixes::Palworld) {
+            return true;
+        }
+
+        packet.id == id
     }
 }
 
 impl From<TcpStream> for Client {
     fn from(tcp_stream: TcpStream) -> Self {
-        Self::new(tcp_stream, None, FOLLOWUP_TIMEOUT)
+        Self::new(tcp_stream, HashSet::new(), FOLLOWUP_TIMEOUT)
     }
 }
