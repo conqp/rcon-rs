@@ -102,7 +102,7 @@ impl Packet {
     }
 
     pub fn size(&self) -> usize {
-        4 + 4 + self.payload.len() + 2
+        self.payload.len() + OFFSET
     }
 }
 
