@@ -78,8 +78,9 @@ impl Client {
         T: AsRef<str>,
     {
         let command = Packet::command(args);
+        let id = command.id;
         self.send(command)?;
-        self.read_responses().map(|responses| {
+        self.read_responses(id).map(|responses| {
             responses
                 .into_iter()
                 .flat_map(|response| response.payload)
@@ -93,19 +94,35 @@ impl Client {
         self.tcp_stream.write_all(bytes.as_slice())
     }
 
-    fn read_responses(&mut self) -> io::Result<Vec<Packet>> {
-        let response = Packet::read_from(&mut self.tcp_stream)?;
+    fn read_responses(&mut self, id: i32) -> io::Result<Vec<Packet>> {
+        let response = self.read_packet(id)?;
         let mut responses = vec![response];
+
         let read_timeout = self.tcp_stream.read_timeout()?;
         self.tcp_stream
             .set_read_timeout(Some(self.followup_timeout))?;
 
-        while let Ok(response) = Packet::read_from(&mut self.tcp_stream) {
+        while let Ok(response) = self.read_packet(id) {
             responses.push(response);
         }
 
         self.tcp_stream.set_read_timeout(read_timeout)?;
         Ok(responses)
+    }
+
+    fn read_packet(&mut self, id: i32) -> io::Result<Packet> {
+        let packet = Packet::read_from(&mut self.tcp_stream)?;
+
+        if matches!(self.fixes, Some(Fixes::Palworld)) {
+            Ok(packet)
+        } else if packet.id != id {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Packet ID mismatch: {} != {id}", packet.id),
+            ));
+        } else {
+            Ok(packet)
+        }
     }
 }
 
