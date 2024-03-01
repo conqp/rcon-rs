@@ -17,7 +17,8 @@ env_logger = "0.11.2"
 futures = "0.3.30"
 log = "0.4.21"
 rand = "0.9.0-alpha.0"
+tokio = { version = "1.36.0", features = ["rt-multi-thread", "macros"], optional = true }
 
 [[bin]]
 name = "rconclt"
-required-features = ["clap"]
+required-features = ["clap", "tokio"]

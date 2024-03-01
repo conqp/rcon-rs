@@ -3,10 +3,11 @@ use super::server_data::ServerData;
 use super::util::invalid_data;
 use crate::source::Fixes;
 use crate::RCon;
+use async_std::io::{timeout, WriteExt};
+use async_std::net::{TcpStream, ToSocketAddrs};
 use log::debug;
 use std::io;
-use std::io::Write;
-use std::net::{TcpStream, ToSocketAddrs};
+use std::sync::Arc;
 use std::time::Duration;
 
 const FOLLOWUP_TIMEOUT: Duration = Duration::from_millis(1);
@@ -32,11 +33,13 @@ impl Client {
     ///
     /// # Errors
     /// Returns an [`io::Error`] on errors.
-    pub fn connect<T>(address: T) -> io::Result<Self>
+    pub async fn connect<T>(address: T) -> io::Result<Self>
     where
-        T: ToSocketAddrs,
+        T: ToSocketAddrs + Send + Sync,
+        <T as ToSocketAddrs>::Iter: Send + Sync,
     {
         TcpStream::connect(address)
+            .await
             .map(|tcp_stream| Self::new(tcp_stream, Fixes::default(), FOLLOWUP_TIMEOUT))
     }
 
@@ -58,30 +61,27 @@ impl Client {
         self.followup_timeout = followup_timeout;
     }
 
-    fn send(&mut self, packet: Packet) -> io::Result<()> {
+    async fn send(&mut self, packet: Packet) -> io::Result<()> {
         let bytes: Vec<_> = packet.try_into().map_err(invalid_data)?;
         debug!("Sending bytes: {bytes:?}");
-        self.tcp_stream.write_all(bytes.as_slice())
+        self.tcp_stream.write_all(bytes.as_slice()).await
     }
 
-    fn read_responses(&mut self, id: i32) -> io::Result<Vec<Packet>> {
-        let response = self.read_packet(id)?;
+    async fn read_responses(&mut self, id: i32) -> io::Result<Vec<Packet>> {
+        let response = self.read_packet(id).await?;
         let mut responses = vec![response];
 
-        let read_timeout = self.tcp_stream.read_timeout()?;
-        self.tcp_stream
-            .set_read_timeout(Some(self.followup_timeout))?;
-
-        while let Ok(response) = self.read_packet(id) {
+        while let Ok(response) =
+            timeout(self.followup_timeout, async { self.read_packet(id).await }).await
+        {
             responses.push(response);
         }
 
-        self.tcp_stream.set_read_timeout(read_timeout)?;
         Ok(responses)
     }
 
-    fn read_packet(&mut self, id: i32) -> io::Result<Packet> {
-        let packet = Packet::read_from(&mut self.tcp_stream)?;
+    async fn read_packet(&mut self, id: i32) -> io::Result<Packet> {
+        let packet = Packet::read_from(&mut self.tcp_stream).await?;
 
         if self.fixes.packet_is_valid(&packet, id) {
             Ok(packet)
@@ -101,13 +101,13 @@ impl From<TcpStream> for Client {
 }
 
 impl RCon for Client {
-    fn login(&mut self, password: &str) -> io::Result<bool> {
-        self.send(Packet::login(password))?;
+    async fn login(&mut self, password: &str) -> io::Result<bool> {
+        self.send(Packet::login(password)).await?;
         let mut packet;
 
         loop {
             debug!("Reading response packet.");
-            packet = Packet::read_from(&mut self.tcp_stream)?;
+            packet = Packet::read_from(&mut self.tcp_stream).await?;
             if packet.typ == ServerData::AuthResponse {
                 break;
             }
@@ -116,14 +116,14 @@ impl RCon for Client {
         Ok(packet.id >= 0)
     }
 
-    fn run<T>(&mut self, args: &[T]) -> io::Result<Vec<u8>>
+    async fn run<T>(&mut self, args: &[T]) -> io::Result<Arc<[u8]>>
     where
-        T: AsRef<str>,
+        T: AsRef<str> + Send + Sync,
     {
         let command = Packet::command(args);
         let id = command.id;
-        self.send(command)?;
-        self.read_responses(id).map(|responses| {
+        self.send(command).await?;
+        self.read_responses(id).await.map(|responses| {
             responses
                 .into_iter()
                 .flat_map(|response| response.payload)
