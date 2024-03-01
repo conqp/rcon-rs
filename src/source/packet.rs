@@ -1,5 +1,6 @@
 use super::server_data::ServerData;
 use super::util::invalid_data;
+use futures::AsyncReadExt;
 use log::debug;
 use rand::{thread_rng, Rng};
 use std::io;
@@ -96,6 +97,40 @@ impl Packet {
         debug!("Reading terminator.");
         let mut terminator = [0; 2];
         source.read_exact(&mut terminator)?;
+        debug!("Packet terminator is {terminator:?}.");
+        Ok(Self::new(id, typ, payload, terminator))
+    }
+
+    pub async fn read_from_async(source: &mut async_std::net::TcpStream) -> io::Result<Self> {
+        let mut buffer = [0; I32_BYTES];
+        debug!("Reading payload size.");
+        source.read_exact(&mut buffer).await?;
+        let size: usize = i32::from_le_bytes(buffer)
+            .try_into()
+            .map_err(invalid_data)?;
+        debug!("Packet size is {size}.");
+        debug!("Reading packet ID.");
+        source.read_exact(&mut buffer).await?;
+        let id = i32::from_le_bytes(buffer);
+        debug!("Packet ID is {id}.");
+        debug!("Reading packet type.");
+        source.read_exact(&mut buffer).await?;
+        let typ: ServerData = i32::from_le_bytes(buffer)
+            .try_into()
+            .map_err(|value| invalid_data(format!("Invalid packet type: {value}")))?;
+        debug!("Packet type is {typ:?}.");
+        debug!("Reading payload.");
+        let mut payload =
+            vec![
+                0;
+                size.checked_sub(OFFSET)
+                    .ok_or_else(|| invalid_data(format!("Invalid payload size: {size}")))?
+            ];
+        source.read_exact(&mut payload).await?;
+        debug!("Packet payload is {payload:?}.");
+        debug!("Reading terminator.");
+        let mut terminator = [0; 2];
+        source.read_exact(&mut terminator).await?;
         debug!("Packet terminator is {terminator:?}.");
         Ok(Self::new(id, typ, payload, terminator))
     }

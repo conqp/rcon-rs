@@ -11,8 +11,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+async-std = "1.12.0"
 clap = { version = "4.5.1", features = ["derive"], optional = true }
 env_logger = "0.11.2"
+futures = "0.3.30"
 log = "0.4.21"
 rand = "0.9.0-alpha.0"
 
