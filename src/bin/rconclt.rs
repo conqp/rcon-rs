@@ -13,9 +13,9 @@ struct Args {
     #[arg(
         short,
         long,
-        help = "follow-up timeout in milliseconds for multi-packet responses"
+        help = "timeout in milliseconds for multi-packet responses"
     )]
-    timeout: Option<u64>,
+    multi_packet_timeout: Option<u64>,
     #[arg(index = 1)]
     server: String,
     #[arg(index = 2)]
@@ -34,7 +34,7 @@ async fn main() {
         });
 
     let mut client: Client = tcp_stream.into();
-    client.set_followup_timeout(args.timeout.map(Duration::from_millis));
+    client.set_followup_timeout(args.multi_packet_timeout.map(Duration::from_millis));
     let logged_in = client.login(&args.password).await.unwrap_or_else(|error| {
         error!("{error}");
         exit(3);
