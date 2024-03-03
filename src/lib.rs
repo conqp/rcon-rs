@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::net::ToSocketAddrs;
 
-mod battleye;
+pub mod battleye;
 pub mod source;
 
 pub trait RCon: Sized {
