@@ -3,3 +3,5 @@ mod from_server;
 mod header;
 mod packet;
 mod to_server;
+
+pub use client::Client;
