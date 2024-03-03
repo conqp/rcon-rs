@@ -1,7 +1,7 @@
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
 use crate::battleye::packet::server::Message;
-use crate::battleye::packet::{command, login, server, Request, Response};
+use crate::battleye::packet::{command, login, server, CommunicationResult, Request, Response};
 use crate::battleye::to_server::ToServer;
 use crate::RCon;
 use log::warn;
@@ -10,6 +10,7 @@ use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::net::{lookup_host, ToSocketAddrs};
+use tokio::time::timeout;
 use udp_stream::UdpStream;
 
 pub struct Client {
@@ -34,13 +35,22 @@ impl Client {
         self.send(Request::Server(server::Ack::new(seq))).await
     }
 
-    async fn communicate<'request>(&mut self, request: Request<'request>) -> io::Result<Response> {
+    async fn communicate<'request>(
+        &mut self,
+        request: Request<'request>,
+        multi_packet_timeout: Option<Duration>,
+    ) -> io::Result<CommunicationResult> {
         self.send(request).await?;
+        let mut responses = Vec::new();
 
-        loop {
-            match self.receive().await? {
-                Response::Command(response) => return Ok(Response::Command(response)),
-                Response::Login(response) => return Ok(Response::Login(response)),
+        while let Ok(packet) = if let Some(t) = multi_packet_timeout {
+            timeout(t, async { self.receive().await }).await?
+        } else {
+            self.receive().await
+        } {
+            match packet {
+                Response::Command(response) => responses.push(response),
+                Response::Login(response) => return Ok(CommunicationResult::Login(response)),
                 Response::Server(message) => {
                     if let Some(handler) = &mut self.handler {
                         handler.send(message).map_err(io::Error::other)?;
@@ -49,6 +59,22 @@ impl Client {
                     }
                 }
             }
+        }
+
+        if responses.is_empty() {
+            Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "No data received.",
+            ))
+        } else {
+            responses.sort_by_key(command::Response::seq);
+            Ok(CommunicationResult::CommandResult(
+                responses
+                    .iter()
+                    .flat_map(command::Response::payload)
+                    .copied()
+                    .collect(),
+            ))
         }
     }
 
@@ -104,17 +130,13 @@ impl RCon for Client {
 
     async fn login(&mut self, password: &str) -> io::Result<bool> {
         match self
-            .communicate(Request::Login(login::Request::from(password)))
+            .communicate(Request::Login(login::Request::from(password)), None)
             .await?
         {
-            Response::Login(response) => Ok(response.success()),
-            Response::Command(_) => Err(io::Error::new(
+            CommunicationResult::Login(response) => Ok(response.success()),
+            CommunicationResult::CommandResult(_) => Err(io::Error::new(
                 io::ErrorKind::InvalidData,
-                "Expected login response, but got a command response.",
-            )),
-            Response::Server(_) => Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "Expected login response, but got a server response.",
+                "Expected login response, but got a command result.",
             )),
         }
     }
@@ -122,7 +144,7 @@ impl RCon for Client {
     async fn run<T>(
         &mut self,
         args: &[T],
-        _multi_packet_timeout: Option<Duration>,
+        multi_packet_timeout: Option<Duration>,
     ) -> io::Result<Arc<[u8]>>
     where
         T: AsRef<str> + Send + Sync,
@@ -130,17 +152,16 @@ impl RCon for Client {
         let command = args.iter().map(AsRef::as_ref).collect::<Vec<_>>().join(" ");
 
         match self
-            .communicate(Request::Command(command::Request::from(command.as_str())))
+            .communicate(
+                Request::Command(command::Request::from(command.as_str())),
+                multi_packet_timeout,
+            )
             .await?
         {
-            Response::Command(response) => Ok(Arc::from(response.payload())),
-            Response::Login(_) => Err(io::Error::new(
+            CommunicationResult::CommandResult(bytes) => Ok(bytes),
+            CommunicationResult::Login(_) => Err(io::Error::new(
                 io::ErrorKind::InvalidData,
-                "Expected login response, but got a command response.",
-            )),
-            Response::Server(_) => Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "Expected login response, but got a server response.",
+                "Expected login response, but got a login response.",
             )),
         }
     }

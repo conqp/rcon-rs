@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 pub mod command;
 pub mod login;
 pub mod server;
@@ -14,4 +16,10 @@ pub enum Response {
     Command(command::Response),
     Login(login::Response),
     Server(server::Message),
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum CommunicationResult {
+    CommandResult(Arc<[u8]>),
+    Login(login::Response),
 }

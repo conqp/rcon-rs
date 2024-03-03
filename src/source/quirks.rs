@@ -18,12 +18,12 @@ pub struct Quirks(pub(crate) u8);
 
 impl Quirks {
     #[must_use]
-    pub fn new(mask: u8) -> Self {
+    pub const fn new(mask: u8) -> Self {
         Self(mask)
     }
 
     #[must_use]
-    pub fn packet_is_valid(&self, packet: &Packet, id: i32) -> bool {
+    pub const fn packet_is_valid(&self, packet: &Packet, id: i32) -> bool {
         if Quirk::Palworld.matches(self.0) {
             return true;
         }

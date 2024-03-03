@@ -31,6 +31,11 @@ impl Response {
     }
 
     #[must_use]
+    pub const fn seq(&self) -> u8 {
+        self.seq
+    }
+
+    #[must_use]
     pub fn payload(&self) -> &[u8] {
         &self.payload
     }
