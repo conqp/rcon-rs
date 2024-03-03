@@ -26,6 +26,14 @@ impl Client {
         }
     }
 
+    /// Acknowledge a server message.
+    ///
+    /// # Errors
+    /// Returns an [`io::Error`] if the ack message could not be sent.
+    pub async fn ack_message(&mut self, seq: u8) -> io::Result<()> {
+        self.send(Request::Server(server::Ack::new(seq))).await
+    }
+
     async fn communicate<'request>(&mut self, request: Request<'request>) -> io::Result<Response> {
         self.send(request).await?;
 
