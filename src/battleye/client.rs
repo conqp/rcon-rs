@@ -108,7 +108,6 @@ impl Client {
                 .map(|f| f(header))
                 .and_then(FromServer::validate)
                 .map(Response::Login),
-
             server::TYPE => Message::read_from(&mut self.udp_stream)
                 .await
                 .map(|f| f(header))
