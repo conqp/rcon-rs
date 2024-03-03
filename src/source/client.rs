@@ -4,7 +4,6 @@ use super::server_data::ServerData;
 use super::util::invalid_data;
 use crate::RCon;
 use log::debug;
-use std::collections::HashSet;
 use std::io;
 use std::sync::Arc;
 use std::time::Duration;
@@ -25,17 +24,17 @@ impl Client {
     }
 
     #[must_use]
-    pub const fn quirks(&self) -> &HashSet<Quirk> {
-        &self.quirks.0
+    pub const fn quirks(&self) -> u8 {
+        self.quirks.0
     }
 
-    pub fn quirks_mut(&mut self) -> &mut HashSet<Quirk> {
-        &mut self.quirks.0
+    pub fn enable_quirk(&mut self, quirk: Quirk) {
+        self.quirks.0 |= quirk as u8;
     }
 
     #[must_use]
     pub fn with_quirk(mut self, quirk: Quirk) -> Self {
-        self.quirks.0.insert(quirk);
+        self.enable_quirk(quirk);
         self
     }
 

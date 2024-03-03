@@ -1,23 +1,30 @@
 use crate::source::packet::Packet;
-use std::collections::HashSet;
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+#[repr(u8)]
 pub enum Quirk {
-    Palworld,
+    Palworld = 0b000_00001,
+}
+
+impl Quirk {
+    #[must_use]
+    pub const fn matches(self, quirks: u8) -> bool {
+        (self as u8) & quirks != 0
+    }
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct Quirks(pub(crate) HashSet<Quirk>);
+pub struct Quirks(pub(crate) u8);
 
 impl Quirks {
     #[must_use]
-    pub fn new() -> Self {
-        Self(HashSet::new())
+    pub fn new(mask: u8) -> Self {
+        Self(mask)
     }
 
     #[must_use]
     pub fn packet_is_valid(&self, packet: &Packet, id: i32) -> bool {
-        if self.0.contains(&Quirk::Palworld) {
+        if Quirk::Palworld.matches(self.0) {
             return true;
         }
 
@@ -27,6 +34,6 @@ impl Quirks {
 
 impl Default for Quirks {
     fn default() -> Self {
-        Self::new()
+        Self::new(0)
     }
 }
