@@ -49,7 +49,15 @@ impl Client {
             self.receive().await
         } {
             match packet {
-                Response::Command(response) => responses.push(response),
+                Response::Command(response) => {
+                    if multi_packet_timeout.is_none() {
+                        return Ok(CommunicationResult::CommandResult(
+                            response.payload().iter().copied().collect(),
+                        ));
+                    }
+
+                    responses.push(response);
+                }
                 Response::Login(response) => return Ok(CommunicationResult::Login(response)),
                 Response::Server(message) => {
                     if let Some(handler) = &mut self.handler {
