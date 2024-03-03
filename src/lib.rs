@@ -1,8 +1,9 @@
-use async_std::net::ToSocketAddrs;
 use std::io;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::net::ToSocketAddrs;
 
+mod battleye;
 pub mod source;
 
 pub trait RCon: Sized {
@@ -12,8 +13,7 @@ pub trait RCon: Sized {
     /// Returns an [`io::Error`] on errors.
     fn connect<T>(address: T) -> impl std::future::Future<Output = io::Result<Self>> + Send
     where
-        T: ToSocketAddrs + Send + Sync,
-        <T as ToSocketAddrs>::Iter: Send + Sync;
+        T: ToSocketAddrs + Send + Sync;
 
     /// Perform a login.
     ///

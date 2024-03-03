@@ -3,13 +3,14 @@ use super::quirks::{Quirk, Quirks};
 use super::server_data::ServerData;
 use super::util::invalid_data;
 use crate::RCon;
-use async_std::io::{timeout, WriteExt};
-use async_std::net::{TcpStream, ToSocketAddrs};
 use log::debug;
 use std::collections::HashSet;
 use std::io;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::io::AsyncWriteExt;
+use tokio::net::{TcpStream, ToSocketAddrs};
+use tokio::time::timeout;
 
 #[derive(Debug)]
 pub struct Client {
@@ -54,7 +55,7 @@ impl Client {
 
         if let Some(multi_packet_timeout) = multi_packet_timeout {
             while let Ok(response) =
-                timeout(multi_packet_timeout, async { self.read_packet(id).await }).await
+                timeout(multi_packet_timeout, async { self.read_packet(id).await }).await?
             {
                 responses.push(response);
             }
@@ -87,7 +88,6 @@ impl RCon for Client {
     async fn connect<T>(address: T) -> io::Result<Self>
     where
         T: ToSocketAddrs + Send + Sync,
-        <T as ToSocketAddrs>::Iter: Send + Sync,
     {
         TcpStream::connect(address)
             .await

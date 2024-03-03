@@ -1,9 +1,10 @@
 use super::server_data::ServerData;
 use super::util::invalid_data;
-use futures::AsyncReadExt;
 use log::{debug, trace, warn};
 use rand::{thread_rng, Rng};
 use std::num::TryFromIntError;
+use tokio::io::AsyncReadExt;
+use tokio::net::TcpStream;
 
 const TERMINATOR: [u8; 2] = [0, 0];
 const I32_BYTES: usize = 4;
@@ -62,7 +63,7 @@ impl Packet {
         )
     }
 
-    pub async fn read_from(source: &mut async_std::net::TcpStream) -> std::io::Result<Self> {
+    pub async fn read_from(source: &mut TcpStream) -> std::io::Result<Self> {
         let mut buffer = [0; I32_BYTES];
         debug!("Reading payload size.");
         source.read_exact(&mut buffer).await?;
