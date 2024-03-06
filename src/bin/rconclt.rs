@@ -1,4 +1,3 @@
-use async_std::net::TcpStream;
 use clap::Parser;
 use log::error;
 use rcon::source::Quirk;
@@ -6,6 +5,7 @@ use rcon::{source::Client, RCon};
 use std::io::{stdout, Write};
 use std::process::exit;
 use std::time::Duration;
+use tokio::net::TcpStream;
 
 #[derive(Debug, Parser)]
 struct Args {
