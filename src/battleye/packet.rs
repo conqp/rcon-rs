@@ -20,6 +20,6 @@ pub enum Response {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CommunicationResult {
-    CommandResult(Arc<[u8]>),
+    Command(Arc<[u8]>),
     Login(login::Response),
 }

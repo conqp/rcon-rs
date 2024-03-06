@@ -52,7 +52,7 @@ impl Client {
             match packet {
                 Response::Command(response) => {
                     if multi_packet_timeout.is_none() {
-                        return Ok(CommunicationResult::CommandResult(
+                        return Ok(CommunicationResult::Command(
                             response.payload().iter().copied().collect(),
                         ));
                     }
@@ -77,7 +77,7 @@ impl Client {
             ))
         } else {
             responses.sort_by_key(command::Response::seq);
-            Ok(CommunicationResult::CommandResult(
+            Ok(CommunicationResult::Command(
                 responses
                     .iter()
                     .flat_map(command::Response::payload)
@@ -142,7 +142,7 @@ impl RCon for Client {
             .await?
         {
             CommunicationResult::Login(response) => Ok(response.success()),
-            CommunicationResult::CommandResult(_) => Err(io::Error::new(
+            CommunicationResult::Command(_) => Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "Expected login response, but got a command result.",
             )),
@@ -166,7 +166,7 @@ impl RCon for Client {
             )
             .await?
         {
-            CommunicationResult::CommandResult(bytes) => Ok(bytes),
+            CommunicationResult::Command(bytes) => Ok(bytes),
             CommunicationResult::Login(_) => Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "Expected login response, but got a login response.",
