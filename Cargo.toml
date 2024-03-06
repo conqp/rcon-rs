@@ -19,6 +19,9 @@ rand = "0.9.0-alpha.0"
 tokio = { version = "1.36.0", features = ["rt-multi-thread", "macros", "time"] }
 udp-stream = "0.0.11"
 
+[features]
+cli = ["dep:clap"]
+
 [[bin]]
 name = "rconclt"
-required-features = ["clap", "tokio"]
+required-features = ["cli"]
