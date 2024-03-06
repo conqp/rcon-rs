@@ -13,6 +13,7 @@ use tokio::net::{lookup_host, ToSocketAddrs};
 use tokio::time::timeout;
 use udp_stream::UdpStream;
 
+#[derive(Debug)]
 pub struct Client {
     udp_stream: UdpStream,
     handler: Option<Sender<Message>>,
