@@ -1,6 +1,7 @@
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
 use log::debug;
+use std::sync::Arc;
 use tokio::io::AsyncReadExt;
 use udp_stream::UdpStream;
 
@@ -8,12 +9,12 @@ use udp_stream::UdpStream;
 pub struct Response {
     header: Header,
     seq: u8,
-    payload: Vec<u8>,
+    payload: Arc<[u8]>,
 }
 
 impl Response {
     #[must_use]
-    pub const fn new(header: Header, seq: u8, payload: Vec<u8>) -> Self {
+    pub const fn new(header: Header, seq: u8, payload: Arc<[u8]>) -> Self {
         Self {
             header,
             seq,
@@ -27,7 +28,7 @@ impl Response {
         let mut payload = Vec::new();
         let bytes = src.read_to_end(&mut payload).await?;
         debug!("Read {bytes} bytes.");
-        Ok(move |header| Self::new(header, u8::from_le_bytes(buffer), payload))
+        Ok(move |header| Self::new(header, u8::from_le_bytes(buffer), payload.into()))
     }
 
     #[must_use]
