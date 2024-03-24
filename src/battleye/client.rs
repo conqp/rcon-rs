@@ -169,7 +169,7 @@ impl RCon for Client {
             CommunicationResult::Command(bytes) => Ok(bytes),
             CommunicationResult::Login(_) => Err(io::Error::new(
                 io::ErrorKind::InvalidData,
-                "Expected login response, but got a login response.",
+                "Expected command response, but got a login response.",
             )),
         }
     }
