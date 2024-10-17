@@ -1,5 +1,5 @@
 use super::packet::Packet;
-use super::quirks::{Quirk, Quirks};
+use super::quirks::Quirks;
 use super::server_data::ServerData;
 use super::util::invalid_data;
 use crate::RCon;
@@ -24,16 +24,16 @@ impl Client {
     }
 
     #[must_use]
-    pub const fn quirks(&self) -> u8 {
-        self.quirks.0
+    pub const fn quirks(&self) -> Quirks {
+        self.quirks
     }
 
-    pub fn enable_quirk(&mut self, quirk: Quirk) {
-        self.quirks.0 |= quirk as u8;
+    pub fn enable_quirk(&mut self, quirk: Quirks) {
+        self.quirks |= quirk;
     }
 
     #[must_use]
-    pub fn with_quirk(mut self, quirk: Quirk) -> Self {
+    pub fn with_quirk(mut self, quirk: Quirks) -> Self {
         self.enable_quirk(quirk);
         self
     }
@@ -66,7 +66,7 @@ impl Client {
     async fn read_packet(&mut self, id: i32) -> io::Result<Packet> {
         let packet = Packet::read_from(&mut self.tcp_stream).await?;
 
-        if self.quirks.packet_is_valid(&packet, id) {
+        if self.quirks.contains(Quirks::PALWORLD) || packet.id == id {
             Ok(packet)
         } else {
             Err(invalid_data(format!(

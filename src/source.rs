@@ -5,4 +5,4 @@ mod server_data;
 mod util;
 
 pub use client::Client;
-pub use quirks::Quirk;
+pub use quirks::Quirks;

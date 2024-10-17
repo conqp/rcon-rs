@@ -1,6 +1,6 @@
 use clap::Parser;
 use log::error;
-use rcon::source::Quirk;
+use rcon::source::Quirks;
 use rcon::{source::Client, RCon};
 use std::io::{stdout, Write};
 use std::process::exit;
@@ -39,7 +39,7 @@ async fn main() {
     let mut client: Client = tcp_stream.into();
 
     if args.palworld {
-        client = client.with_quirk(Quirk::Palworld);
+        client = client.with_quirk(Quirks::PALWORLD);
     }
 
     let logged_in = client.login(&args.password).await.unwrap_or_else(|error| {

@@ -1,39 +1,12 @@
-use crate::source::packet::Packet;
+use bitflags::bitflags;
 
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
-#[repr(u8)]
-pub enum Quirk {
-    Palworld = 0b000_00001,
-}
+/// Quirks for Source RCON.
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, PartialOrd, Ord)]
+pub struct Quirks(u8);
 
-impl Quirk {
-    #[must_use]
-    pub const fn matches(self, quirks: u8) -> bool {
-        (self as u8) & quirks != 0
-    }
-}
-
-#[derive(Debug, Eq, PartialEq)]
-pub struct Quirks(pub(crate) u8);
-
-impl Quirks {
-    #[must_use]
-    pub const fn new(mask: u8) -> Self {
-        Self(mask)
-    }
-
-    #[must_use]
-    pub const fn packet_is_valid(&self, packet: &Packet, id: i32) -> bool {
-        if Quirk::Palworld.matches(self.0) {
-            return true;
-        }
-
-        packet.id == id
-    }
-}
-
-impl Default for Quirks {
-    fn default() -> Self {
-        Self::new(0)
+bitflags! {
+    impl Quirks: u8 {
+        /// Quirk for Palworld servers.
+        const PALWORLD = 0b0000_0001;
     }
 }
