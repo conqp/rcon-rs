@@ -11,6 +11,7 @@ use tokio::io::AsyncWriteExt;
 use tokio::net::{TcpStream, ToSocketAddrs};
 use tokio::time::timeout;
 
+/// A Source `RCON` client.
 #[derive(Debug)]
 pub struct Client {
     tcp_stream: TcpStream,
@@ -18,20 +19,24 @@ pub struct Client {
 }
 
 impl Client {
+    /// Creates a new client instance.
     #[must_use]
     pub const fn new(tcp_stream: TcpStream, quirks: Quirks) -> Self {
         Self { tcp_stream, quirks }
     }
 
+    /// Returns the currently set quirks.
     #[must_use]
     pub const fn quirks(&self) -> Quirks {
         self.quirks
     }
 
+    /// Enable a quirk on the client.
     pub fn enable_quirk(&mut self, quirk: Quirks) {
         self.quirks |= quirk;
     }
 
+    /// Enable a quirk and return the client.
     #[must_use]
     pub fn with_quirk(mut self, quirk: Quirks) -> Self {
         self.enable_quirk(quirk);

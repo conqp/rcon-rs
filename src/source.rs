@@ -1,3 +1,5 @@
+//! Client implementation for the Source `RCON` protocol.
+
 mod client;
 mod packet;
 mod quirks;

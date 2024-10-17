@@ -13,6 +13,7 @@ use tokio::net::{lookup_host, ToSocketAddrs};
 use tokio::time::timeout;
 use udp_stream::UdpStream;
 
+/// A `BattlEye Rcon` client.
 #[derive(Debug)]
 pub struct Client {
     udp_stream: UdpStream,
@@ -20,6 +21,7 @@ pub struct Client {
 }
 
 impl Client {
+    /// Creates a new instance of the client.
     #[must_use]
     pub const fn new(udp_stream: UdpStream, handler: Option<Sender<Message>>) -> Self {
         Self {
@@ -31,6 +33,7 @@ impl Client {
     /// Acknowledge a server message.
     ///
     /// # Errors
+    ///
     /// Returns an [`io::Error`] if the ack message could not be sent.
     pub async fn ack_message(&mut self, seq: u8) -> io::Result<()> {
         self.send(Request::Server(server::Ack::new(seq))).await

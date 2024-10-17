@@ -1,3 +1,5 @@
+//! A common interface for different `RCON` protocols.
+
 use std::io;
 use std::sync::Arc;
 use std::time::Duration;
@@ -6,6 +8,7 @@ use tokio::net::ToSocketAddrs;
 pub mod battleye;
 pub mod source;
 
+/// Common API for `RCON` protocol clients
 pub trait RCon: Sized {
     /// Connect to the given socket address.
     ///
