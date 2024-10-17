@@ -9,7 +9,7 @@ const PREFIX: &[u8; 2] = b"BE";
 const CRC32: Crc<u32> = Crc::<u32>::new(&CRC_32_CKSUM);
 pub const SIZE: usize = 8;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Header {
     prefix: [u8; 2],
     crc32: u32,
@@ -40,15 +40,15 @@ impl Header {
     }
 
     #[must_use]
-    pub const fn typ(&self) -> u8 {
+    pub const fn typ(self) -> u8 {
         self.typ
     }
 
-    pub fn crc32(&self, payload: &[u8]) -> u32 {
+    pub fn crc32(self, payload: &[u8]) -> u32 {
         crc32(self.typ, self.infix, payload)
     }
 
-    pub fn is_valid(&self, payload: &[u8]) -> bool {
+    pub fn is_valid(self, payload: &[u8]) -> bool {
         self.crc32(payload) == self.crc32
     }
 }
@@ -64,7 +64,7 @@ impl From<[u8; SIZE]> for Header {
     }
 }
 
-impl IntoIterator for &Header {
+impl IntoIterator for Header {
     type Item = u8;
     type IntoIter = Chain<
         Chain<Chain<IntoIter<Self::Item, 2>, IntoIter<Self::Item, 4>>, IntoIter<Self::Item, 1>>,
@@ -81,13 +81,8 @@ impl IntoIterator for &Header {
 }
 
 fn crc32(typ: u8, infix: u8, payload: &[u8]) -> u32 {
-    CRC32.checksum(
-        infix
-            .to_le_bytes()
-            .into_iter()
-            .chain(typ.to_le_bytes())
-            .chain(payload.iter().copied())
-            .collect::<Vec<_>>()
-            .as_slice(),
-    )
+    let mut crc = CRC32.digest();
+    crc.update(&[infix, typ]);
+    crc.update(payload);
+    crc.finalize()
 }

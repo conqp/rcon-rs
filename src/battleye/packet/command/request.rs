@@ -7,7 +7,7 @@ use std::slice::Iter;
 
 const SEQ: u8 = 0x00;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Request<'cmd> {
     header: Header,
     seq: u8,
@@ -42,10 +42,10 @@ impl<'cmd> From<&'cmd str> for Request<'cmd> {
     }
 }
 
-impl<'req, 'cmd> IntoIterator for &'req Request<'cmd> {
+impl<'cmd> IntoIterator for Request<'cmd> {
     type Item = u8;
     type IntoIter = Chain<
-        Chain<<&'req Header as IntoIterator>::IntoIter, IntoIter<Self::Item, 1>>,
+        Chain<<Header as IntoIterator>::IntoIter, IntoIter<Self::Item, 1>>,
         Copied<Iter<'cmd, Self::Item>>,
     >;
 
@@ -57,4 +57,4 @@ impl<'req, 'cmd> IntoIterator for &'req Request<'cmd> {
     }
 }
 
-impl ToServer for &Request<'_> {}
+impl ToServer for Request<'_> {}

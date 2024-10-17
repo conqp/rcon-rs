@@ -1,27 +1,32 @@
 use super::TYPE;
+use crate::battleye::header::Header;
 use crate::battleye::to_server::ToServer;
 use std::array::IntoIter;
 use std::iter::Chain;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Ack {
+    header: Header,
     seq: u8,
 }
 
 impl Ack {
     #[must_use]
-    pub const fn new(seq: u8) -> Self {
-        Self { seq }
+    pub fn new(seq: u8) -> Self {
+        Self {
+            header: Header::create(TYPE, &seq.to_le_bytes()),
+            seq,
+        }
     }
 }
 
-impl IntoIterator for &Ack {
+impl IntoIterator for Ack {
     type Item = u8;
-    type IntoIter = Chain<IntoIter<u8, 1>, IntoIter<u8, 1>>;
+    type IntoIter = Chain<<Header as IntoIterator>::IntoIter, IntoIter<u8, 1>>;
 
     fn into_iter(self) -> Self::IntoIter {
-        TYPE.to_le_bytes().into_iter().chain(self.seq.to_le_bytes())
+        self.header.into_iter().chain(self.seq.to_le_bytes())
     }
 }
 
-impl ToServer for &Ack {}
+impl ToServer for Ack {}

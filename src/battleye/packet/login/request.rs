@@ -2,7 +2,7 @@ use super::TYPE;
 use crate::battleye::header::Header;
 use crate::battleye::to_server::ToServer;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Request<'passwd> {
     header: Header,
     password: &'passwd str,
@@ -21,13 +21,13 @@ impl<'passwd> From<&'passwd str> for Request<'passwd> {
     }
 }
 
-impl<'req, 'passwd> IntoIterator for &'req Request<'passwd> {
+impl<'passwd> IntoIterator for Request<'passwd> {
     type Item = u8;
-    type IntoIter = <&'req Header as IntoIterator>::IntoIter;
+    type IntoIter = <Header as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.header.into_iter()
     }
 }
 
-impl ToServer for &Request<'_> {}
+impl ToServer for Request<'_> {}

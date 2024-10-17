@@ -3,7 +3,7 @@ use crate::battleye::header::Header;
 use tokio::io::AsyncReadExt;
 use udp_stream::UdpStream;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Response {
     header: Header,
     success: bool,
