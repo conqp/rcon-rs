@@ -13,6 +13,7 @@ mod args;
 fn main() {
     env_logger::init();
     let args = Args::parse();
+
     let mut client = args.client().unwrap_or_else(|error| {
         error!("{error}");
         exit(2);
