@@ -6,7 +6,7 @@ use clap::Parser;
 use rcon::{battleye, source, RCon};
 use rpassword::prompt_password;
 
-const DEFAULT_TIMEOUT: Duration = Duration::from_secs(15);
+const DEFAULT_TIMEOUT: Duration = Duration::from_secs(5);
 
 #[derive(Debug, Parser)]
 #[command(author, version, about = "An RCon CLI client.")]
