@@ -80,14 +80,14 @@ impl Args {
 enum Protocol {
     #[command(about = "Use the Source RCON protocol", name = "source")]
     Source {
-        #[arg(index = 2, help = "The command to execute")]
+        #[arg(help = "The command to execute")]
         command: Vec<Cow<'static, str>>,
         #[arg(short, long, help = "Enable quirks")]
         quirks: Vec<source::Quirks>,
     },
     #[command(about = "Use the BattlEys Rcon protocol", name = "battleye")]
     BattlEye {
-        #[arg(index = 2, help = "The command to execute")]
+        #[arg(help = "The command to execute")]
         command: Vec<Cow<'static, str>>,
     },
 }
