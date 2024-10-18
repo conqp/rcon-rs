@@ -1,8 +1,8 @@
 use std::io::ErrorKind;
-use std::net::UdpSocket;
 
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
+use crate::UdpSocketWrapper;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Response {
@@ -16,7 +16,7 @@ impl Response {
         Self { header, success }
     }
 
-    pub fn read_from(src: &UdpSocket) -> std::io::Result<impl FnOnce(Header) -> Self> {
+    pub fn read_from(src: &UdpSocketWrapper) -> std::io::Result<impl FnOnce(Header) -> Self> {
         let mut buffer = [0; 1];
 
         if src.recv(&mut buffer)? < buffer.len() {

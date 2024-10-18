@@ -1,4 +1,3 @@
-use std::net::UdpSocket;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
@@ -13,13 +12,14 @@ use crate::battleye::header::Header;
 use crate::battleye::into_bytes::IntoBytes;
 use crate::battleye::packet::server::{Ack, Message};
 use crate::battleye::packet::{command, login, server, Request, Response};
+use crate::UdpSocketWrapper;
 
 /// Idle timeout according to protocol definition: <https://www.battleye.com/downloads/BERConProtocol.txt>
 const IDLE_TIMEOUT: Duration = Duration::from_secs(45);
 
 #[derive(Debug)]
 pub struct Handler {
-    udp_socket: UdpSocket,
+    udp_socket: UdpSocketWrapper,
     running: Arc<AtomicBool>,
     requests: Receiver<Request>,
     responses: Sender<Response>,
@@ -30,7 +30,7 @@ pub struct Handler {
 impl Handler {
     #[must_use]
     pub const fn new(
-        udp_socket: UdpSocket,
+        udp_socket: UdpSocketWrapper,
         running: Arc<AtomicBool>,
         requests: Receiver<Request>,
         responses: Sender<Response>,

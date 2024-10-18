@@ -1,10 +1,9 @@
 use crate::battleye::client::handler::Handler;
 use crate::battleye::packet::{command, login, CommunicationResult, Request, Response};
-use crate::RCon;
+use crate::{RCon, UdpSocketWrapper};
 use std::borrow::Cow;
 use std::io;
 use std::io::ErrorKind;
-use std::net::UdpSocket;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::SeqCst;
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -29,14 +28,14 @@ pub struct Client {
 impl Client {
     /// Creates a new instance of the client.
     #[must_use]
-    pub fn new(udp_socket: UdpSocket) -> Self {
+    pub fn new(udp_socket: UdpSocketWrapper) -> Self {
         Self::new_with_handler_interval(udp_socket, Some(DEFAULT_HANDLER_INTERVAL))
     }
 
     /// Creates a new instance of the client with a custom handler interval set.
     #[must_use]
     pub fn new_with_handler_interval(
-        udp_socket: UdpSocket,
+        udp_socket: UdpSocketWrapper,
         handler_interval: Option<Duration>,
     ) -> Self {
         let running = Arc::new(AtomicBool::new(true));

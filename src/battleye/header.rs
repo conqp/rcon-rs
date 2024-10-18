@@ -1,6 +1,6 @@
 use std::io::ErrorKind;
-use std::net::UdpSocket;
 
+use crate::UdpSocketWrapper;
 use crc::{Crc, CRC_32_CKSUM};
 
 const INFIX: u8 = 0xFF;
@@ -33,7 +33,7 @@ impl Header {
         Self::new(*PREFIX, crc32(typ, INFIX, payload), INFIX, typ)
     }
 
-    pub fn read_from(src: &UdpSocket) -> std::io::Result<Self> {
+    pub fn read_from(src: &UdpSocketWrapper) -> std::io::Result<Self> {
         let mut buffer = [0; 8];
 
         if src.recv(&mut buffer)? < buffer.len() {
