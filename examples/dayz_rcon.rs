@@ -33,31 +33,31 @@ enum Command {
     Say {
         #[arg(help = "The player to send the message to")]
         player: Cow<'static, str>,
-        #[arg(short, long, help = "The message")]
+        #[arg(help = "The message")]
         message: Cow<'static, str>,
     },
     #[command(about = "Send a broadcast message to all players", name = "broadcast")]
     Broadcast {
-        #[arg(short, long, help = "The message")]
+        #[arg(help = "The message")]
         message: Cow<'static, str>,
     },
     #[command(about = "Kick a player from the server", name = "kick")]
     Kick {
-        #[arg(short, long, help = "The player to kick")]
+        #[arg(help = "The player to kick")]
         player: Cow<'static, str>,
         #[arg(short, long, help = "An optional reason for the kick")]
         reason: Option<Cow<'static, str>>,
     },
     #[command(about = "Ban a player from the server", name = "ban")]
     Ban {
-        #[arg(short, long, help = "The player to ban")]
+        #[arg(help = "The player to ban")]
         player: Cow<'static, str>,
         #[arg(short, long, help = "An optional reason for the ban")]
         reason: Option<Cow<'static, str>>,
     },
     #[command(about = "Execute a raw command", name = "exec")]
     Exec {
-        #[arg(short, long, help = "The command to execute")]
+        #[arg(help = "The command to execute")]
         command: Vec<Cow<'static, str>>,
     },
 }
