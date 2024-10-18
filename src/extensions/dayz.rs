@@ -15,7 +15,7 @@ pub struct Client {
 
 impl Say for Client {
     fn say(&mut self, target: Cow<'_, str>, message: Cow<'_, str>) -> std::io::Result<()> {
-        self.run(&[target, message]).map(drop)
+        self.run(&["say".into(), target, message]).map(drop)
     }
 }
 
