@@ -14,13 +14,13 @@ edition = "2021"
 bitflags = "2.6"
 clap = { version = "4.5", features = ["derive"], optional = true }
 crc = "3.2"
-env_logger = "0.11"
+env_logger = { version = "0.11", optional = true }
 log = "0.4"
 rand = "0.9.0-alpha.2"
 rpassword = { version = "7.3", optional = true }
 
 [features]
-cli = ["dep:clap", "dep:rpassword"]
+cli = ["dep:clap", "dep:env_logger", "dep:rpassword"]
 
 [[bin]]
 name = "rconclt"
