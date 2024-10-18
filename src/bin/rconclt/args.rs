@@ -1,5 +1,5 @@
 use std::borrow::Cow;
-use std::net::{SocketAddr, TcpStream, UdpSocket};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, TcpStream, UdpSocket};
 
 use clap::Parser;
 use rcon::{battleye, source, RCon};
@@ -52,7 +52,13 @@ impl Protocol {
     pub fn client(&self) -> std::io::Result<Box<dyn RCon>> {
         match self {
             Self::BattlEye { server, .. } => {
-                let client = UdpSocket::bind(server).map(battleye::Client::new)?;
+                let client = UdpSocket::bind(if server.is_ipv4() {
+                    SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)
+                } else {
+                    SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
+                })
+                .and_then(|socket| socket.connect(server).map(|()| socket))
+                .map(battleye::Client::new)?;
                 Ok(Box::new(client))
             }
             Self::Source { server, quirks, .. } => {
