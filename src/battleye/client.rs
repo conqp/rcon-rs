@@ -1,6 +1,3 @@
-use crate::battleye::client::handler::Handler;
-use crate::battleye::packet::{command, login, CommunicationResult, Request, Response};
-use crate::{RCon, UdpSocketWrapper};
 use std::borrow::Cow;
 use std::io;
 use std::io::ErrorKind;
@@ -10,6 +7,12 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Arc;
 use std::thread::{spawn, JoinHandle};
 use std::time::Duration;
+
+use log::{debug, trace};
+
+use crate::battleye::client::handler::Handler;
+use crate::battleye::packet::{command, login, CommunicationResult, Request, Response};
+use crate::{RCon, UdpSocketWrapper};
 
 mod handler;
 
@@ -59,24 +62,36 @@ impl Client {
     }
 
     fn communicate(&mut self, request: Request) -> io::Result<CommunicationResult> {
+        trace!("Sending request {:?}", request);
         self.requests
             .send(request)
             .map_err(|_| ErrorKind::BrokenPipe)?;
 
+        debug!("Clearing buffer");
         self.buffer.clear();
 
         loop {
+            debug!("Receiving response");
             match self.responses.recv() {
                 Ok(response) => match response {
                     Response::Command(response) => {
+                        debug!("Received command response");
+                        trace!("Received response {:?}", response);
                         let seq = response.seq() as usize;
                         self.buffer.push(response);
 
                         if self.buffer.len() >= seq {
+                            debug!("Buffer size exceeds sequence number. Returning.");
+                            trace!("Buffer size: {}", self.buffer.len());
+                            trace!("Sequence number: {}", seq);
                             return Ok(CommunicationResult::Command(self.collect_responses()));
                         }
                     }
-                    Response::Login(response) => return Ok(CommunicationResult::Login(response)),
+                    Response::Login(response) => {
+                        debug!("Received login response. Returning.");
+                        trace!("Login response {:?}", response);
+                        return Ok(CommunicationResult::Login(response));
+                    }
                 },
                 Err(_) => return Err(ErrorKind::BrokenPipe.into()),
             }
