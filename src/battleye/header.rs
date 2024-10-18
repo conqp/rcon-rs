@@ -1,6 +1,7 @@
+use std::io::ErrorKind;
+use std::net::UdpSocket;
+
 use crc::{Crc, CRC_32_CKSUM};
-use tokio::io::AsyncReadExt;
-use udp_stream::UdpStream;
 
 const INFIX: u8 = 0xFF;
 const PREFIX: &[u8; 2] = b"BE";
@@ -32,9 +33,13 @@ impl Header {
         Self::new(*PREFIX, crc32(typ, INFIX, payload), INFIX, typ)
     }
 
-    pub async fn read_from(src: &mut UdpStream) -> std::io::Result<Self> {
+    pub fn read_from(src: &UdpSocket) -> std::io::Result<Self> {
         let mut buffer = [0; 8];
-        src.read_exact(&mut buffer).await?;
+
+        if src.recv(&mut buffer)? < buffer.len() {
+            return Err(ErrorKind::UnexpectedEof.into());
+        }
+
         Ok(Self::from(buffer))
     }
 

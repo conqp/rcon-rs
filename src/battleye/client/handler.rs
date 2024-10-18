@@ -1,14 +1,12 @@
+use std::net::UdpSocket;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::Relaxed;
+use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use std::sync::Arc;
+use std::thread::sleep;
 use std::time::{Duration, SystemTime};
 
 use log::{debug, error, trace, warn};
-use tokio::io::AsyncWriteExt;
-use tokio::sync::mpsc::error::TryRecvError;
-use tokio::sync::mpsc::{Receiver, Sender};
-use tokio::time::sleep;
-use udp_stream::UdpStream;
 
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
@@ -21,7 +19,7 @@ const IDLE_TIMEOUT: Duration = Duration::from_secs(45);
 
 #[derive(Debug)]
 pub struct Handler {
-    udp_stream: UdpStream,
+    udp_socket: UdpSocket,
     running: Arc<AtomicBool>,
     requests: Receiver<Request>,
     responses: Sender<Response>,
@@ -32,14 +30,14 @@ pub struct Handler {
 impl Handler {
     #[must_use]
     pub const fn new(
-        udp_stream: UdpStream,
+        udp_socket: UdpSocket,
         running: Arc<AtomicBool>,
         requests: Receiver<Request>,
         responses: Sender<Response>,
         interval: Option<Duration>,
     ) -> Self {
         Self {
-            udp_stream,
+            udp_socket,
             running,
             requests,
             responses,
@@ -48,21 +46,21 @@ impl Handler {
         }
     }
 
-    pub async fn run(mut self) {
+    pub fn run(self) {
         while self.running.load(Relaxed) {
             match self.requests.try_recv() {
-                Ok(request) => self.handle_request(request).await,
+                Ok(request) => self.handle_request(request),
                 Err(error) => match error {
                     TryRecvError::Disconnected => {
                         error!("Request channel disconnected");
                         return;
                     }
                     TryRecvError::Empty => {
-                        self.process_incoming_messages().await;
-                        self.keepalive().await;
+                        self.process_incoming_messages();
+                        self.keepalive();
 
                         if let Some(interval) = self.interval {
-                            sleep(interval).await;
+                            sleep(interval);
                         }
                     }
                 },
@@ -70,61 +68,49 @@ impl Handler {
         }
     }
 
-    async fn send(&mut self, request: Request) -> std::io::Result<()> {
+    fn send(&self, request: Request) -> std::io::Result<usize> {
         match request {
-            Request::Command(request) => {
-                self.udp_stream
-                    .write_all(request.into_bytes().as_ref())
-                    .await
-            }
-            Request::Login(request) => {
-                self.udp_stream
-                    .write_all(request.into_bytes().as_ref())
-                    .await
-            }
+            Request::Command(request) => self.udp_socket.send(request.into_bytes().as_ref()),
+            Request::Login(request) => self.udp_socket.send(request.into_bytes().as_ref()),
         }
     }
 
-    async fn handle_request(&mut self, request: Request) {
-        if let Err(error) = self.send(request).await {
+    fn handle_request(&self, request: Request) {
+        if let Err(error) = self.send(request) {
             error!("{error}");
         }
     }
 
-    async fn process_incoming_messages(&mut self) {
-        if let Err(error) = self.receive().await {
+    fn process_incoming_messages(&self) {
+        if let Err(error) = self.receive() {
             error!("{error}");
         }
     }
 
-    async fn receive(&mut self) -> std::io::Result<()> {
+    fn receive(&self) -> std::io::Result<()> {
         debug!("Receiving packet from UDP stream");
-        let stream = &mut self.udp_stream;
-        let header = Header::read_from(stream).await?;
+        let header = Header::read_from(&self.udp_socket)?;
 
         match header.typ() {
             command::TYPE => {
-                let response = command::Response::read_from(stream)
-                    .await
+                let response = command::Response::read_from(&self.udp_socket)
                     .map(|f| f(header))
                     .and_then(FromServer::validate)
                     .map(Response::Command)?;
-                self.forward(response).await;
+                self.forward(response);
             }
             login::TYPE => {
-                let response = login::Response::read_from(stream)
-                    .await
+                let response = login::Response::read_from(&self.udp_socket)
                     .map(|f| f(header))
                     .and_then(FromServer::validate)
                     .map(Response::Login)?;
-                self.forward(response).await;
+                self.forward(response);
             }
             server::TYPE => {
-                let message = Message::read_from(stream)
-                    .await
+                let message = Message::read_from(&self.udp_socket)
                     .map(|f| f(header))
                     .and_then(FromServer::validate)?;
-                self.ack(message).await;
+                self.ack(&message);
             }
             other => {
                 error!("Received packet of invalid type: {other:#04X}");
@@ -134,28 +120,27 @@ impl Handler {
         Ok(())
     }
 
-    async fn forward(&self, response: Response) {
+    fn forward(&self, response: Response) {
         debug!("Forwarding response from UDP stream");
         trace!("Response: {response:?}");
 
-        if let Err(error) = self.responses.send(response).await {
+        if let Err(error) = self.responses.send(response) {
             error!("Error sending response: {error}");
         }
     }
 
-    async fn ack(&mut self, message: Message) {
+    fn ack(&self, message: &Message) {
         if let Err(error) = self
-            .udp_stream
-            .write_all(Ack::new(message.seq()).into_bytes().as_ref())
-            .await
+            .udp_socket
+            .send(Ack::new(message.seq()).into_bytes().as_ref())
         {
             error!("Error sending ack: {error}");
         }
     }
 
-    async fn keepalive(&mut self) {
+    fn keepalive(&self) {
         if self.needs_keepalive() {
-            if let Err(error) = self.send(Self::keepalive_packet()).await {
+            if let Err(error) = self.send(Self::keepalive_packet()) {
                 error!("Error sending keepalive packet: {error}");
             }
         }

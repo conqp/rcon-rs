@@ -1,5 +1,5 @@
-use tokio::io::AsyncReadExt;
-use udp_stream::UdpStream;
+use std::io::ErrorKind;
+use std::net::UdpSocket;
 
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
@@ -16,9 +16,13 @@ impl Response {
         Self { header, success }
     }
 
-    pub async fn read_from(src: &mut UdpStream) -> std::io::Result<impl FnOnce(Header) -> Self> {
+    pub fn read_from(src: &UdpSocket) -> std::io::Result<impl FnOnce(Header) -> Self> {
         let mut buffer = [0; 1];
-        src.read_exact(&mut buffer).await?;
+
+        if src.recv(&mut buffer)? < buffer.len() {
+            return Err(ErrorKind::UnexpectedEof.into());
+        }
+
         Ok(move |header| Self::new(header, u8::from_le_bytes(buffer) != 0))
     }
 

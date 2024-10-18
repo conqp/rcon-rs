@@ -1,11 +1,13 @@
-use super::server_data::ServerData;
-use super::util::invalid_data;
+use std::borrow::Cow;
+use std::io::Read;
+use std::net::TcpStream;
+use std::num::TryFromIntError;
+
 use log::{debug, trace, warn};
 use rand::{thread_rng, Rng};
-use std::borrow::Cow;
-use std::num::TryFromIntError;
-use tokio::io::AsyncReadExt;
-use tokio::net::TcpStream;
+
+use super::server_data::ServerData;
+use super::util::invalid_data;
 
 const TERMINATOR: [u8; 2] = [0, 0];
 const I32_BYTES: usize = 4;
@@ -29,11 +31,14 @@ impl Packet {
         }
     }
 
-    pub fn login(password: &str) -> Self {
+    pub fn login<'a, T>(password: T) -> Self
+    where
+        T: Into<Cow<'a, str>>,
+    {
         Self::new(
             random_id(thread_rng()),
             ServerData::Auth,
-            password.as_bytes().to_vec(),
+            password.into().bytes().collect(),
             TERMINATOR,
         )
     }
@@ -60,24 +65,27 @@ impl Packet {
         )
     }
 
-    pub async fn read_from(source: &mut TcpStream) -> std::io::Result<Self> {
+    pub fn read_from(source: &mut TcpStream) -> std::io::Result<Self> {
         let mut buffer = [0; I32_BYTES];
         debug!("Reading payload size.");
-        source.read_exact(&mut buffer).await?;
+        source.read_exact(&mut buffer)?;
         let size: usize = i32::from_le_bytes(buffer)
             .try_into()
             .map_err(invalid_data)?;
         trace!("Packet size is {size}.");
+
         debug!("Reading packet ID.");
-        source.read_exact(&mut buffer).await?;
+        source.read_exact(&mut buffer)?;
         let id = i32::from_le_bytes(buffer);
         trace!("Packet ID is {id}.");
+
         debug!("Reading packet type.");
-        source.read_exact(&mut buffer).await?;
+        source.read_exact(&mut buffer)?;
         let typ: ServerData = i32::from_le_bytes(buffer)
             .try_into()
             .map_err(|value| invalid_data(format!("Invalid packet type: {value}")))?;
         trace!("Packet type is {typ:?}.");
+
         debug!("Reading payload.");
         let mut payload =
             vec![
@@ -85,11 +93,12 @@ impl Packet {
                 size.checked_sub(OFFSET)
                     .ok_or_else(|| invalid_data(format!("Invalid payload size: {size}")))?
             ];
-        source.read_exact(&mut payload).await?;
+        source.read_exact(&mut payload)?;
         trace!("Packet payload is {payload:?}.");
+
         debug!("Reading terminator.");
         let mut terminator = [0; 2];
-        source.read_exact(&mut terminator).await?;
+        source.read_exact(&mut terminator)?;
         trace!("Packet terminator is {terminator:?}.");
 
         if terminator != TERMINATOR {

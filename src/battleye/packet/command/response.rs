@@ -1,8 +1,8 @@
+use std::io::ErrorKind;
+use std::net::UdpSocket;
 use std::sync::Arc;
 
 use log::debug;
-use tokio::io::AsyncReadExt;
-use udp_stream::UdpStream;
 
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
@@ -24,12 +24,17 @@ impl Response {
         }
     }
 
-    pub async fn read_from(src: &mut UdpStream) -> std::io::Result<impl FnOnce(Header) -> Self> {
+    pub fn read_from(src: &UdpSocket) -> std::io::Result<impl FnOnce(Header) -> Self> {
         let mut buffer = [0; 1];
-        src.read_exact(&mut buffer).await?;
+
+        if src.recv(&mut buffer)? < buffer.len() {
+            return Err(ErrorKind::UnexpectedEof.into());
+        }
+
         let mut payload = Vec::new();
-        let bytes = src.read_to_end(&mut payload).await?;
+        let bytes = src.recv(&mut payload)?;
         debug!("Read {bytes} bytes.");
+
         Ok(move |header| Self::new(header, u8::from_le_bytes(buffer), payload.into()))
     }
 
