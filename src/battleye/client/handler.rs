@@ -48,8 +48,12 @@ impl Handler {
 
     pub fn run(self) {
         while self.running.load(Relaxed) {
+            trace!("Receiving request");
             match self.requests.try_recv() {
-                Ok(request) => self.handle_request(request),
+                Ok(request) => {
+                    trace!("Received request: {request:?}");
+                    self.handle_request(request);
+                }
                 Err(error) => match error {
                     TryRecvError::Disconnected => {
                         error!("Request channel disconnected");
@@ -60,6 +64,7 @@ impl Handler {
                         self.keepalive();
 
                         if let Some(interval) = self.interval {
+                            debug!("Sleeping for {interval:?}");
                             sleep(interval);
                         }
                     }
@@ -76,40 +81,51 @@ impl Handler {
     }
 
     fn handle_request(&self, request: Request) {
+        trace!("Handling request: {request:?}");
+
         if let Err(error) = self.send(request) {
             error!("{error}");
         }
     }
 
     fn process_incoming_messages(&self) {
-        if let Err(error) = self.receive() {
-            error!("{error}");
+        debug!("Processing incoming messages");
+
+        if let Err(error) = self.process_incoming_message_fallible() {
+            error!("Failed to receive message: {error}");
         }
     }
 
-    fn receive(&self) -> std::io::Result<()> {
+    fn process_incoming_message_fallible(&self) -> std::io::Result<()> {
         debug!("Receiving packet from UDP stream");
         let header = Header::read_from(&self.udp_socket)?;
+        trace!("Received header: {header:?}");
 
         match header.typ() {
             command::TYPE => {
+                debug!("Received command response");
                 let response = command::Response::read_from(&self.udp_socket)
                     .map(|f| f(header))
                     .and_then(FromServer::validate)
                     .map(Response::Command)?;
+                trace!("Command response: {response:?}");
                 self.forward(response);
             }
             login::TYPE => {
+                debug!("Received login response");
                 let response = login::Response::read_from(&self.udp_socket)
                     .map(|f| f(header))
                     .and_then(FromServer::validate)
                     .map(Response::Login)?;
+                trace!("Login response: {response:?}");
                 self.forward(response);
             }
             server::TYPE => {
+                debug!("Received server message");
                 let message = Message::read_from(&self.udp_socket)
                     .map(|f| f(header))
                     .and_then(FromServer::validate)?;
+                trace!("Server message: {message:?}");
                 self.ack(&message);
             }
             other => {
@@ -130,6 +146,9 @@ impl Handler {
     }
 
     fn ack(&self, message: &Message) {
+        debug!("Ack'ing message #{}", message.seq());
+        trace!("Message: {message:?}");
+
         if let Err(error) = self
             .udp_socket
             .send(Ack::new(message.seq()).into_bytes().as_ref())
@@ -139,10 +158,16 @@ impl Handler {
     }
 
     fn keepalive(&self) {
+        debug!("Performing keepalive check");
+
         if self.needs_keepalive() {
+            debug!("Need to send a keepalive message");
+
             if let Err(error) = self.send(Self::keepalive_packet()) {
                 error!("Error sending keepalive packet: {error}");
             }
+        } else {
+            debug!("No need to send keepalive message");
         }
     }
 
