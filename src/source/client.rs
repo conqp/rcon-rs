@@ -1,4 +1,4 @@
-use log::debug;
+use log::{debug, error, trace};
 use std::borrow::Cow;
 use std::io;
 use std::io::Write;
@@ -62,26 +62,35 @@ impl Client {
         loop {
             let packet = Packet::read_from(&mut self.tcp_stream)?;
 
-            if packet.typ == ServerData::ResponseValue {
-                if packet.id == sentinel_id {
-                    sentinel_mirrored = true;
-                } else if sentinel_mirrored && packet.payload == SENTINEL {
-                    return Ok(self
-                        .buffer
-                        .iter()
-                        .flat_map(|response| &response.payload)
-                        .copied()
-                        .collect());
+            match packet.typ {
+                ServerData::AuthResponse => return Ok(packet.payload),
+                ServerData::ResponseValue => {
+                    if packet.typ == ServerData::ResponseValue {
+                        if packet.id == sentinel_id {
+                            sentinel_mirrored = true;
+                            continue;
+                        } else if sentinel_mirrored && packet.payload == SENTINEL {
+                            return Ok(self
+                                .buffer
+                                .iter()
+                                .flat_map(|response| &response.payload)
+                                .copied()
+                                .collect());
+                        } else if self.quirks.contains(Quirks::PALWORLD) || packet.id == command_id
+                        {
+                            self.buffer.push(packet);
+                        } else {
+                            return Err(invalid_data(format!(
+                                "Packet ID mismatch: {} != {command_id}",
+                                packet.id
+                            )));
+                        }
+                    }
                 }
-            }
-
-            if self.quirks.contains(Quirks::PALWORLD) || packet.id == command_id {
-                self.buffer.push(packet);
-            } else {
-                return Err(invalid_data(format!(
-                    "Packet ID mismatch: {} != {command_id}",
-                    packet.id
-                )));
+                other => {
+                    error!("Received unexpected packet type: {other:?}");
+                    trace!("Packet: {packet:?}");
+                }
             }
         }
     }
