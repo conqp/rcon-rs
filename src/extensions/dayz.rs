@@ -58,8 +58,10 @@ impl Broadcast for Client {
     }
 }
 
-impl Players<Player> for Client {
-    fn players(&mut self) -> std::io::Result<Vec<Player>> {
+impl Players for Client {
+    type Player = Player;
+
+    fn players(&mut self) -> std::io::Result<Vec<Self::Player>> {
         let result = self.run(&["players".into()])?;
         let text = String::from_utf8(result).map_err(|_| {
             std::io::Error::new(ErrorKind::InvalidData, "Response is not valid UTF-8")

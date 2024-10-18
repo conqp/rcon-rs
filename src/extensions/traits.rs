@@ -49,16 +49,16 @@ pub trait Ban {
 }
 
 /// List players on the server.
-pub trait Players<T>
-where
-    T: Player,
-{
+pub trait Players {
+    /// The player type that is being returned.
+    type Player: Player;
+
     /// List players on the server.
     ///
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if listing the players fails.
-    fn players(&mut self) -> std::io::Result<Vec<T>>;
+    fn players(&mut self) -> std::io::Result<Vec<Self::Player>>;
 }
 
 /// Information about a player.
