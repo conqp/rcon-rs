@@ -1,6 +1,7 @@
-use log::debug;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket};
 use std::time::Duration;
+
+use log::debug;
 
 /// Wrapper around a UDP socket.
 #[derive(Debug)]
