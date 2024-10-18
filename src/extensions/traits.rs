@@ -45,7 +45,7 @@ pub trait Ban {
     ///
     /// # Errors
     ///
-    /// Returns an [`std::io::Error`] if kicking the player fails.
+    /// Returns an [`std::io::Error`] if banning  the player fails.
     fn ban(&mut self, player: Cow<'_, str>, reason: Option<Cow<'_, str>>) -> std::io::Result<()>;
 }
 
