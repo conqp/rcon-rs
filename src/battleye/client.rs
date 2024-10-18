@@ -17,7 +17,7 @@ use crate::RCon;
 
 mod handler;
 
-const DEFAULT_HANDLER_INTERVAL: Duration = Duration::from_secs(1);
+const DEFAULT_HANDLER_INTERVAL: Duration = Duration::from_millis(100);
 const DEFAULT_BUF_SIZE: usize = 1024;
 
 /// A `BattlEye Rcon` client.
