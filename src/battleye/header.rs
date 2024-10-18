@@ -1,11 +1,11 @@
 use std::io::ErrorKind;
 
 use crate::UdpSocketWrapper;
-use crc::{Crc, CRC_32_CKSUM};
+use crc::{Crc, CRC_32_ISO_HDLC};
 
 const INFIX: u8 = 0xFF;
 const PREFIX: &[u8; 2] = b"BE";
-const CRC32: Crc<u32> = Crc::<u32>::new(&CRC_32_CKSUM);
+const CRC32: Crc<u32> = Crc::<u32>::new(&CRC_32_ISO_HDLC);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Header {
@@ -81,4 +81,15 @@ fn crc32(typ: u8, infix: u8, payload: &[u8]) -> u32 {
     crc.update(&[infix, typ]);
     crc.update(payload);
     crc.finalize()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::crc32;
+
+    #[test]
+    fn test_crc32() {
+        let checksum = crc32(0x00, 0xff, b"password");
+        assert_eq!(checksum, 0x522d_26de);
+    }
 }
