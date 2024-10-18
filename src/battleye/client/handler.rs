@@ -75,9 +75,21 @@ impl Handler {
     }
 
     fn send(&self, request: Request) -> std::io::Result<usize> {
+        trace!("Sending request: {request:?}");
+
         match request {
-            Request::Command(request) => self.udp_socket.send(request.into_bytes().as_ref()),
-            Request::Login(request) => self.udp_socket.send(request.into_bytes().as_ref()),
+            Request::Command(request) => {
+                let owner = request.into_bytes();
+                let bytes = owner.as_ref();
+                trace!("Sending bytes: {bytes:#04X?}");
+                self.udp_socket.send(bytes)
+            }
+            Request::Login(request) => {
+                let owner = request.into_bytes();
+                let bytes = owner.as_ref();
+                trace!("Sending bytes: {bytes:#04X?}");
+                self.udp_socket.send(bytes)
+            }
         }
     }
 
