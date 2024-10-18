@@ -12,8 +12,7 @@ use args::Args;
 fn main() {
     env_logger::init();
     let args = Args::parse();
-    let protocol = args.protocol();
-    let mut client = protocol.client().unwrap_or_else(|error| {
+    let mut client = args.client().unwrap_or_else(|error| {
         error!("{error}");
         exit(2);
     });
@@ -27,7 +26,7 @@ fn main() {
         });
 
     if logged_in {
-        let result = client.run(protocol.command()).unwrap_or_else(|error| {
+        let result = client.run(args.command()).unwrap_or_else(|error| {
             error!("{error}");
             exit(5);
         });
