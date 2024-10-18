@@ -1,9 +1,14 @@
 //! Extension of the `BattlEye Rcon` client for `DayZ` server.
 
 use std::borrow::Cow;
+use std::io::ErrorKind;
+use std::str::FromStr;
 
 use crate::extensions::traits::{Ban, Kick};
-use crate::{battleye, Broadcast, RCon, Say};
+use crate::{battleye, Broadcast, Players, RCon, Say};
+use player::Player;
+
+mod player;
 
 const BROADCAST_TARGET: &str = "-1";
 
@@ -50,6 +55,26 @@ impl Ban for Client {
 impl Broadcast for Client {
     fn broadcast(&mut self, message: Cow<'_, str>) -> std::io::Result<()> {
         self.say(BROADCAST_TARGET.into(), message)
+    }
+}
+
+impl Players<Player> for Client {
+    fn players(&mut self) -> std::io::Result<Vec<Player>> {
+        let result = self.run(&["players".into()])?;
+        let text = String::from_utf8(result).map_err(|_| {
+            std::io::Error::new(ErrorKind::InvalidData, "Response is not valid UTF-8")
+        })?;
+
+        let mut lines = text.lines();
+        // Discard header.
+        let _ = (&mut lines).take_while(|line| line.starts_with('-'));
+        let players: Vec<Player> = lines
+            // Take until footer.
+            .take_while(|line| !line.starts_with('('))
+            .map(Player::from_str)
+            .filter_map(Result::ok)
+            .collect();
+        Ok(players)
     }
 }
 
