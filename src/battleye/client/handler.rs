@@ -74,6 +74,14 @@ impl Handler {
         }
     }
 
+    fn handle_request(&self, request: Request) {
+        trace!("Handling request: {request:?}");
+
+        if let Err(error) = self.send(request) {
+            error!("{error}");
+        }
+    }
+
     fn send(&self, request: Request) -> std::io::Result<usize> {
         trace!("Sending request: {request:?}");
 
@@ -90,14 +98,6 @@ impl Handler {
                 trace!("Sending bytes: {bytes:#04X?}");
                 self.udp_socket.send(bytes)
             }
-        }
-    }
-
-    fn handle_request(&self, request: Request) {
-        trace!("Handling request: {request:?}");
-
-        if let Err(error) = self.send(request) {
-            error!("{error}");
         }
     }
 
