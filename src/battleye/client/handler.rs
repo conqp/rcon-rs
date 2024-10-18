@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::io::ErrorKind;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::Relaxed;
@@ -105,6 +106,10 @@ impl Handler {
         debug!("Processing incoming messages");
 
         if let Err(error) = self.process_incoming_message_fallible() {
+            debug!("Error while processing incoming messages: {error}");
+            trace!("Error kind: {:?}", error.kind());
+            trace!("Error source: {:?}", error.source());
+
             if error.kind() != ErrorKind::TimedOut {
                 error!("Failed to receive message: {error}");
             }
