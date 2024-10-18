@@ -11,7 +11,7 @@ pub mod source;
 #[cfg(feature = "dayz")]
 pub use extensions::dayz;
 
-pub use extensions::{Broadcast, Say};
+pub use extensions::{Ban, Broadcast, Kick, Say};
 
 /// Common API for `RCON` protocol clients
 pub trait RCon {

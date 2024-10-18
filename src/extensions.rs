@@ -2,4 +2,4 @@
 pub mod dayz;
 mod traits;
 
-pub use traits::{Broadcast, Say};
+pub use traits::{Ban, Broadcast, Kick, Say};
