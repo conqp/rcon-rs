@@ -7,6 +7,8 @@ use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
 use crate::UdpSocketWrapper;
 
+const MAX_PACKET_SIZE: usize = 2048;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Response {
     header: Header,
@@ -25,17 +27,15 @@ impl Response {
     }
 
     pub fn read_from(src: &UdpSocketWrapper) -> std::io::Result<impl FnOnce(Header) -> Self> {
-        let mut buffer = [0; 1];
+        let mut buffer = vec![0; MAX_PACKET_SIZE];
+        let size = src.recv(&mut buffer)?;
 
-        if src.recv(&mut buffer)? < buffer.len() {
+        if size < 1 {
             return Err(ErrorKind::UnexpectedEof.into());
         }
 
-        let mut payload = Vec::new();
-        let bytes = src.recv(&mut payload)?;
-        debug!("Read {bytes} bytes.");
-
-        Ok(move |header| Self::new(header, u8::from_le_bytes(buffer), payload.into()))
+        debug!("Read {size} bytes.");
+        Ok(move |header| Self::new(header, buffer[0], buffer[1..].into()))
     }
 
     #[must_use]
