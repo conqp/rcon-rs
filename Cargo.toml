@@ -25,6 +25,7 @@ rpassword = { version = "7.3", optional = true }
 battleye = ["crc"]
 source = ["bitflags", "num-derive", "num-traits", "rand"]
 cli = ["battleye", "source", "clap/derive", "env_logger", "rpassword"]
+dayz = ["source"]
 
 [[bin]]
 name = "rconclt"

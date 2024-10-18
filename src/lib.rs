@@ -4,8 +4,14 @@ use std::borrow::Cow;
 
 #[cfg(feature = "battleye")]
 pub mod battleye;
+mod extensions;
 #[cfg(feature = "source")]
 pub mod source;
+
+#[cfg(feature = "dayz")]
+pub use extensions::dayz;
+
+pub use extensions::{Broadcast, Say};
 
 /// Common API for `RCON` protocol clients
 pub trait RCon {
