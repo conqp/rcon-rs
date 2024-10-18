@@ -10,9 +10,6 @@ use super::server_data::ServerData;
 use super::util::invalid_data;
 use crate::RCon;
 
-/// Multi-packet sentinel value: <https://developer.valvesoftware.com/wiki/Source_RCON_Protocol#Multiple-packet_Responses>
-const SENTINEL: &[u8] = &[0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00];
-
 /// A Source `RCON` client.
 #[derive(Debug)]
 pub struct Client {
@@ -57,8 +54,6 @@ impl Client {
     }
 
     fn read_responses(&mut self, command_id: i32, sentinel_id: i32) -> io::Result<Vec<u8>> {
-        let mut sentinel_mirrored = false;
-
         loop {
             let packet = Packet::read_from(&mut self.tcp_stream)?;
 
@@ -67,11 +62,7 @@ impl Client {
                 ServerData::ResponseValue => {
                     if packet.typ == ServerData::ResponseValue {
                         if packet.id == sentinel_id {
-                            debug!("Received sentinel mirror packet");
-                            sentinel_mirrored = true;
-                            continue;
-                        } else if sentinel_mirrored && packet.payload == SENTINEL {
-                            debug!("Received sentinel payload packet");
+                            debug!("Received sentinel packet");
                             return Ok(self
                                 .buffer
                                 .iter()
