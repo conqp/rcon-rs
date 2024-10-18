@@ -5,7 +5,6 @@ use std::time::Duration;
 #[derive(Debug)]
 pub struct UdpSocketWrapper {
     socket: UdpSocket,
-    address: SocketAddr,
 }
 
 impl UdpSocketWrapper {
@@ -20,7 +19,8 @@ impl UdpSocketWrapper {
         } else {
             SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
         })?;
-        Ok(Self { socket, address })
+        socket.connect(address)?;
+        Ok(Self { socket })
     }
 
     /// Send data via the UDP socket.
@@ -29,7 +29,6 @@ impl UdpSocketWrapper {
     ///
     /// Returns an [`std::io::Error`] if the sending fails.
     pub fn send(&self, data: &[u8]) -> std::io::Result<usize> {
-        self.socket.connect(self.address)?;
         self.socket.send(data)
     }
 
@@ -39,7 +38,6 @@ impl UdpSocketWrapper {
     ///
     /// Returns an [`std::io::Error`] if the receiving fails.
     pub fn recv(&self, buffer: &mut [u8]) -> std::io::Result<usize> {
-        self.socket.connect(self.address)?;
         self.socket.recv(buffer)
     }
 
