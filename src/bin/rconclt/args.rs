@@ -89,8 +89,6 @@ enum Protocol {
     BattlEye {
         #[arg(index = 2, help = "The command to execute")]
         command: Vec<Cow<'static, str>>,
-        #[arg(short, long, help = "Connection timeout in seconds")]
-        timeout: u64,
     },
 }
 
