@@ -39,7 +39,7 @@ pub trait Kick {
 
 /// Kick a player from the server.
 pub trait Ban {
-    /// Kick a player from the server.
+    /// Ban a player from the server.
     ///
     /// You may specify an optional reason for the ban to forward to the player.
     ///
