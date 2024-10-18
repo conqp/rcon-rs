@@ -2,6 +2,7 @@ use std::io::ErrorKind;
 
 use crate::UdpSocketWrapper;
 use crc::{Crc, CRC_32_ISO_HDLC};
+use log::{debug, error};
 
 const INFIX: u8 = 0xFF;
 const PREFIX: &[u8; 2] = b"BE";
@@ -53,7 +54,15 @@ impl Header {
     }
 
     pub fn is_valid(self, payload: &[u8]) -> bool {
-        self.crc32(payload) == self.crc32
+        let crc = self.crc32(payload);
+
+        if crc != self.crc32 {
+            error!("CRC mismatch");
+            debug!("Expected: {:#010X}, but got {:#010X}", self.crc32, crc);
+            return false;
+        }
+
+        true
     }
 }
 
