@@ -35,9 +35,10 @@ impl FromStr for Player {
             .ok_or("missing ping")?
             .parse()
             .map_err(|error| format!("invalid ping: {error}"))?;
-        let guid: Uuid = fields
-            .next()
-            .ok_or("missing GUID")?
+        let guid = fields.next().ok_or("missing GUID")?;
+        let guid = guid
+            .split_once('(')
+            .map_or(guid, |(guid, _)| guid)
             .parse()
             .map_err(|error| format!("invalid GUID: {error}"))?;
         let name = fields.collect::<Vec<_>>().join("");
