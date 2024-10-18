@@ -67,17 +67,20 @@ impl Client {
                 ServerData::ResponseValue => {
                     if packet.typ == ServerData::ResponseValue {
                         if packet.id == sentinel_id {
+                            debug!("Received sentinel mirror packet");
                             sentinel_mirrored = true;
                             continue;
                         } else if sentinel_mirrored && packet.payload == SENTINEL {
+                            debug!("Received sentinel payload packet");
                             return Ok(self
                                 .buffer
                                 .iter()
                                 .flat_map(|response| &response.payload)
                                 .copied()
                                 .collect());
-                        } else if self.quirks.contains(Quirks::PALWORLD) || packet.id == command_id
+                        } else if packet.id == command_id || self.quirks.contains(Quirks::PALWORLD)
                         {
+                            debug!("Received data packet");
                             self.buffer.push(packet);
                         } else {
                             return Err(invalid_data(format!(
