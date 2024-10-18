@@ -58,7 +58,7 @@ impl Client {
             let packet = Packet::read_from(&mut self.tcp_stream)?;
 
             match packet.typ {
-                ServerData::AuthResponse => return Ok(packet.payload),
+                ServerData::ExecCommandOrAuthResponse => return Ok(packet.payload),
                 ServerData::ResponseValue => {
                     if packet.typ == ServerData::ResponseValue {
                         if packet.id == sentinel_id {
@@ -81,8 +81,8 @@ impl Client {
                         }
                     }
                 }
-                other => {
-                    error!("Received unexpected packet type: {other:?}");
+                ServerData::Auth => {
+                    error!("Received unexpected packet type: {:?}", ServerData::Auth);
                     trace!("Packet: {packet:?}");
                 }
             }
@@ -104,7 +104,7 @@ impl RCon for Client {
         loop {
             debug!("Reading response packet.");
             packet = Packet::read_from(&mut self.tcp_stream)?;
-            if packet.typ == ServerData::AuthResponse {
+            if packet.typ == ServerData::ExecCommandOrAuthResponse {
                 break;
             }
         }

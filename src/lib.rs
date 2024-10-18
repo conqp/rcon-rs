@@ -2,7 +2,9 @@
 
 use std::borrow::Cow;
 
+#[cfg(feature = "battleye")]
 pub mod battleye;
+#[cfg(feature = "source")]
 pub mod source;
 
 /// Common API for `RCON` protocol clients

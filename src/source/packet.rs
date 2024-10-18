@@ -4,13 +4,13 @@ use std::net::TcpStream;
 use std::num::TryFromIntError;
 
 use log::{debug, trace, warn};
+use num_traits::FromPrimitive;
 use rand::{thread_rng, Rng};
 
 use super::server_data::ServerData;
 use super::util::invalid_data;
 
 const TERMINATOR: [u8; 2] = [0, 0];
-const I32_BYTES: usize = 4;
 const OFFSET: usize = 10;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -50,7 +50,7 @@ impl Packet {
     pub fn command_raw(command: &[u8]) -> Self {
         Self::new(
             random_id(thread_rng()),
-            ServerData::ExecCommand,
+            ServerData::ExecCommandOrAuthResponse,
             command.to_vec(),
             TERMINATOR,
         )
@@ -66,7 +66,7 @@ impl Packet {
     }
 
     pub fn read_from(source: &mut TcpStream) -> std::io::Result<Self> {
-        let mut buffer = [0; I32_BYTES];
+        let mut buffer = [0; size_of::<i32>()];
         debug!("Reading payload size.");
         source.read_exact(&mut buffer)?;
         let size: usize = i32::from_le_bytes(buffer)
@@ -81,9 +81,9 @@ impl Packet {
 
         debug!("Reading packet type.");
         source.read_exact(&mut buffer)?;
-        let typ: ServerData = i32::from_le_bytes(buffer)
-            .try_into()
-            .map_err(|value| invalid_data(format!("Invalid packet type: {value}")))?;
+        let type_id = i32::from_le_bytes(buffer);
+        let typ = ServerData::from_i32(type_id)
+            .ok_or_else(|| invalid_data(format!("Invalid packet type: {type_id:#010X}")))?;
         trace!("Packet type is {typ:?}.");
 
         debug!("Reading payload.");
@@ -117,10 +117,10 @@ impl TryFrom<Packet> for Vec<u8> {
     type Error = TryFromIntError;
 
     fn try_from(packet: Packet) -> Result<Self, Self::Error> {
-        let mut bytes = Self::with_capacity(packet.size() + I32_BYTES);
+        let mut bytes = Self::with_capacity(packet.size() + size_of::<i32>());
         bytes.extend_from_slice(&i32::try_from(packet.size())?.to_le_bytes());
         bytes.extend_from_slice(&packet.id.to_le_bytes());
-        bytes.extend_from_slice(&i32::from(packet.typ).to_le_bytes());
+        bytes.extend_from_slice(&(packet.typ as i32).to_le_bytes());
         bytes.extend_from_slice(&packet.payload);
         bytes.extend_from_slice(&packet.terminator);
         Ok(bytes)

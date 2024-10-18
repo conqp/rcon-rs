@@ -11,16 +11,20 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bitflags = "2.6"
-clap = { version = "4.5", features = ["derive"], optional = true }
-crc = "3.2"
+bitflags = { version = "2.6", optional = true }
+clap = { version = "4.5", optional = true }
+crc = { version = "3.2", optional = true }
 env_logger = { version = "0.11", optional = true }
 log = "0.4"
-rand = "0.9.0-alpha.2"
+num-derive = { version = "0.4.2", optional = true }
+num-traits = { version = "0.2.19", optional = true }
+rand = { version = "0.9.0-alpha.2", optional = true }
 rpassword = { version = "7.3", optional = true }
 
 [features]
-cli = ["dep:clap", "dep:env_logger", "dep:rpassword"]
+battleye = ["crc"]
+source = ["bitflags", "num-derive", "num-traits", "rand"]
+cli = ["battleye", "source", "clap/derive", "env_logger", "rpassword"]
 
 [[bin]]
 name = "rconclt"
