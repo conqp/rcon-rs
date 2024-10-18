@@ -25,13 +25,7 @@ impl Args {
     pub fn client(&self) -> std::io::Result<Box<dyn RCon>> {
         match &self.protocol {
             Protocol::BattlEye { .. } => {
-                let client = UdpSocketWrapper::connect(self.server)
-                    .and_then(|socket| {
-                        socket.set_read_timeout(Some(self.timeout()))?;
-                        socket.set_write_timeout(Some(self.timeout()))?;
-                        Ok(socket)
-                    })
-                    .map(battleye::Client::new)?;
+                let client = UdpSocketWrapper::connect(self.server).map(battleye::Client::new)?;
                 Ok(Box::new(client))
             }
             Protocol::Source { quirks, .. } => {
