@@ -1,13 +1,14 @@
 //! An example `RCON` client supporting both `Source RCON` and `BattlEye Rcon`.
 
-mod args;
-
-use clap::Parser;
-use log::error;
 use std::io::{stdout, Write};
 use std::process::exit;
 
+use clap::Parser;
+use log::error;
+
 use args::Args;
+
+mod args;
 
 fn main() {
     env_logger::init();

@@ -1,9 +1,10 @@
-use clap::Parser;
-use rcon::{battleye, source, RCon};
-use rpassword::prompt_password;
 use std::borrow::Cow;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, TcpStream, UdpSocket};
 use std::time::Duration;
+
+use clap::Parser;
+use rcon::{battleye, source, RCon};
+use rpassword::prompt_password;
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(15);
 
