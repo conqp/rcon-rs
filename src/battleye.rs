@@ -3,7 +3,7 @@
 mod client;
 mod from_server;
 mod header;
+mod into_bytes;
 mod packet;
-mod to_server;
 
 pub use client::Client;

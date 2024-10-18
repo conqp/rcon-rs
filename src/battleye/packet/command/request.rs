@@ -1,22 +1,21 @@
+use std::borrow::Cow;
+
 use super::TYPE;
 use crate::battleye::header::Header;
-use crate::battleye::to_server::ToServer;
-use std::array::IntoIter;
-use std::iter::{Chain, Copied};
-use std::slice::Iter;
+use crate::battleye::into_bytes::IntoBytes;
 
 const SEQ: u8 = 0x00;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct Request<'cmd> {
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Request {
     header: Header,
     seq: u8,
-    command: &'cmd str,
+    command: String,
 }
 
-impl<'cmd> Request<'cmd> {
+impl Request {
     #[must_use]
-    pub const fn new(header: Header, seq: u8, command: &'cmd str) -> Self {
+    pub const fn new(header: Header, seq: u8, command: String) -> Self {
         Self {
             header,
             seq,
@@ -25,8 +24,13 @@ impl<'cmd> Request<'cmd> {
     }
 }
 
-impl<'cmd> From<&'cmd str> for Request<'cmd> {
-    fn from(command: &'cmd str) -> Self {
+impl<'cow, T> From<T> for Request
+where
+    T: Into<Cow<'cow, str>>,
+{
+    fn from(command: T) -> Self {
+        let command = command.into();
+
         Self::new(
             Header::create(
                 TYPE,
@@ -37,24 +41,19 @@ impl<'cmd> From<&'cmd str> for Request<'cmd> {
                     .as_slice(),
             ),
             SEQ,
-            command,
+            command.into_owned(),
         )
     }
 }
 
-impl<'cmd> IntoIterator for Request<'cmd> {
-    type Item = u8;
-    type IntoIter = Chain<
-        Chain<<Header as IntoIterator>::IntoIter, IntoIter<Self::Item, 1>>,
-        Copied<Iter<'cmd, Self::Item>>,
-    >;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.header
-            .into_iter()
-            .chain(self.seq.to_le_bytes())
-            .chain(self.command.as_bytes().iter().copied())
+impl IntoBytes for Request {
+    fn into_bytes(self) -> impl AsRef<[u8]> {
+        let header: [u8; Header::SIZE] = self.header.into();
+        let command = self.command.as_bytes();
+        let mut buffer = Vec::with_capacity(Header::SIZE + command.len());
+        buffer.extend_from_slice(&header);
+        buffer.push(self.seq);
+        buffer.extend_from_slice(command);
+        buffer
     }
 }
-
-impl ToServer for Request<'_> {}

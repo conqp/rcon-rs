@@ -1,8 +1,6 @@
 use super::TYPE;
 use crate::battleye::header::Header;
-use crate::battleye::to_server::ToServer;
-use std::array::IntoIter;
-use std::iter::Chain;
+use crate::battleye::into_bytes::IntoBytes;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Ack {
@@ -20,13 +18,9 @@ impl Ack {
     }
 }
 
-impl IntoIterator for Ack {
-    type Item = u8;
-    type IntoIter = Chain<<Header as IntoIterator>::IntoIter, IntoIter<u8, 1>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.header.into_iter().chain(self.seq.to_le_bytes())
+impl IntoBytes for Ack {
+    fn into_bytes(self) -> impl AsRef<[u8]> {
+        let [hdr0, hdr1, hdr2, hdr3, hdr4, hdr5, hdr6, hdr7] = self.header.into();
+        [hdr0, hdr1, hdr2, hdr3, hdr4, hdr5, hdr6, hdr7, self.seq]
     }
 }
-
-impl ToServer for Ack {}

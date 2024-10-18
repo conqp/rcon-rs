@@ -2,6 +2,7 @@ use super::server_data::ServerData;
 use super::util::invalid_data;
 use log::{debug, trace, warn};
 use rand::{thread_rng, Rng};
+use std::borrow::Cow;
 use std::num::TryFromIntError;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
@@ -37,21 +38,8 @@ impl Packet {
         )
     }
 
-    pub fn command<T>(args: &[T]) -> Self
-    where
-        T: AsRef<str>,
-    {
-        Self::command_str(
-            args.iter()
-                .map(AsRef::as_ref)
-                .collect::<Vec<_>>()
-                .join(" ")
-                .as_str(),
-        )
-    }
-
-    pub fn command_str(command: &str) -> Self {
-        Self::command_raw(command.as_bytes())
+    pub fn command(args: &[Cow<'_, str>]) -> Self {
+        Self::command_raw(args.join(" ").as_bytes())
     }
 
     pub fn command_raw(command: &[u8]) -> Self {
@@ -59,6 +47,15 @@ impl Packet {
             random_id(thread_rng()),
             ServerData::ExecCommand,
             command.to_vec(),
+            TERMINATOR,
+        )
+    }
+
+    pub const fn sentinel(id: i32) -> Self {
+        Self::new(
+            id.wrapping_add(1),
+            ServerData::ResponseValue,
+            Vec::new(),
             TERMINATOR,
         )
     }

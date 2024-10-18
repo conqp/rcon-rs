@@ -1,28 +1,36 @@
+use std::borrow::Cow;
+use std::io;
+
+use log::debug;
+use tokio::io::AsyncWriteExt;
+use tokio::net::{TcpStream, ToSocketAddrs};
+
 use super::packet::Packet;
 use super::quirks::Quirks;
 use super::server_data::ServerData;
 use super::util::invalid_data;
 use crate::RCon;
-use log::debug;
-use std::io;
-use std::sync::Arc;
-use std::time::Duration;
-use tokio::io::AsyncWriteExt;
-use tokio::net::{TcpStream, ToSocketAddrs};
-use tokio::time::timeout;
+
+/// Multi-packet sentinel value: <https://developer.valvesoftware.com/wiki/Source_RCON_Protocol#Multiple-packet_Responses>
+const SENTINEL: &[u8] = &[0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00];
 
 /// A Source `RCON` client.
 #[derive(Debug)]
 pub struct Client {
     tcp_stream: TcpStream,
     quirks: Quirks,
+    buffer: Vec<Packet>,
 }
 
 impl Client {
     /// Creates a new client instance.
     #[must_use]
-    pub const fn new(tcp_stream: TcpStream, quirks: Quirks) -> Self {
-        Self { tcp_stream, quirks }
+    pub fn new(tcp_stream: TcpStream) -> Self {
+        Self {
+            tcp_stream,
+            quirks: Quirks::default(),
+            buffer: Vec::new(),
+        }
     }
 
     /// Returns the currently set quirks.
@@ -49,53 +57,49 @@ impl Client {
         self.tcp_stream.write_all(bytes.as_slice()).await
     }
 
-    async fn read_responses(
-        &mut self,
-        id: i32,
-        multi_packet_timeout: Option<Duration>,
-    ) -> io::Result<Vec<Packet>> {
-        let response = self.read_packet(id).await?;
-        let mut responses = vec![response];
+    async fn read_responses(&mut self, command_id: i32, sentinel_id: i32) -> io::Result<Vec<u8>> {
+        let mut sentinel_mirrored = false;
 
-        if let Some(multi_packet_timeout) = multi_packet_timeout {
-            while let Ok(response) =
-                timeout(multi_packet_timeout, async { self.read_packet(id).await }).await?
-            {
-                responses.push(response);
+        loop {
+            let packet = Packet::read_from(&mut self.tcp_stream).await?;
+
+            if packet.typ == ServerData::ResponseValue {
+                if packet.id == sentinel_id {
+                    sentinel_mirrored = true;
+                } else if sentinel_mirrored && packet.payload == SENTINEL {
+                    return Ok(self
+                        .buffer
+                        .iter()
+                        .flat_map(|response| &response.payload)
+                        .copied()
+                        .collect());
+                }
             }
-        }
 
-        Ok(responses)
-    }
-
-    async fn read_packet(&mut self, id: i32) -> io::Result<Packet> {
-        let packet = Packet::read_from(&mut self.tcp_stream).await?;
-
-        if self.quirks.contains(Quirks::PALWORLD) || packet.id == id {
-            Ok(packet)
-        } else {
-            Err(invalid_data(format!(
-                "Packet ID mismatch: {} != {id}",
-                packet.id
-            )))
+            if self.quirks.contains(Quirks::PALWORLD) || packet.id == command_id {
+                self.buffer.push(packet);
+            } else {
+                return Err(invalid_data(format!(
+                    "Packet ID mismatch: {} != {command_id}",
+                    packet.id
+                )));
+            }
         }
     }
 }
 
 impl From<TcpStream> for Client {
     fn from(tcp_stream: TcpStream) -> Self {
-        Self::new(tcp_stream, Quirks::default())
+        Self::new(tcp_stream)
     }
 }
 
 impl RCon for Client {
     async fn connect<T>(address: T) -> io::Result<Self>
     where
-        T: ToSocketAddrs + Send + Sync,
+        T: ToSocketAddrs + Send,
     {
-        TcpStream::connect(address)
-            .await
-            .map(|tcp_stream| Self::new(tcp_stream, Quirks::default()))
+        TcpStream::connect(address).await.map(Self::new)
     }
 
     async fn login(&mut self, password: &str) -> io::Result<bool> {
@@ -113,24 +117,13 @@ impl RCon for Client {
         Ok(packet.id >= 0)
     }
 
-    async fn run<T>(
-        &mut self,
-        args: &[T],
-        multi_packet_timeout: Option<Duration>,
-    ) -> io::Result<Arc<[u8]>>
-    where
-        T: AsRef<str> + Send + Sync,
-    {
+    async fn run<'a>(&mut self, args: &[Cow<'a, str>]) -> io::Result<Vec<u8>> {
         let command = Packet::command(args);
-        let id = command.id;
+        let command_id = command.id;
+        let sentinel = Packet::sentinel(command.id);
+        let sentinel_id = sentinel.id;
         self.send(command).await?;
-        self.read_responses(id, multi_packet_timeout)
-            .await
-            .map(|responses| {
-                responses
-                    .into_iter()
-                    .flat_map(|response| response.payload)
-                    .collect()
-            })
+        self.send(sentinel).await?;
+        self.read_responses(command_id, sentinel_id).await
     }
 }

@@ -1,33 +1,42 @@
+use std::borrow::Cow;
+
 use super::TYPE;
 use crate::battleye::header::Header;
-use crate::battleye::to_server::ToServer;
+use crate::battleye::into_bytes::IntoBytes;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct Request<'passwd> {
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Request {
     header: Header,
-    password: &'passwd str,
+    password: String,
 }
 
-impl<'passwd> Request<'passwd> {
+impl Request {
     #[must_use]
-    pub const fn new(header: Header, password: &'passwd str) -> Self {
+    pub const fn new(header: Header, password: String) -> Self {
         Self { header, password }
     }
 }
 
-impl<'passwd> From<&'passwd str> for Request<'passwd> {
-    fn from(password: &'passwd str) -> Self {
-        Self::new(Header::create(TYPE, password.as_bytes()), password)
+impl<'cow, T> From<T> for Request
+where
+    T: Into<Cow<'cow, str>>,
+{
+    fn from(password: T) -> Self {
+        let password = password.into();
+        Self::new(
+            Header::create(TYPE, password.as_bytes()),
+            password.into_owned(),
+        )
     }
 }
 
-impl<'passwd> IntoIterator for Request<'passwd> {
-    type Item = u8;
-    type IntoIter = <Header as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.header.into_iter()
+impl IntoBytes for Request {
+    fn into_bytes(self) -> impl AsRef<[u8]> {
+        let header: [u8; Header::SIZE] = self.header.into();
+        let password_bytes = self.password.as_bytes();
+        let mut buffer = Vec::with_capacity(Header::SIZE + password_bytes.iter().len());
+        buffer.extend_from_slice(&header);
+        buffer.extend_from_slice(password_bytes);
+        buffer
     }
 }
-
-impl ToServer for Request<'_> {}

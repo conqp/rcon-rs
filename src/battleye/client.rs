@@ -1,126 +1,111 @@
-use crate::battleye::from_server::FromServer;
-use crate::battleye::header::Header;
-use crate::battleye::packet::server::Message;
-use crate::battleye::packet::{command, login, server, CommunicationResult, Request, Response};
-use crate::battleye::to_server::ToServer;
+mod handler;
+
+use crate::battleye::client::handler::Handler;
+use crate::battleye::packet::{command, login, CommunicationResult, Request, Response};
 use crate::RCon;
-use log::warn;
+use std::borrow::Cow;
 use std::io;
-use std::sync::mpsc::Sender;
+use std::io::ErrorKind;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering::SeqCst;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::net::{lookup_host, ToSocketAddrs};
-use tokio::time::timeout;
+use tokio::spawn;
+use tokio::sync::mpsc::{channel, Receiver, Sender};
+use tokio::task::JoinHandle;
 use udp_stream::UdpStream;
+
+const DEFAULT_HANDLER_INTERVAL: Duration = Duration::from_secs(1);
+const DEFAULT_CHANNEL_BUFFER: usize = 8;
 
 /// A `BattlEye Rcon` client.
 #[derive(Debug)]
 pub struct Client {
-    udp_stream: UdpStream,
-    handler: Option<Sender<Message>>,
+    running: Arc<AtomicBool>,
+    requests: Sender<Request>,
+    responses: Receiver<Response>,
+    handler: Option<JoinHandle<()>>,
+    buffer: Vec<command::Response>,
 }
 
 impl Client {
     /// Creates a new instance of the client.
     #[must_use]
-    pub const fn new(udp_stream: UdpStream, handler: Option<Sender<Message>>) -> Self {
-        Self {
+    pub fn new<const CHANNEL_BUFFER: usize>(udp_stream: UdpStream) -> Self {
+        Self::new_with_handler_interval::<CHANNEL_BUFFER>(
             udp_stream,
-            handler,
+            Some(DEFAULT_HANDLER_INTERVAL),
+        )
+    }
+
+    /// Creates a new instance of the client with a custom handler interval set.
+    #[must_use]
+    pub fn new_with_handler_interval<const CHANNEL_BUFFER: usize>(
+        udp_stream: UdpStream,
+        handler_interval: Option<Duration>,
+    ) -> Self {
+        let running = Arc::new(AtomicBool::new(true));
+        let (request_tx, request_rx) = channel(CHANNEL_BUFFER);
+        let (response_tx, response_rx) = channel(CHANNEL_BUFFER);
+        let handler = Handler::new(
+            udp_stream,
+            running.clone(),
+            request_rx,
+            response_tx,
+            handler_interval,
+        );
+        let join_handle = spawn(async { handler.run().await });
+        Self {
+            running,
+            requests: request_tx,
+            responses: response_rx,
+            handler: Some(join_handle),
+            buffer: Vec::new(),
         }
     }
 
-    /// Acknowledge a server message.
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`io::Error`] if the ack message could not be sent.
-    pub async fn ack_message(&mut self, seq: u8) -> io::Result<()> {
-        self.send(Request::Server(server::Ack::new(seq))).await
-    }
+    async fn communicate(&mut self, request: Request) -> io::Result<CommunicationResult> {
+        self.requests
+            .send(request)
+            .await
+            .map_err(|_| ErrorKind::BrokenPipe)?;
 
-    async fn communicate<'request>(
-        &mut self,
-        request: Request<'request>,
-        multi_packet_timeout: Option<Duration>,
-    ) -> io::Result<CommunicationResult> {
-        self.send(request).await?;
-        let mut responses = Vec::new();
+        self.buffer.clear();
 
-        while let Ok(packet) = if let Some(t) = multi_packet_timeout {
-            timeout(t, async { self.receive().await }).await?
-        } else {
-            self.receive().await
-        } {
-            match packet {
-                Response::Command(response) => {
-                    if multi_packet_timeout.is_none() {
-                        return Ok(CommunicationResult::Command(
-                            response.payload().iter().copied().collect(),
-                        ));
+        loop {
+            if let Some(response) = self.responses.recv().await {
+                match response {
+                    Response::Command(response) => {
+                        let seq = response.seq() as usize;
+                        self.buffer.push(response);
+
+                        if self.buffer.len() >= seq {
+                            return Ok(CommunicationResult::Command(self.collect_responses()));
+                        }
                     }
-
-                    responses.push(response);
-                }
-                Response::Login(response) => return Ok(CommunicationResult::Login(response)),
-                Response::Server(message) => {
-                    if let Some(handler) = &mut self.handler {
-                        handler.send(message).map_err(io::Error::other)?;
-                    } else {
-                        warn!("Received server response, but no handler was provided.");
-                    }
+                    Response::Login(response) => return Ok(CommunicationResult::Login(response)),
                 }
             }
         }
-
-        if responses.is_empty() {
-            Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "No data received.",
-            ))
-        } else {
-            responses.sort_by_key(command::Response::seq);
-            Ok(CommunicationResult::Command(
-                responses
-                    .iter()
-                    .flat_map(command::Response::payload)
-                    .copied()
-                    .collect(),
-            ))
-        }
     }
 
-    async fn send<'request>(&mut self, request: Request<'request>) -> io::Result<()> {
-        match request {
-            Request::Command(request) => request.write_to(&mut self.udp_stream).await,
-            Request::Login(request) => request.write_to(&mut self.udp_stream).await,
-            Request::Server(ack) => ack.write_to(&mut self.udp_stream).await,
-        }
+    fn collect_responses(&mut self) -> Vec<u8> {
+        self.buffer.sort_by_key(command::Response::seq);
+        self.buffer
+            .iter()
+            .flat_map(command::Response::payload)
+            .copied()
+            .collect()
     }
+}
 
-    async fn receive(&mut self) -> io::Result<Response> {
-        let header = Header::read_from(&mut self.udp_stream).await?;
+impl Drop for Client {
+    fn drop(&mut self) {
+        self.running.store(false, SeqCst);
 
-        match header.typ() {
-            command::TYPE => command::Response::read_from(&mut self.udp_stream)
-                .await
-                .map(|f| f(header))
-                .and_then(FromServer::validate)
-                .map(Response::Command),
-            login::TYPE => login::Response::read_from(&mut self.udp_stream)
-                .await
-                .map(|f| f(header))
-                .and_then(FromServer::validate)
-                .map(Response::Login),
-            server::TYPE => Message::read_from(&mut self.udp_stream)
-                .await
-                .map(|f| f(header))
-                .and_then(FromServer::validate)
-                .map(Response::Server),
-            other => Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("Invalid packet type: {other}"),
-            )),
+        if let Some(handler) = self.handler.take() {
+            handler.abort();
         }
     }
 }
@@ -128,12 +113,12 @@ impl Client {
 impl RCon for Client {
     async fn connect<T>(address: T) -> io::Result<Self>
     where
-        T: ToSocketAddrs + Send + Sync,
+        T: ToSocketAddrs + Send,
     {
         if let Some(address) = lookup_host(address).await?.next() {
             return UdpStream::connect(address)
                 .await
-                .map(|udp_stream| Self::new(udp_stream, None));
+                .map(Self::new::<DEFAULT_CHANNEL_BUFFER>);
         }
 
         Err(io::Error::other("No host found."))
@@ -141,37 +126,27 @@ impl RCon for Client {
 
     async fn login(&mut self, password: &str) -> io::Result<bool> {
         match self
-            .communicate(Request::Login(login::Request::from(password)), None)
+            .communicate(Request::Login(login::Request::from(password)))
             .await?
         {
             CommunicationResult::Login(response) => Ok(response.success()),
             CommunicationResult::Command(_) => Err(io::Error::new(
-                io::ErrorKind::InvalidData,
+                ErrorKind::InvalidData,
                 "Expected login response, but got a command response.",
             )),
         }
     }
 
-    async fn run<T>(
-        &mut self,
-        args: &[T],
-        multi_packet_timeout: Option<Duration>,
-    ) -> io::Result<Arc<[u8]>>
-    where
-        T: AsRef<str> + Send + Sync,
-    {
-        let command = args.iter().map(AsRef::as_ref).collect::<Vec<_>>().join(" ");
+    async fn run<'a>(&mut self, args: &[Cow<'a, str>]) -> io::Result<Vec<u8>> {
+        let command = args.join(" ");
 
         match self
-            .communicate(
-                Request::Command(command::Request::from(command.as_str())),
-                multi_packet_timeout,
-            )
+            .communicate(Request::Command(command::Request::from(command.as_str())))
             .await?
         {
             CommunicationResult::Command(bytes) => Ok(bytes),
             CommunicationResult::Login(_) => Err(io::Error::new(
-                io::ErrorKind::InvalidData,
+                ErrorKind::InvalidData,
                 "Expected command response, but got a login response.",
             )),
         }

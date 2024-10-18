@@ -1,28 +1,24 @@
+//! An example `RCON` client supporting both `Source RCON` and `BattlEye Rcon`.
+
 use clap::Parser;
 use log::error;
 use rcon::source::Quirks;
 use rcon::{source::Client, RCon};
+use std::borrow::Cow;
 use std::io::{stdout, Write};
 use std::process::exit;
-use std::time::Duration;
 use tokio::net::TcpStream;
 
 #[derive(Debug, Parser)]
 struct Args {
     #[arg(short, long)]
     password: String,
-    #[arg(
-        short = 't',
-        long,
-        help = "timeout in milliseconds for multi-packet responses"
-    )]
-    multi_packet_timeout: Option<u64>,
     #[arg(short = 'P', long, help = "use quirks for Palword servers")]
     palworld: bool,
     #[arg(index = 1)]
     server: String,
     #[arg(index = 2)]
-    command: Vec<String>,
+    command: Vec<Cow<'static, str>>,
 }
 
 #[tokio::main]
@@ -47,16 +43,10 @@ async fn main() {
         exit(3);
     });
     if logged_in {
-        let result = client
-            .run(
-                &args.command,
-                args.multi_packet_timeout.map(Duration::from_millis),
-            )
-            .await
-            .unwrap_or_else(|error| {
-                error!("{error}");
-                exit(5);
-            });
+        let result = client.run(&args.command).await.unwrap_or_else(|error| {
+            error!("{error}");
+            exit(5);
+        });
         stdout()
             .lock()
             .write_all(&result)

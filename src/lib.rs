@@ -1,8 +1,7 @@
 //! A common interface for different `RCON` protocols.
 
+use std::borrow::Cow;
 use std::io;
-use std::sync::Arc;
-use std::time::Duration;
 use tokio::net::ToSocketAddrs;
 
 pub mod battleye;
@@ -16,7 +15,7 @@ pub trait RCon: Sized {
     /// Returns an [`io::Error`] on errors.
     fn connect<T>(address: T) -> impl std::future::Future<Output = io::Result<Self>> + Send
     where
-        T: ToSocketAddrs + Send + Sync;
+        T: ToSocketAddrs + Send;
 
     /// Perform a login.
     ///
@@ -31,11 +30,8 @@ pub trait RCon: Sized {
     ///
     /// # Errors
     /// Returns an [`io::Error`] on errors.
-    fn run<T>(
+    fn run<'a>(
         &mut self,
-        args: &[T],
-        multi_packet_timeout: Option<Duration>,
-    ) -> impl std::future::Future<Output = io::Result<Arc<[u8]>>> + Send
-    where
-        T: AsRef<str> + Send + Sync;
+        args: &[Cow<'a, str>],
+    ) -> impl std::future::Future<Output = io::Result<Vec<u8>>> + Send;
 }

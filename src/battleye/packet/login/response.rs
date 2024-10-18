@@ -1,7 +1,8 @@
-use crate::battleye::from_server::FromServer;
-use crate::battleye::header::Header;
 use tokio::io::AsyncReadExt;
 use udp_stream::UdpStream;
+
+use crate::battleye::from_server::FromServer;
+use crate::battleye::header::Header;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Response {

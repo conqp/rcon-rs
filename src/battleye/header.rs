@@ -1,13 +1,10 @@
 use crc::{Crc, CRC_32_CKSUM};
-use std::array::IntoIter;
-use std::iter::Chain;
 use tokio::io::AsyncReadExt;
 use udp_stream::UdpStream;
 
 const INFIX: u8 = 0xFF;
 const PREFIX: &[u8; 2] = b"BE";
 const CRC32: Crc<u32> = Crc::<u32>::new(&CRC_32_CKSUM);
-pub const SIZE: usize = 8;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Header {
@@ -18,6 +15,8 @@ pub struct Header {
 }
 
 impl Header {
+    pub const SIZE: usize = 8;
+
     #[must_use]
     pub const fn new(prefix: [u8; 2], crc32: u32, infix: u8, typ: u8) -> Self {
         Self {
@@ -53,8 +52,8 @@ impl Header {
     }
 }
 
-impl From<[u8; SIZE]> for Header {
-    fn from(buffer: [u8; SIZE]) -> Self {
+impl From<[u8; Self::SIZE]> for Header {
+    fn from(buffer: [u8; Self::SIZE]) -> Self {
         Self::new(
             [buffer[0], buffer[1]],
             u32::from_le_bytes([buffer[2], buffer[3], buffer[4], buffer[5]]),
@@ -64,19 +63,11 @@ impl From<[u8; SIZE]> for Header {
     }
 }
 
-impl IntoIterator for Header {
-    type Item = u8;
-    type IntoIter = Chain<
-        Chain<Chain<IntoIter<Self::Item, 2>, IntoIter<Self::Item, 4>>, IntoIter<Self::Item, 1>>,
-        IntoIter<Self::Item, 1>,
-    >;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.prefix
-            .into_iter()
-            .chain(self.crc32.to_le_bytes())
-            .chain(self.infix.to_le_bytes())
-            .chain(self.typ.to_le_bytes())
+impl From<Header> for [u8; Header::SIZE] {
+    fn from(header: Header) -> [u8; Header::SIZE] {
+        let [prefix0, prefix1] = header.prefix;
+        let [a, b, c, d] = header.crc32.to_le_bytes();
+        [prefix0, prefix1, a, b, c, d, header.infix, header.typ]
     }
 }
 
