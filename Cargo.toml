@@ -17,9 +17,10 @@ crc = "3.2"
 env_logger = "0.11"
 log = "0.4"
 rand = "0.9.0-alpha.2"
+rpassword = { version = "7.3", optional = true }
 
 [features]
-cli = ["dep:clap"]
+cli = ["dep:clap", "dep:rpassword"]
 
 [[bin]]
 name = "rconclt"
