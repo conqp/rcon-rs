@@ -70,10 +70,14 @@ pub trait Player {
     fn name(&self) -> Cow<'_, str>;
 
     /// Returns the player's UUID.
-    fn uuid(&self) -> Option<Uuid>;
+    fn uuid(&self) -> Option<Uuid> {
+        None
+    }
 
     /// Returns the player's socket address.
-    fn socket_addr(&self) -> Option<SocketAddr>;
+    fn socket_addr(&self) -> Option<SocketAddr> {
+        None
+    }
 
     /// Returns the player's IP address.
     fn ip_add(&self) -> Option<IpAddr> {
@@ -81,5 +85,7 @@ pub trait Player {
     }
 
     /// Returns the player's RTT (aka "ping").
-    fn rtt(&self) -> Option<Duration>;
+    fn rtt(&self) -> Option<Duration> {
+        None
+    }
 }
