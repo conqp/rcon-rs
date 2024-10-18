@@ -1,7 +1,7 @@
 use std::io::ErrorKind;
 use std::sync::Arc;
 
-use log::debug;
+use log::{debug, trace};
 
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
@@ -34,7 +34,13 @@ impl Response {
             return Err(ErrorKind::UnexpectedEof.into());
         }
 
+        #[allow(unsafe_code)]
+        // SAFETY: We just read this amount of bytes, which cannot exceed the initial buffer's size.
+        unsafe {
+            buffer.set_len(size);
+        };
         debug!("Read {size} bytes.");
+        trace!("Buffer: {:#04X?}", buffer);
         Ok(move |header| Self::new(header, buffer[0], buffer[1..].into()))
     }
 
