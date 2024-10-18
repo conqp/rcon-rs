@@ -13,6 +13,12 @@ pub struct Client {
     inner: battleye::Client,
 }
 
+impl From<battleye::Client> for Client {
+    fn from(client: battleye::Client) -> Self {
+        Self { inner: client }
+    }
+}
+
 impl Say for Client {
     fn say(&mut self, target: Cow<'_, str>, message: Cow<'_, str>) -> std::io::Result<()> {
         self.run(&["say".into(), target, message]).map(drop)
