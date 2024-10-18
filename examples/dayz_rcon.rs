@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use clap::Parser;
 use log::error;
-use rcon::{battleye, dayz, Ban, Broadcast, Kick, RCon, Say};
+use rcon::{battleye, dayz, Ban, Broadcast, Kick, Players, RCon, Say};
 use rpassword::prompt_password;
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(5);
@@ -29,6 +29,8 @@ struct Args {
 #[derive(Debug, Parser)]
 #[command(subcommand_value_name = "COMMAND")]
 enum Command {
+    #[command(about = "List players on the server", name = "players")]
+    Players,
     #[command(about = "Send a message to a player", name = "say")]
     Say {
         #[arg(help = "The player to send the message to")]
@@ -110,6 +112,9 @@ fn main() {
 
     if logged_in {
         match args.command {
+            Command::Players => client
+                .players()
+                .map(|players| players.iter().for_each(|player| println!("{player:?}"))),
             Command::Say { player, message } => client.say(player, message),
             Command::Broadcast { message } => client.broadcast(message),
             Command::Kick { player, reason } => client.kick(player, reason),
