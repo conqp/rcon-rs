@@ -1,3 +1,4 @@
+use log::debug;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket};
 use std::time::Duration;
 
@@ -19,6 +20,7 @@ impl UdpSocketWrapper {
         } else {
             SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
         })?;
+        debug!("UDP socket local address: {}", socket.local_addr()?);
         socket.connect(address)?;
         Ok(Self { socket })
     }
