@@ -2,7 +2,7 @@
 
 use crate::extensions::traits::{Ban, Kick};
 use crate::{battleye, Broadcast, Players, RCon, Say};
-use log::error;
+use log::warn;
 use player::Player;
 use std::borrow::Cow;
 use std::io::ErrorKind;
@@ -65,16 +65,17 @@ impl Players<Player> for Client {
             std::io::Error::new(ErrorKind::InvalidData, "Response is not valid UTF-8")
         })?;
 
-        let mut lines = text.lines();
-        // Discard header.
-        let _ = (&mut lines).take_while(|line| line.starts_with('-'));
-        let players: Vec<Player> = lines
+        let players: Vec<Player> = text
+            .lines()
+            // Discard header.
+            .skip_while(|line| !line.starts_with('-'))
+            .skip(1)
             // Take until footer.
             .take_while(|line| !line.starts_with('('))
             .map(Player::from_str)
             .filter_map(|result| {
                 result
-                    .inspect_err(|error| error!("Failed to parse player data: {error}"))
+                    .inspect_err(|error| warn!("Failed to parse player data: {error}"))
                     .ok()
             })
             .collect();
