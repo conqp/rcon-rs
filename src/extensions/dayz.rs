@@ -1,12 +1,12 @@
 //! Extension of the `BattlEye Rcon` client for `DayZ` server.
 
+use crate::extensions::traits::{Ban, Kick};
+use crate::{battleye, Broadcast, Players, RCon, Say};
+use log::error;
+use player::Player;
 use std::borrow::Cow;
 use std::io::ErrorKind;
 use std::str::FromStr;
-
-use crate::extensions::traits::{Ban, Kick};
-use crate::{battleye, Broadcast, Players, RCon, Say};
-use player::Player;
 
 mod player;
 
@@ -72,7 +72,11 @@ impl Players<Player> for Client {
             // Take until footer.
             .take_while(|line| !line.starts_with('('))
             .map(Player::from_str)
-            .filter_map(Result::ok)
+            .filter_map(|result| {
+                result
+                    .inspect_err(|error| error!("Failed to parse player data: {error}"))
+                    .ok()
+            })
             .collect();
         Ok(players)
     }
