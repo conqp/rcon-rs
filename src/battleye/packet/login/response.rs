@@ -1,8 +1,6 @@
-use std::io::ErrorKind;
-
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
-use crate::UdpSocketWrapper;
+use std::io::ErrorKind;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Response {
@@ -16,14 +14,14 @@ impl Response {
         Self { header, success }
     }
 
-    pub fn read_from(src: &UdpSocketWrapper) -> std::io::Result<impl FnOnce(Header) -> Self> {
-        let mut buffer = [0; 1];
-
-        if src.recv(&mut buffer)? < buffer.len() {
-            return Err(ErrorKind::UnexpectedEof.into());
-        }
-
-        Ok(move |header| Self::new(header, u8::from_le_bytes(buffer) != 0))
+    pub fn read_from<T>(mut src: T) -> std::io::Result<impl FnOnce(Header) -> Self>
+    where
+        T: Iterator<Item = u8>,
+    {
+        let success = src
+            .next()
+            .ok_or_else(|| std::io::Error::from(ErrorKind::UnexpectedEof))?;
+        Ok(move |header| Self::new(header, success != 0))
     }
 
     #[must_use]

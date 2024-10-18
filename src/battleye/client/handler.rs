@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::io::ErrorKind;
+use std::net::UdpSocket;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
@@ -14,29 +15,30 @@ use crate::battleye::header::Header;
 use crate::battleye::into_bytes::IntoBytes;
 use crate::battleye::packet::server::{Ack, Message};
 use crate::battleye::packet::{command, login, server, Request, Response};
-use crate::UdpSocketWrapper;
 
 /// Idle timeout according to protocol definition: <https://www.battleye.com/downloads/BERConProtocol.txt>
 const IDLE_TIMEOUT: Duration = Duration::from_secs(45);
 
 #[derive(Debug)]
 pub struct Handler {
-    udp_socket: UdpSocketWrapper,
+    udp_socket: UdpSocket,
     running: Arc<AtomicBool>,
     requests: Receiver<Request>,
     responses: Sender<Response>,
     interval: Option<Duration>,
     last_command: Option<SystemTime>,
+    buffer: Vec<u8>,
 }
 
 impl Handler {
     #[must_use]
-    pub const fn new(
-        udp_socket: UdpSocketWrapper,
+    pub fn new(
+        udp_socket: UdpSocket,
         running: Arc<AtomicBool>,
         requests: Receiver<Request>,
         responses: Sender<Response>,
         interval: Option<Duration>,
+        buf_size: usize,
     ) -> Self {
         Self {
             udp_socket,
@@ -45,10 +47,11 @@ impl Handler {
             responses,
             interval,
             last_command: None,
+            buffer: vec![0; buf_size],
         }
     }
 
-    pub fn run(self) {
+    pub fn run(mut self) {
         while self.running.load(Relaxed) {
             trace!("Receiving request");
             match self.requests.try_recv() {
@@ -102,7 +105,7 @@ impl Handler {
         }
     }
 
-    fn process_incoming_messages(&self) {
+    fn process_incoming_messages(&mut self) {
         debug!("Processing incoming messages");
 
         if let Err(error) = self.process_incoming_message_fallible() {
@@ -116,15 +119,16 @@ impl Handler {
         }
     }
 
-    fn process_incoming_message_fallible(&self) -> std::io::Result<()> {
+    fn process_incoming_message_fallible(&mut self) -> std::io::Result<()> {
+        let mut bytes = self.receive()?.iter().copied();
         debug!("Receiving packet from UDP stream");
-        let header = Header::read_from(&self.udp_socket)?;
+        let header = Header::read_from(&mut bytes)?;
         trace!("Received header: {header:?}");
 
         match header.typ() {
             command::TYPE => {
                 debug!("Received command response");
-                let response = command::Response::read_from(&self.udp_socket)
+                let response = command::Response::read_from(&mut bytes)
                     .map(|f| f(header))
                     .and_then(FromServer::validate)
                     .map(Response::Command)?;
@@ -133,7 +137,7 @@ impl Handler {
             }
             login::TYPE => {
                 debug!("Received login response");
-                let response = login::Response::read_from(&self.udp_socket)
+                let response = login::Response::read_from(&mut bytes)
                     .map(|f| f(header))
                     .and_then(FromServer::validate)
                     .map(Response::Login)?;
@@ -142,7 +146,7 @@ impl Handler {
             }
             server::TYPE => {
                 debug!("Received server message");
-                let message = Message::read_from(&self.udp_socket)
+                let message = Message::read_from(&mut bytes)
                     .map(|f| f(header))
                     .and_then(FromServer::validate)?;
                 trace!("Server message: {message:?}");
@@ -154,6 +158,11 @@ impl Handler {
         };
 
         Ok(())
+    }
+
+    fn receive(&mut self) -> std::io::Result<&[u8]> {
+        let len = self.udp_socket.recv(&mut self.buffer)?;
+        Ok(&self.buffer[..len])
     }
 
     fn forward(&self, response: Response) {

@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::io;
 use std::io::ErrorKind;
+use std::net::UdpSocket;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::SeqCst;
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -12,11 +13,12 @@ use log::{debug, trace};
 
 use crate::battleye::client::handler::Handler;
 use crate::battleye::packet::{command, login, CommunicationResult, Request, Response};
-use crate::{RCon, UdpSocketWrapper};
+use crate::RCon;
 
 mod handler;
 
 const DEFAULT_HANDLER_INTERVAL: Duration = Duration::from_secs(1);
+const DEFAULT_BUF_SIZE: usize = 1024;
 
 /// A `BattlEye Rcon` client.
 #[derive(Debug)]
@@ -31,14 +33,15 @@ pub struct Client {
 impl Client {
     /// Creates a new instance of the client.
     #[must_use]
-    pub fn new(udp_socket: UdpSocketWrapper) -> Self {
-        Self::new_with_handler_interval(udp_socket, Some(DEFAULT_HANDLER_INTERVAL))
+    pub fn new(udp_socket: UdpSocket) -> Self {
+        Self::new_ext(udp_socket, DEFAULT_BUF_SIZE, Some(DEFAULT_HANDLER_INTERVAL))
     }
 
-    /// Creates a new instance of the client with a custom handler interval set.
+    /// Creates a new instance of the client with additional information.
     #[must_use]
-    pub fn new_with_handler_interval(
-        udp_socket: UdpSocketWrapper,
+    pub fn new_ext(
+        udp_socket: UdpSocket,
+        buf_size: usize,
         handler_interval: Option<Duration>,
     ) -> Self {
         let running = Arc::new(AtomicBool::new(true));
@@ -50,6 +53,7 @@ impl Client {
             request_rx,
             response_tx,
             handler_interval,
+            buf_size,
         );
         let join_handle = spawn(|| handler.run());
         Self {

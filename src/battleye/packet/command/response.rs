@@ -1,13 +1,8 @@
 use std::io::ErrorKind;
 use std::sync::Arc;
 
-use log::{debug, trace};
-
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
-use crate::UdpSocketWrapper;
-
-const MAX_PACKET_SIZE: usize = 2048;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Response {
@@ -26,22 +21,15 @@ impl Response {
         }
     }
 
-    pub fn read_from(src: &UdpSocketWrapper) -> std::io::Result<impl FnOnce(Header) -> Self> {
-        let mut buffer = vec![0; MAX_PACKET_SIZE];
-        let size = src.recv(&mut buffer)?;
-
-        if size < 1 {
-            return Err(ErrorKind::UnexpectedEof.into());
-        }
-
-        #[allow(unsafe_code)]
-        // SAFETY: We just read this amount of bytes, which cannot exceed the initial buffer's size.
-        unsafe {
-            buffer.set_len(size);
-        };
-        debug!("Read {size} bytes.");
-        trace!("Buffer: {:#04X?}", buffer);
-        Ok(move |header| Self::new(header, buffer[0], buffer[1..].into()))
+    pub fn read_from<T>(mut src: T) -> std::io::Result<impl FnOnce(Header) -> Self>
+    where
+        T: Iterator<Item = u8>,
+    {
+        let seq = src
+            .next()
+            .ok_or_else(|| std::io::Error::from(ErrorKind::UnexpectedEof))?;
+        let payload: Vec<u8> = src.collect();
+        Ok(move |header| Self::new(header, seq, payload.into()))
     }
 
     #[must_use]

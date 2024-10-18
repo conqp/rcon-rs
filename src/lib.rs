@@ -2,11 +2,8 @@
 
 use std::borrow::Cow;
 
-pub use utils::UdpSocketWrapper;
-
 pub mod battleye;
 pub mod source;
-mod utils;
 
 /// Common API for `RCON` protocol clients
 pub trait RCon {

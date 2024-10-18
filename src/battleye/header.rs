@@ -1,6 +1,5 @@
 use std::io::ErrorKind;
 
-use crate::UdpSocketWrapper;
 use crc::{Crc, CRC_32_ISO_HDLC};
 use log::{debug, error};
 
@@ -34,13 +33,15 @@ impl Header {
         Self::new(*PREFIX, crc32(typ, INFIX, payload), INFIX, typ)
     }
 
-    pub fn read_from(src: &UdpSocketWrapper) -> std::io::Result<Self> {
-        let mut buffer = [0; 8];
-
-        if src.recv(&mut buffer)? < buffer.len() {
-            return Err(ErrorKind::UnexpectedEof.into());
-        }
-
+    pub fn read_from<T>(src: T) -> std::io::Result<Self>
+    where
+        T: Iterator<Item = u8>,
+    {
+        let buffer: [u8; Self::SIZE] = src
+            .take(Self::SIZE)
+            .collect::<Vec<_>>()
+            .try_into()
+            .map_err(|_| std::io::Error::from(ErrorKind::UnexpectedEof))?;
         Ok(Self::from(buffer))
     }
 
@@ -100,5 +101,23 @@ mod tests {
     fn test_crc32() {
         let checksum = crc32(0x00, 0xff, b"password");
         assert_eq!(checksum, 0x522d_26de);
+    }
+
+    #[cfg(any())]
+    #[test]
+    fn test_payload_checksum() {
+        let payload = &[
+            0x42, 0x45, 0xEE, 0x1E, 0x1B, 0xCD, 0xFF, 0x02, 0x00, 0x52, 0x43, 0x6F, 0x6E, 0x20,
+            0x61, 0x64, 0x6D, 0x69, 0x6E, 0x20, 0x23, 0x30, 0x20, 0x28, 0x31, 0x32, 0x37, 0x2E,
+            0x30, 0x2E, 0x30, 0x2E, 0x31, 0x3A, 0x33, 0x36, 0x31, 0x34, 0x32, 0x29, 0x20, 0x6C,
+            0x6F, 0x67, 0x67, 0x65, 0x64, 0x20, 0x69, 0x6E,
+        ];
+        let header = Header {
+            prefix: [66, 69],
+            crc32: 0x58c2_dcbe,
+            infix: 255,
+            typ: 1,
+        };
+        assert!(header.is_valid(payload));
     }
 }

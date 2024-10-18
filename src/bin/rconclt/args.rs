@@ -1,9 +1,9 @@
 use std::borrow::Cow;
-use std::net::{SocketAddr, TcpStream};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, TcpStream, UdpSocket};
 use std::time::Duration;
 
 use clap::Parser;
-use rcon::{battleye, source, RCon, UdpSocketWrapper};
+use rcon::{battleye, source, RCon};
 use rpassword::prompt_password;
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(5);
@@ -25,13 +25,18 @@ impl Args {
     pub fn client(&self) -> std::io::Result<Box<dyn RCon>> {
         match &self.protocol {
             Protocol::BattlEye { .. } => {
-                let client = UdpSocketWrapper::connect(self.server)
-                    .and_then(|socket| {
-                        socket.set_read_timeout(Some(self.timeout()))?;
-                        socket.set_write_timeout(Some(self.timeout()))?;
-                        Ok(socket)
-                    })
-                    .map(battleye::Client::new)?;
+                let client = UdpSocket::bind(if self.server.is_ipv4() {
+                    SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)
+                } else {
+                    SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
+                })
+                .and_then(|socket| {
+                    socket.set_read_timeout(Some(self.timeout()))?;
+                    socket.set_write_timeout(Some(self.timeout()))?;
+                    socket.connect(self.server)?;
+                    Ok(socket)
+                })
+                .map(battleye::Client::new)?;
                 Ok(Box::new(client))
             }
             Protocol::Source { quirks, .. } => {
