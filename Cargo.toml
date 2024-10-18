@@ -25,7 +25,7 @@ rpassword = { version = "7.3", optional = true }
 battleye = ["crc"]
 source = ["bitflags", "num-derive", "num-traits", "rand"]
 cli = ["clap/derive", "env_logger", "rpassword"]
-dayz = ["source"]
+dayz = ["battleye"]
 
 [[bin]]
 name = "rconclt"
@@ -33,7 +33,7 @@ required-features = ["battleye", "source", "cli"]
 
 [[example]]
 name = "dayz_rcon"
-required-features = ["battleye", "cli"]
+required-features = ["cli", "dayz"]
 
 [profile.release]
 strip = true

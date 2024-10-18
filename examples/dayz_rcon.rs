@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use clap::Parser;
 use log::error;
-use rcon::{battleye, RCon};
+use rcon::{battleye, dayz, Ban, Broadcast, Kick, RCon, Say};
 use rpassword::prompt_password;
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(5);
@@ -22,12 +22,48 @@ struct Args {
     timeout: u64,
     #[arg(short, long, help = "The password for the RCON server")]
     password: Option<String>,
-    #[arg(help = "The command to execute")]
-    command: Vec<Cow<'static, str>>,
+    #[clap(subcommand)]
+    command: Command,
+}
+
+#[derive(Debug, Parser)]
+#[command(subcommand_value_name = "COMMAND")]
+enum Command {
+    #[command(about = "Send a message to a player", name = "say")]
+    Say {
+        #[arg(help = "The player to send the message to")]
+        player: Cow<'static, str>,
+        #[arg(short, long, help = "The message")]
+        message: Cow<'static, str>,
+    },
+    #[command(about = "Send a broadcast message to all players", name = "broadcast")]
+    Broadcast {
+        #[arg(short, long, help = "The message")]
+        message: Cow<'static, str>,
+    },
+    #[command(about = "Kick a player from the server", name = "kick")]
+    Kick {
+        #[arg(short, long, help = "The player to kick")]
+        player: Cow<'static, str>,
+        #[arg(short, long, help = "An optional reason for the kick")]
+        reason: Option<Cow<'static, str>>,
+    },
+    #[command(about = "Ban a player from the server", name = "ban")]
+    Ban {
+        #[arg(short, long, help = "The player to ban")]
+        player: Cow<'static, str>,
+        #[arg(short, long, help = "An optional reason for the ban")]
+        reason: Option<Cow<'static, str>>,
+    },
+    #[command(about = "Execute a raw command", name = "exec")]
+    Exec {
+        #[arg(short, long, help = "The command to execute")]
+        command: Vec<Cow<'static, str>>,
+    },
 }
 
 impl Args {
-    fn client(&self) -> std::io::Result<battleye::Client> {
+    fn client(&self) -> std::io::Result<dayz::Client> {
         UdpSocket::bind(if self.server.is_ipv4() {
             SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)
         } else {
@@ -40,6 +76,7 @@ impl Args {
             Ok(socket)
         })
         .map(battleye::Client::new)
+        .map(Into::into)
     }
 
     const fn timeout(&self) -> Duration {
@@ -54,7 +91,6 @@ impl Args {
     }
 }
 
-// TODO: Implement DayZ specific features.
 fn main() {
     env_logger::init();
     let args = Args::parse();
@@ -73,14 +109,18 @@ fn main() {
         });
 
     if logged_in {
-        let result = client.run(args.command.as_slice()).unwrap_or_else(|error| {
+        match args.command {
+            Command::Say { player, message } => client.say(player, message),
+            Command::Broadcast { message } => client.broadcast(message),
+            Command::Kick { player, reason } => client.kick(player, reason),
+            Command::Ban { player, reason } => client.ban(player, reason),
+            Command::Exec { command } => client
+                .run(command.as_ref())
+                .and_then(|result| stdout().lock().write_all(&result)),
+        }
+        .unwrap_or_else(|error| {
             error!("{error}");
-            exit(5);
         });
-        stdout()
-            .lock()
-            .write_all(&result)
-            .expect("Could not write result to stdout.");
     } else {
         error!("Login failed.");
         exit(4);
