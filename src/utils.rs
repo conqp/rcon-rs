@@ -15,9 +15,10 @@ impl UdpSocketWrapper {
     ///
     /// Returns an [`std::io::Error`] if the binding of the inner socket fails.
     pub fn connect(address: SocketAddr) -> std::io::Result<Self> {
-        let socket = UdpSocket::bind(match address {
-            SocketAddr::V4(socket) => SocketAddr::new((*socket.ip()).into(), 0),
-            SocketAddr::V6(socket) => SocketAddr::new((*socket.ip()).into(), 0),
+        let socket = UdpSocket::bind(if address.is_ipv4() {
+            SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)
+        } else {
+            SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
         })?;
         debug!("UDP socket local address: {}", socket.local_addr()?);
         socket.connect(address)?;
