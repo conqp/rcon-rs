@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::net::{IpAddr, SocketAddr};
+use std::str::FromStr;
 use std::time::Duration;
 
 use uuid::Uuid;
@@ -64,10 +65,25 @@ pub trait Players {
 /// Information about a player.
 pub trait Player {
     /// Returns the player's ID.
-    fn id(&self) -> i64;
+    ///
+    /// This is the only mandatory method of `Player` and may return
+    /// the player's name or the string representation of a numeric ID.
+    ///
+    /// Its return value shall be a value that can be used to securely identify the player.
+    fn id(&self) -> Cow<'_, str>;
 
-    /// Returns the player's name.
-    fn name(&self) -> Cow<'_, str>;
+    /// Returns the player's ID.
+    fn numeric_id(&self) -> Option<i64> {
+        i64::from_str(self.name().as_ref()).ok()
+    }
+
+    /// The player's descriptive name.
+    ///
+    /// This defaults to the return value of [`id`](Self::id) but unlike the
+    /// latter this method should not be used to safely identify players.
+    fn name(&self) -> Cow<'_, str> {
+        self.id()
+    }
 
     /// Returns the player's UUID.
     fn uuid(&self) -> Option<Uuid> {
