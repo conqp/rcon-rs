@@ -24,6 +24,7 @@ pub trait Ban {
     fn ban(&mut self, player: Cow<'_, str>, reason: Option<Cow<'_, str>>) -> std::io::Result<()>;
 }
 
+/// Remove player bans.
 pub trait Unban {
     /// Remove a player ban from the server.
     ///
