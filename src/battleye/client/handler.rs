@@ -113,7 +113,7 @@ impl Handler {
             trace!("Error kind: {:?}", error.kind());
             trace!("Error source: {:?}", error.source());
 
-            if error.kind() != ErrorKind::TimedOut {
+            if error.kind() != ErrorKind::TimedOut && error.kind() != ErrorKind::WouldBlock {
                 error!("Failed to receive message: {error}");
             }
         }
