@@ -1,6 +1,5 @@
 use std::borrow::Cow;
-use std::io;
-use std::io::ErrorKind;
+use std::io::{Error, ErrorKind};
 use std::net::UdpSocket;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::SeqCst;
@@ -25,7 +24,7 @@ const DEFAULT_BUF_SIZE: usize = 1024;
 pub struct Client {
     running: Arc<AtomicBool>,
     requests: Sender<Request>,
-    responses: Receiver<Response>,
+    responses: Receiver<std::io::Result<Response>>,
     handler: Option<JoinHandle<()>>,
     buffer: Vec<command::Response>,
 }
@@ -65,7 +64,7 @@ impl Client {
         }
     }
 
-    fn communicate(&mut self, request: Request) -> io::Result<CommunicationResult> {
+    fn communicate(&mut self, request: Request) -> std::io::Result<CommunicationResult> {
         trace!("Sending request {:?}", request);
         self.requests
             .send(request)
@@ -77,7 +76,7 @@ impl Client {
         loop {
             debug!("Receiving response");
             match self.responses.recv() {
-                Ok(response) => match response {
+                Ok(response) => match response? {
                     Response::Command(response) => {
                         debug!("Received command response");
                         trace!("Received response {:?}", response);
@@ -123,22 +122,22 @@ impl Drop for Client {
 }
 
 impl RCon for Client {
-    fn login(&mut self, password: Cow<'_, str>) -> io::Result<bool> {
+    fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool> {
         match self.communicate(Request::Login(login::Request::from(password)))? {
             CommunicationResult::Login(response) => Ok(response.success()),
-            CommunicationResult::Command(_) => Err(io::Error::new(
+            CommunicationResult::Command(_) => Err(Error::new(
                 ErrorKind::InvalidData,
                 "Expected login response, but got a command response.",
             )),
         }
     }
 
-    fn run(&mut self, args: &[Cow<'_, str>]) -> io::Result<Vec<u8>> {
+    fn run(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<Vec<u8>> {
         let command = args.join(" ");
 
         match self.communicate(Request::Command(command::Request::from(command.as_str())))? {
             CommunicationResult::Command(bytes) => Ok(bytes),
-            CommunicationResult::Login(_) => Err(io::Error::new(
+            CommunicationResult::Login(_) => Err(Error::new(
                 ErrorKind::InvalidData,
                 "Expected command response, but got a login response.",
             )),

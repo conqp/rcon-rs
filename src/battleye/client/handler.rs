@@ -24,7 +24,7 @@ pub struct Handler {
     udp_socket: UdpSocket,
     running: Arc<AtomicBool>,
     requests: Receiver<Request>,
-    responses: Sender<Response>,
+    responses: Sender<std::io::Result<Response>>,
     interval: Option<Duration>,
     last_command: Option<SystemTime>,
     buffer: Vec<u8>,
@@ -36,7 +36,7 @@ impl Handler {
         udp_socket: UdpSocket,
         running: Arc<AtomicBool>,
         requests: Receiver<Request>,
-        responses: Sender<Response>,
+        responses: Sender<std::io::Result<Response>>,
         interval: Option<Duration>,
         buf_size: usize,
     ) -> Self {
@@ -131,7 +131,7 @@ impl Handler {
                 let response = command::Response::read_from(&mut bytes)
                     .map(|f| f(header))
                     .and_then(FromServer::validate)
-                    .map(Response::Command)?;
+                    .map(Response::Command);
                 trace!("Command response: {response:?}");
                 self.forward(response);
             }
@@ -140,7 +140,7 @@ impl Handler {
                 let response = login::Response::read_from(&mut bytes)
                     .map(|f| f(header))
                     .and_then(FromServer::validate)
-                    .map(Response::Login)?;
+                    .map(Response::Login);
                 trace!("Login response: {response:?}");
                 self.forward(response);
             }
@@ -165,7 +165,7 @@ impl Handler {
         Ok(&self.buffer[..len])
     }
 
-    fn forward(&self, response: Response) {
+    fn forward(&self, response: std::io::Result<Response>) {
         debug!("Forwarding response from UDP stream");
         trace!("Response: {response:?}");
 
