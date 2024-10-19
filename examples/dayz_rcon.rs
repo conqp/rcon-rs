@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use clap::Parser;
 use log::error;
-use rcon::{battleye, Ban, Broadcast, DayZ, Kick, Player, Players, RCon, Say};
+use rcon::{battleye, Ban, Broadcast, Kick, Player, Players, RCon, Say};
 use rpassword::prompt_password;
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(5);
