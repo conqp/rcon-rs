@@ -4,6 +4,8 @@ use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use std::time::Duration;
 
+use crate::extensions::types::PlayersMut;
+use crate::RCon;
 use uuid::Uuid;
 
 /// Send direct messages to players.
@@ -61,6 +63,27 @@ pub trait Players {
     ///
     /// Returns an [`std::io::Error`] if listing the players fails.
     fn players(&mut self) -> std::io::Result<Vec<Self::Player>>;
+
+    /// Returns an iterator over player proxies.
+    ///
+    /// Each player proxy also implements [`Player`] but also some other functionalities,
+    /// depending on the traits that the underlying RCON client implements.
+    ///
+    /// This can be used to call methods on players directly, such as messaging,
+    /// kicking and banning.
+    ///
+    /// Note that this method does not make any guarantees on the validity of the player information,
+    /// which may or may not change, while the proxy object is held, so use this with care.  
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if listing the players fails.
+    fn players_mut(&mut self) -> std::io::Result<PlayersMut<'_, Self>>
+    where
+        Self: RCon + Sized,
+    {
+        self.players().map(|players| PlayersMut::new(self, players))
+    }
 }
 
 /// Information about a player.

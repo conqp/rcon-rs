@@ -1,10 +1,39 @@
 use std::borrow::Cow;
 use std::net::{IpAddr, SocketAddr};
 use std::time::Duration;
-
+use std::vec::IntoIter;
 use uuid::Uuid;
 
-use crate::{Ban, Kick, Player, RCon, Say};
+use crate::{Ban, Kick, Player, Players, RCon, Say};
+
+/// An iterator over proxy objects of players on the server.
+#[derive(Debug)]
+pub struct PlayersMut<'client, C>
+where
+    C: RCon + Players,
+{
+    client: &'client mut C,
+    players: IntoIter<<C as Players>::Player>,
+}
+
+impl<'client, C> PlayersMut<'client, C>
+where
+    C: RCon + Players,
+{
+    pub(crate) fn new(client: &'client mut C, players: Vec<<C as Players>::Player>) -> Self {
+        Self {
+            client,
+            players: players.into_iter(),
+        }
+    }
+
+    /// Returns the next player proxy from the player list iterator.
+    pub fn next(&mut self) -> Option<PlayerProxy<'_, C, <C as Players>::Player>> {
+        self.players
+            .next()
+            .map(|player| PlayerProxy::new(self.client, player))
+    }
+}
 
 /// A proxy type to act on a player.
 #[derive(Debug)]
