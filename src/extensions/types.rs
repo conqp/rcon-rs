@@ -89,7 +89,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if banning  the player fails.
-    fn ban(&mut self, reason: Option<Cow<'_, str>>) -> std::io::Result<()>
+    pub fn ban(&mut self, reason: Option<Cow<'_, str>>) -> std::io::Result<()>
     where
         C: Ban,
     {
