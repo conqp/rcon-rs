@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use clap::Parser;
 use log::error;
-use rcon::{battleye, dayz, Ban, Broadcast, Kick, Players, RCon, Say};
+use rcon::{battleye, Ban, Broadcast, DayZ, Kick, Player, Players, RCon, Say};
 use rpassword::prompt_password;
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(5);
@@ -31,6 +31,14 @@ struct Args {
 enum Command {
     #[command(about = "List players on the server", name = "players")]
     Players,
+    #[command(
+        about = "Send a message directly to all players on the server",
+        name = "say-to-all"
+    )]
+    SayToAll {
+        #[arg(help = "The message")]
+        message: Cow<'static, str>,
+    },
     #[command(about = "Send a message to a player", name = "say")]
     Say {
         #[arg(help = "The player to send the message to")]
@@ -65,7 +73,7 @@ enum Command {
 }
 
 impl Args {
-    fn client(&self) -> std::io::Result<dayz::Client> {
+    fn client(&self) -> std::io::Result<battleye::Client> {
         UdpSocket::bind(if self.server.is_ipv4() {
             SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)
         } else {
@@ -115,6 +123,13 @@ fn main() {
             Command::Players => client
                 .players()
                 .map(|players| players.iter().for_each(|player| println!("{player:?}"))),
+            Command::SayToAll { message } => client.players_mut().map(|mut players| {
+                while let Some(mut player) = players.next() {
+                    player.say(message.clone()).unwrap_or_else(|error| {
+                        error!("Could not notify player #{}: {error}", player.id());
+                    });
+                }
+            }),
             Command::Say { player, message } => client.say(player, message),
             Command::Broadcast { message } => client.broadcast(message),
             Command::Kick { player, reason } => client.kick(player, reason),
