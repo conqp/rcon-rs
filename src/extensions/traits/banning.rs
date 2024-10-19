@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-/// Kick a player from the server.
+/// Kick players from the server.
 pub trait Kick {
     /// Kick a player from the server.
     ///
@@ -12,7 +12,7 @@ pub trait Kick {
     fn kick(&mut self, player: Cow<'_, str>, reason: Option<Cow<'_, str>>) -> std::io::Result<()>;
 }
 
-/// Kick a player from the server.
+/// Ban players from the server.
 pub trait Ban {
     /// Ban a player from the server.
     ///
