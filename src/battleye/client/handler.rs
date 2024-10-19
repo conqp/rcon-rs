@@ -108,18 +108,25 @@ impl Handler {
     fn process_incoming_messages(&mut self) {
         debug!("Processing incoming messages");
 
-        if let Err(error) = self.process_incoming_message_fallible() {
-            debug!("Error while processing incoming messages: {error}");
-            trace!("Error kind: {:?}", error.kind());
-            trace!("Error source: {:?}", error.source());
+        match self.process_incoming_message_fallible() {
+            Err(error) => {
+                debug!("Error while processing incoming messages: {error}");
+                trace!("Error kind: {:?}", error.kind());
+                trace!("Error source: {:?}", error.source());
 
-            if error.kind() != ErrorKind::TimedOut && error.kind() != ErrorKind::WouldBlock {
-                error!("Failed to receive message: {error}");
+                if error.kind() != ErrorKind::TimedOut && error.kind() != ErrorKind::WouldBlock {
+                    self.forward(Err(error));
+                }
+            }
+            Ok(result) => {
+                if let Some(response) = result {
+                    self.forward(Ok(response));
+                }
             }
         }
     }
 
-    fn process_incoming_message_fallible(&mut self) -> std::io::Result<()> {
+    fn process_incoming_message_fallible(&mut self) -> std::io::Result<Option<Response>> {
         debug!("Receiving packet from UDP socket");
         let mut bytes = self.receive()?.iter().copied();
         debug!("Parsing header from buffer");
@@ -132,18 +139,18 @@ impl Handler {
                 let response = command::Response::read_from(&mut bytes)
                     .map(|f| f(header))
                     .and_then(FromServer::validate)
-                    .map(Response::Command);
+                    .map(Response::Command)?;
                 trace!("Command response: {response:?}");
-                self.forward(response);
+                return Ok(Some(response));
             }
             login::TYPE => {
                 debug!("Received login response");
                 let response = login::Response::read_from(&mut bytes)
                     .map(|f| f(header))
                     .and_then(FromServer::validate)
-                    .map(Response::Login);
+                    .map(Response::Login)?;
                 trace!("Login response: {response:?}");
-                self.forward(response);
+                return Ok(Some(response));
             }
             server::TYPE => {
                 debug!("Received server message");
@@ -158,7 +165,7 @@ impl Handler {
             }
         };
 
-        Ok(())
+        Ok(None)
     }
 
     fn receive(&mut self) -> std::io::Result<&[u8]> {
