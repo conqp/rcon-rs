@@ -13,5 +13,3 @@ pub use quirks::Quirks;
 pub(crate) trait Source: RCon {}
 
 impl Source for Client {}
-
-impl<'a, T> Source for &'a mut T where T: Source {}

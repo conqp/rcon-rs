@@ -12,5 +12,3 @@ pub use client::Client;
 pub(crate) trait BattlEye: RCon {}
 
 impl BattlEye for Client {}
-
-impl<'a, T> BattlEye for &'a mut T where T: BattlEye {}

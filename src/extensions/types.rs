@@ -28,12 +28,7 @@ where
     }
 
     /// Returns the next player proxy from the player list iterator.
-    pub fn next<'borrow>(
-        &'borrow mut self,
-    ) -> Option<PlayerProxy<&'borrow mut C, <C as Players>::Player>>
-    where
-        &'borrow mut C: RCon,
-    {
+    pub fn next(&mut self) -> Option<PlayerProxy<C, <C as Players>::Player>> {
         self.players
             .next()
             .map(|player| PlayerProxy::new(&mut *self.client, player))
@@ -42,21 +37,21 @@ where
 
 /// A proxy type to act on a player.
 #[derive(Debug)]
-pub struct PlayerProxy<C, P>
+pub struct PlayerProxy<'client, C, P>
 where
     C: RCon,
     P: Player,
 {
-    client: C,
+    client: &'client mut C,
     player: P,
 }
 
-impl<C, P> PlayerProxy<C, P>
+impl<'client, C, P> PlayerProxy<'client, C, P>
 where
     C: RCon,
     P: Player,
 {
-    pub(crate) const fn new(client: C, player: P) -> Self {
+    pub(crate) fn new(client: &'client mut C, player: P) -> Self {
         Self { client, player }
     }
 
@@ -69,7 +64,7 @@ where
     where
         C: Say,
     {
-        Say::say(&mut self.client, self.player.id(), message)
+        Say::say(self.client, self.player.id(), message)
     }
 
     /// Kick this player from the server.
@@ -83,7 +78,7 @@ where
     where
         C: Kick,
     {
-        Kick::kick(&mut self.client, self.player.id(), reason)
+        Kick::kick(self.client, self.player.id(), reason)
     }
 
     /// Ban this player from the server.
@@ -97,11 +92,11 @@ where
     where
         C: Ban,
     {
-        Ban::ban(&mut self.client, self.player.id(), reason)
+        Ban::ban(self.client, self.player.id(), reason)
     }
 }
 
-impl<C, P> Player for PlayerProxy<C, P>
+impl<'client, C, P> Player for PlayerProxy<'client, C, P>
 where
     C: RCon,
     P: Player,
