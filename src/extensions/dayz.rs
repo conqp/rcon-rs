@@ -1,7 +1,8 @@
 //! Extension of the `BattlEye Rcon` client for `DayZ` server.
 
+use crate::battleye::Client;
 use crate::extensions::traits::{Ban, Kick};
-use crate::{battleye, Broadcast, Players, RCon, Say};
+use crate::{Broadcast, Players, RCon, Say};
 use log::warn;
 use player::Player;
 use std::borrow::Cow;
@@ -13,24 +14,23 @@ mod player;
 const BROADCAST_TARGET: &str = "-1";
 
 /// Extended `BattlEye Rcon` client for `DayZ` servers.
-#[derive(Debug)]
-pub struct Client {
-    inner: battleye::Client,
-}
+pub trait DayZ {}
 
-impl From<battleye::Client> for Client {
-    fn from(client: battleye::Client) -> Self {
-        Self { inner: client }
-    }
-}
+impl DayZ for Client {}
 
-impl Say for Client {
+impl Say for Client
+where
+    Self: DayZ,
+{
     fn say(&mut self, target: Cow<'_, str>, message: Cow<'_, str>) -> std::io::Result<()> {
         self.run(&["say".into(), target, message]).map(drop)
     }
 }
 
-impl Kick for Client {
+impl Kick for Client
+where
+    Self: DayZ,
+{
     fn kick(&mut self, player: Cow<'_, str>, reason: Option<Cow<'_, str>>) -> std::io::Result<()> {
         if let Some(reason) = reason {
             self.run(&["kick".into(), player, reason])
@@ -41,7 +41,10 @@ impl Kick for Client {
     }
 }
 
-impl Ban for Client {
+impl Ban for Client
+where
+    Self: DayZ,
+{
     fn ban(&mut self, player: Cow<'_, str>, reason: Option<Cow<'_, str>>) -> std::io::Result<()> {
         if let Some(reason) = reason {
             self.run(&["ban".into(), player, reason])
@@ -52,13 +55,19 @@ impl Ban for Client {
     }
 }
 
-impl Broadcast for Client {
+impl Broadcast for Client
+where
+    Self: DayZ,
+{
     fn broadcast(&mut self, message: Cow<'_, str>) -> std::io::Result<()> {
         self.say(BROADCAST_TARGET.into(), message)
     }
 }
 
-impl Players for Client {
+impl Players for Client
+where
+    Self: DayZ,
+{
     type Player = Player;
 
     fn players(&mut self) -> std::io::Result<Vec<Self::Player>> {
@@ -82,15 +91,5 @@ impl Players for Client {
             })
             .collect();
         Ok(players)
-    }
-}
-
-impl RCon for Client {
-    fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool> {
-        self.inner.login(password)
-    }
-
-    fn run(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<Vec<u8>> {
-        self.inner.run(args)
     }
 }
