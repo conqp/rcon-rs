@@ -9,9 +9,6 @@ mod extensions;
 #[cfg(feature = "source")]
 pub mod source;
 
-#[cfg(feature = "dayz")]
-pub use extensions::dayz;
-
 pub use extensions::*;
 
 /// Common API for `RCON` protocol clients
