@@ -28,7 +28,7 @@ where
     }
 
     /// Returns the next player proxy from the player list iterator.
-    pub fn next(&mut self) -> Option<PlayerProxy<C, <C as Players>::Player>> {
+    pub fn next(&mut self) -> Option<PlayerProxy<'_, C, <C as Players>::Player>> {
         self.players
             .next()
             .map(|player| PlayerProxy::new(&mut *self.client, player))
