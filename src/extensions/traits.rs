@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::fmt::Debug;
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use std::time::Duration;
@@ -63,7 +64,7 @@ pub trait Players {
 }
 
 /// Information about a player.
-pub trait Player {
+pub trait Player: Debug {
     /// Returns the player's ID.
     ///
     /// This is the only mandatory method of `Player` and may return
