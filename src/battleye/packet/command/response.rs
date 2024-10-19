@@ -1,8 +1,9 @@
-use std::io::ErrorKind;
-use std::sync::Arc;
-
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
+use std::io::ErrorKind;
+use std::sync::Arc;
+use tokio::io::AsyncReadExt;
+use udp_stream::UdpStream;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Response {
@@ -21,15 +22,10 @@ impl Response {
         }
     }
 
-    pub fn read_from<T>(mut src: T) -> std::io::Result<impl FnOnce(Header) -> Self>
-    where
-        T: Iterator<Item = u8>,
-    {
-        let seq = src
-            .next()
-            .ok_or_else(|| std::io::Error::from(ErrorKind::UnexpectedEof))?;
-        let payload: Vec<u8> = src.collect();
-        Ok(move |header| Self::new(header, seq, payload.into()))
+    pub async fn read_from(src: &mut UdpStream) -> std::io::Result<impl FnOnce(Header) -> Self> {
+        let mut buffer = Vec::new();
+        src.read_to_end(&mut buffer).await?;
+        Ok(move |header| Self::new(header, buffer, payload.into()))
     }
 
     #[must_use]

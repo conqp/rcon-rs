@@ -1,14 +1,15 @@
 use std::borrow::Cow;
 use std::io::{Error, ErrorKind};
-use std::net::UdpSocket;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::SeqCst;
-use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Arc;
-use std::thread::{spawn, JoinHandle};
 use std::time::Duration;
 
 use log::{debug, trace};
+use tokio::spawn;
+use tokio::sync::mpsc::{channel, Receiver, Sender};
+use tokio::task::JoinHandle;
+use udp_stream::UdpStream;
 
 use crate::battleye::client::handler::Handler;
 use crate::battleye::packet::{command, login, CommunicationResult, Request, Response};
@@ -18,6 +19,7 @@ mod handler;
 
 const DEFAULT_HANDLER_INTERVAL: Duration = Duration::from_millis(100);
 const DEFAULT_BUF_SIZE: usize = 1024;
+const DEFAULT_CHANNEL_SIZE: usize = 8;
 
 /// A `BattlEye Rcon` client.
 #[derive(Debug)]
@@ -32,22 +34,28 @@ pub struct Client {
 impl Client {
     /// Creates a new instance of the client.
     #[must_use]
-    pub fn new(udp_socket: UdpSocket) -> Self {
-        Self::new_ext(udp_socket, DEFAULT_BUF_SIZE, Some(DEFAULT_HANDLER_INTERVAL))
+    pub fn new(udp_stream: UdpStream) -> Self {
+        Self::new_ext(
+            udp_stream,
+            DEFAULT_BUF_SIZE,
+            DEFAULT_CHANNEL_SIZE,
+            Some(DEFAULT_HANDLER_INTERVAL),
+        )
     }
 
     /// Creates a new instance of the client with additional information.
     #[must_use]
     pub fn new_ext(
-        udp_socket: UdpSocket,
+        udp_stream: UdpStream,
         buf_size: usize,
+        channel_size: usize,
         handler_interval: Option<Duration>,
     ) -> Self {
         let running = Arc::new(AtomicBool::new(true));
-        let (request_tx, request_rx) = channel();
-        let (response_tx, response_rx) = channel();
+        let (request_tx, request_rx) = channel(channel_size);
+        let (response_tx, response_rx) = channel(channel_size);
         let handler = Handler::new(
-            udp_socket,
+            udp_stream,
             running.clone(),
             request_rx,
             response_tx,
@@ -64,10 +72,11 @@ impl Client {
         }
     }
 
-    fn communicate(&mut self, request: Request) -> std::io::Result<CommunicationResult> {
+    async fn communicate(&mut self, request: Request) -> std::io::Result<CommunicationResult> {
         trace!("Sending request {:?}", request);
         self.requests
             .send(request)
+            .await
             .map_err(|_| ErrorKind::BrokenPipe)?;
 
         debug!("Clearing buffer");
@@ -75,8 +84,8 @@ impl Client {
 
         loop {
             debug!("Receiving response");
-            match self.responses.recv() {
-                Ok(response) => match response? {
+            match self.responses.recv().await {
+                Some(response) => match response? {
                     Response::Command(response) => {
                         debug!("Received command response");
                         trace!("Received response {:?}", response);
@@ -96,7 +105,7 @@ impl Client {
                         return Ok(CommunicationResult::Login(response));
                     }
                 },
-                Err(_) => return Err(ErrorKind::BrokenPipe.into()),
+                None => return Err(ErrorKind::BrokenPipe.into()),
             }
         }
     }
@@ -116,14 +125,17 @@ impl Drop for Client {
         self.running.store(false, SeqCst);
 
         if let Some(handler) = self.handler.take() {
-            handler.join().expect("Failed to join handler");
+            handler.abort();
         }
     }
 }
 
 impl RCon for Client {
-    fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool> {
-        match self.communicate(Request::Login(login::Request::from(password)))? {
+    async fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool> {
+        match self
+            .communicate(Request::Login(login::Request::from(password)))
+            .await?
+        {
             CommunicationResult::Login(response) => Ok(response.success()),
             CommunicationResult::Command(_) => Err(Error::new(
                 ErrorKind::InvalidData,
@@ -132,10 +144,13 @@ impl RCon for Client {
         }
     }
 
-    fn run(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<Vec<u8>> {
+    async fn run(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<Vec<u8>> {
         let command = args.join(" ");
 
-        match self.communicate(Request::Command(command::Request::from(command.as_str())))? {
+        match self
+            .communicate(Request::Command(command::Request::from(command.as_str())))
+            .await?
+        {
             CommunicationResult::Command(bytes) => Ok(bytes),
             CommunicationResult::Login(_) => Err(Error::new(
                 ErrorKind::InvalidData,

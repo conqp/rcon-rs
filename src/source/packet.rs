@@ -1,11 +1,11 @@
 use std::borrow::Cow;
-use std::io::Read;
-use std::net::TcpStream;
 use std::num::TryFromIntError;
 
 use log::{debug, trace, warn};
 use num_traits::FromPrimitive;
 use rand::{thread_rng, Rng};
+use tokio::io::AsyncReadExt;
+use tokio::net::TcpStream;
 
 use super::quirks::Quirks;
 use super::server_data::ServerData;
@@ -66,22 +66,22 @@ impl Packet {
         )
     }
 
-    pub fn read_from(source: &mut TcpStream) -> std::io::Result<Self> {
+    pub async fn read_from(source: &mut TcpStream) -> std::io::Result<Self> {
         let mut buffer = [0; size_of::<i32>()];
         debug!("Reading payload size.");
-        source.read_exact(&mut buffer)?;
+        source.read_exact(&mut buffer).await?;
         let size: usize = i32::from_le_bytes(buffer)
             .try_into()
             .map_err(invalid_data)?;
         trace!("Packet size is {size}.");
 
         debug!("Reading packet ID.");
-        source.read_exact(&mut buffer)?;
+        source.read_exact(&mut buffer).await?;
         let id = i32::from_le_bytes(buffer);
         trace!("Packet ID is {id}.");
 
         debug!("Reading packet type.");
-        source.read_exact(&mut buffer)?;
+        source.read_exact(&mut buffer).await?;
         let type_id = i32::from_le_bytes(buffer);
         let typ = ServerData::from_i32(type_id)
             .ok_or_else(|| invalid_data(format!("Invalid packet type: {type_id:#010X}")))?;
@@ -94,12 +94,12 @@ impl Packet {
                 size.checked_sub(OFFSET)
                     .ok_or_else(|| invalid_data(format!("Invalid payload size: {size}")))?
             ];
-        source.read_exact(&mut payload)?;
+        source.read_exact(&mut payload).await?;
         trace!("Packet payload is {payload:?}.");
 
         debug!("Reading terminator.");
         let mut terminator = [0; 2];
-        source.read_exact(&mut terminator)?;
+        source.read_exact(&mut terminator).await?;
         trace!("Packet terminator is {terminator:?}.");
 
         if terminator != TERMINATOR {

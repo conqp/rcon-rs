@@ -2,6 +2,7 @@
 
 use std::borrow::Cow;
 use std::fmt::Debug;
+use std::future::Future;
 use std::io::{Error, ErrorKind};
 
 #[cfg(feature = "battleye")]
@@ -23,7 +24,10 @@ pub trait RCon: Debug {
     /// # Errors
     ///
     /// Returns an [`Error`] if any I/O errors occurred.
-    fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool>;
+    fn login(
+        &mut self,
+        password: Cow<'_, str>,
+    ) -> impl Future<Output = std::io::Result<bool>> + Send;
 
     /// Run a command.
     ///
@@ -34,7 +38,10 @@ pub trait RCon: Debug {
     /// # Errors
     ///
     /// Returns an [`Error`] if any I/O errors occurred.
-    fn run(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<Vec<u8>>;
+    fn run(
+        &mut self,
+        args: &[Cow<'_, str>],
+    ) -> impl Future<Output = std::io::Result<Vec<u8>>> + Send;
 
     /// Run a command.
     ///
@@ -45,10 +52,18 @@ pub trait RCon: Debug {
     /// # Errors
     ///
     /// Returns an [`Error`] if any I/O errors occurred or if the returned bytes are not valid UTF-8.
-    fn run_utf8(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<String> {
-        self.run(args).and_then(|bytes| {
-            String::from_utf8(bytes).map_err(|error| Error::new(ErrorKind::InvalidData, error))
-        })
+    fn run_utf8(
+        &mut self,
+        args: &[Cow<'_, str>],
+    ) -> impl Future<Output = std::io::Result<String>> + Send
+    where
+        Self: Send,
+    {
+        async {
+            self.run(args).await.and_then(|bytes| {
+                String::from_utf8(bytes).map_err(|error| Error::new(ErrorKind::InvalidData, error))
+            })
+        }
     }
 
     /// Run a command.
@@ -65,8 +80,17 @@ pub trait RCon: Debug {
     /// # Errors
     ///
     /// Returns an [`Error`] if any I/O errors occurred.
-    fn run_utf8_lossy(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<String> {
-        self.run(args)
-            .map(|bytes| String::from_utf8_lossy(&bytes).to_string())
+    fn run_utf8_lossy(
+        &mut self,
+        args: &[Cow<'_, str>],
+    ) -> impl Future<Output = std::io::Result<String>> + Send
+    where
+        Self: Send,
+    {
+        async {
+            self.run(args)
+                .await
+                .map(|bytes| String::from_utf8_lossy(&bytes).to_string())
+        }
     }
 }
