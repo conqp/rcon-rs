@@ -63,22 +63,12 @@ impl Client {
                     if packet.typ == ServerData::ResponseValue {
                         if packet.id == sentinel_id {
                             debug!("Received sentinel packet");
-                            return Ok(self
-                                .buffer
-                                .iter()
-                                .flat_map(|response| &response.payload)
-                                .copied()
-                                .collect());
-                        } else if packet.id == command_id || self.quirks.contains(Quirks::PALWORLD)
-                        {
-                            debug!("Received data packet");
-                            self.buffer.push(packet);
-                        } else {
-                            return Err(invalid_data(format!(
-                                "Packet ID mismatch: {} != {command_id}",
-                                packet.id
-                            )));
+                            return Ok(self.collect_buffer());
                         }
+
+                        packet.validate(command_id, self.quirks)?;
+                        debug!("Received data packet");
+                        self.buffer.push(packet);
                     }
                 }
                 ServerData::Auth => {
@@ -87,6 +77,14 @@ impl Client {
                 }
             }
         }
+    }
+
+    fn collect_buffer(&self) -> Vec<u8> {
+        self.buffer
+            .iter()
+            .flat_map(|response| &response.payload)
+            .copied()
+            .collect()
     }
 }
 

@@ -7,6 +7,7 @@ use log::{debug, trace, warn};
 use num_traits::FromPrimitive;
 use rand::{thread_rng, Rng};
 
+use super::quirks::Quirks;
 use super::server_data::ServerData;
 use super::util::invalid_data;
 
@@ -110,6 +111,20 @@ impl Packet {
 
     pub fn size(&self) -> usize {
         self.payload.len() + OFFSET
+    }
+
+    pub fn validate(&self, id: i32, quirks: Quirks) -> std::io::Result<()> {
+        if self.id == id {
+            Ok(())
+        } else if self.id == 0x00 && quirks.contains(Quirks::PALWORLD) {
+            debug!("Packet ID does not match, but accepting packet due to Palworld quirk.");
+            Ok(())
+        } else {
+            Err(invalid_data(format!(
+                "Packet ID mismatch: {} != {id}",
+                self.id
+            )))
+        }
     }
 }
 
