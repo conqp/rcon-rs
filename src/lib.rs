@@ -16,9 +16,13 @@ pub use extensions::*;
 pub trait RCon: Debug {
     /// Perform a login.
     ///
+    /// # Returns
+    ///
+    /// Returns `true` if the login succeeded, otherwise `false`.
+    ///
     /// # Errors
     ///
-    /// Returns an [`Error`] if any I/O errors occurred or if the login failed.
+    /// Returns an [`Error`] if any I/O errors occurred.
     fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool>;
 
     /// Run a command.
