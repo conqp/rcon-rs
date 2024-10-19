@@ -28,6 +28,7 @@ where
     }
 
     /// Returns the next player proxy from the player list iterator.
+    #[allow(clippy::should_implement_trait)]
     pub fn next(&mut self) -> Option<PlayerProxy<'_, C, <C as Players>::Player>> {
         self.players
             .next()
