@@ -64,7 +64,7 @@ pub trait RCon: Debug {
     ///
     /// # Errors
     ///
-    /// Returns an [`Error`] if any I/O errors occurred or if the returned bytes are not valid UTF-8.
+    /// Returns an [`Error`] if any I/O errors occurred.
     fn run_utf8_lossy(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<String> {
         self.run(args)
             .map(|bytes| String::from_utf8_lossy(&bytes).to_string())
