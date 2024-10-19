@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use crate::{PlayersMut, RCon};
 
-/// List players on the server.
+/// Manage players on the server.
 pub trait Players {
     /// The player type that is being returned.
     type Player: Player;
