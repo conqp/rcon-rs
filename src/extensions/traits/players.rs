@@ -1,10 +1,12 @@
-use crate::{PlayersMut, RCon};
 use std::borrow::Cow;
 use std::fmt::Debug;
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use std::time::Duration;
+
 use uuid::Uuid;
+
+use crate::{PlayersMut, RCon};
 
 /// List players on the server.
 pub trait Players {
