@@ -25,7 +25,7 @@ pub trait RCon: Debug {
     /// Returns an [`Error`] if any I/O errors occurred.
     fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool>;
 
-    /// Run a command.
+    /// Run a command returning the raw bytes from the server's response.
     ///
     /// # Errors
     ///
