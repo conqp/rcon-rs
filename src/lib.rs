@@ -1,6 +1,7 @@
 //! A common interface for different `RCON` protocols.
 
 use std::borrow::Cow;
+use std::fmt::Debug;
 
 #[cfg(feature = "battleye")]
 pub mod battleye;
@@ -14,7 +15,7 @@ pub use extensions::dayz;
 pub use extensions::{Ban, Broadcast, Kick, Player, Players, Say};
 
 /// Common API for `RCON` protocol clients
-pub trait RCon {
+pub trait RCon: Debug {
     /// Perform a login.
     ///
     /// # Errors
