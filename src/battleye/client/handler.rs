@@ -120,8 +120,9 @@ impl Handler {
     }
 
     fn process_incoming_message_fallible(&mut self) -> std::io::Result<()> {
+        debug!("Receiving packet from UDP socket");
         let mut bytes = self.receive()?.iter().copied();
-        debug!("Receiving packet from UDP stream");
+        debug!("Parsing header from buffer");
         let header = Header::read_from(&mut bytes)?;
         trace!("Received header: {header:?}");
 
