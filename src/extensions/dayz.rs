@@ -14,7 +14,7 @@ mod player;
 const BROADCAST_TARGET: &str = "-1";
 
 /// Extended `BattlEye Rcon` client for `DayZ` servers.
-pub trait DayZ: RCon + BattlEye {}
+trait DayZ: RCon + BattlEye {}
 
 impl<T> DayZ for T where T: RCon + BattlEye {}
 
