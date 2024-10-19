@@ -1,7 +1,7 @@
 mod banning;
 mod messaging;
-mod players;
+mod player_management;
 
 pub use banning::*;
 pub use messaging::*;
-pub use players::*;
+pub use player_management::*;

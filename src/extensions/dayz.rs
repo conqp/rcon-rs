@@ -1,15 +1,22 @@
-use crate::battleye::BattlEye;
-use crate::extensions::traits::{Ban, Kick};
-use crate::{Broadcast, Players, RCon, Say};
-use log::warn;
-use player::Player;
 use std::borrow::Cow;
 use std::io::ErrorKind;
 use std::str::FromStr;
+use std::time::Duration;
 
+use log::warn;
+
+use crate::battleye::BattlEye;
+use crate::extensions::traits::{Ban, Kick};
+use crate::{AddBan, Bans, Broadcast, Players, RCon, RemoveBan, Say, Target};
+
+use ban_list_entry::{BanListEntry, PERM_BAN, SECS_PER_MINUTE};
+use player::Player;
+
+mod ban_list_entry;
 mod player;
 
 const BROADCAST_TARGET: &str = "-1";
+const INVALID_BAN_FORMAT_MESSAGE: &str = "Invalid ban format";
 
 /// Extended `BattlEye Rcon` client for `DayZ` servers.
 trait DayZ: RCon + BattlEye {}
@@ -50,6 +57,79 @@ where
             self.run(&["ban".into(), player])
         }
         .map(drop)
+    }
+}
+
+impl<T> Bans for T
+where
+    T: DayZ,
+{
+    type BanListEntry = BanListEntry;
+
+    fn bans(&mut self) -> std::io::Result<impl Iterator<Item = Self::BanListEntry>> {
+        self.run_utf8_lossy(&["bans".into()]).map(|text| {
+            text.lines()
+                .filter(|line| line.chars().next().map_or(false, char::is_numeric))
+                .filter_map(|line| {
+                    BanListEntry::from_str(line)
+                        .inspect_err(|error| warn!(r#"Invalid ban list entry "{line}": {error}"#))
+                        .ok()
+                })
+                .collect::<Vec<_>>()
+                .into_iter()
+        })
+    }
+}
+
+impl<T> AddBan for T
+where
+    T: DayZ,
+{
+    fn add_ban(
+        &mut self,
+        ban: Target,
+        duration: Option<Duration>,
+        reason: Option<Cow<'_, str>>,
+    ) -> std::io::Result<()> {
+        let mut args: Vec<Cow<'_, str>> = vec!["addBan".into()];
+
+        match ban {
+            Target::Ip(ip) => args.push(ip.to_string().into()),
+            Target::Uuid(uuid) => args.push(uuid.to_string().replace('-', "").into()),
+        }
+
+        if let Some(duration) = duration {
+            args.push((duration.as_secs() / SECS_PER_MINUTE).to_string().into());
+        } else if reason.is_some() {
+            args.push(PERM_BAN.into());
+        }
+
+        // FIXME: The appended reason currently does not appear in the ban list.
+        // TODO: Investigate this.
+        if let Some(reason) = reason {
+            args.push(reason);
+        }
+
+        self.run(&args).and_then(|response| {
+            if response == INVALID_BAN_FORMAT_MESSAGE.as_bytes() {
+                Err(std::io::Error::new(
+                    ErrorKind::InvalidData,
+                    INVALID_BAN_FORMAT_MESSAGE,
+                ))
+            } else {
+                Ok(())
+            }
+        })
+    }
+}
+
+impl<T> RemoveBan for T
+where
+    T: DayZ,
+{
+    fn remove_ban(&mut self, id: u64) -> std::io::Result<()> {
+        self.run(&["removeBan".into(), id.to_string().into()])
+            .map(drop)
     }
 }
 
