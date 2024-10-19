@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use clap::Parser;
 use log::error;
-use rcon::{battleye, Ban, Broadcast, Kick, Player, Players, RCon, Say};
+use rcon::{battleye, Ban, Bans, Broadcast, Kick, Player, Players, RCon, Say};
 use rpassword::prompt_password;
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(5);
@@ -65,6 +65,8 @@ enum Command {
         #[arg(short, long, help = "An optional reason for the ban")]
         reason: Option<Cow<'static, str>>,
     },
+    #[command(about = "Show the ban list", name = "bans")]
+    Bans,
     #[command(about = "Execute a raw command", name = "exec")]
     Exec {
         #[arg(help = "The command to execute")]
@@ -138,6 +140,9 @@ fn main() {
             Command::Broadcast { message } => client.broadcast(message),
             Command::Kick { player, reason } => client.kick(player, reason),
             Command::Ban { player, reason } => client.ban(player, reason),
+            Command::Bans => client
+                .bans()
+                .map(|bans| bans.for_each(|ban| println!("{ban:?}"))),
             Command::Exec { command } => client
                 .run(command.as_ref())
                 .and_then(|result| stdout().lock().write_all(&result)),
