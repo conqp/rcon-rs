@@ -1,6 +1,6 @@
 #![cfg(feature = "dayz")]
 
-use crate::battleye::Client;
+use crate::battleye::BattlEye;
 use crate::extensions::traits::{Ban, Kick};
 use crate::{Broadcast, Players, RCon, Say};
 use log::warn;
@@ -14,22 +14,22 @@ mod player;
 const BROADCAST_TARGET: &str = "-1";
 
 /// Extended `BattlEye Rcon` client for `DayZ` servers.
-pub trait DayZ {}
+pub trait DayZ: RCon + BattlEye {}
 
-impl DayZ for Client {}
+impl<T> DayZ for T where T: RCon + BattlEye {}
 
-impl Say for Client
+impl<T> Say for T
 where
-    Self: DayZ,
+    T: DayZ,
 {
     fn say(&mut self, target: Cow<'_, str>, message: Cow<'_, str>) -> std::io::Result<()> {
         self.run(&["say".into(), target, message]).map(drop)
     }
 }
 
-impl Kick for Client
+impl<T> Kick for T
 where
-    Self: DayZ,
+    T: DayZ,
 {
     fn kick(&mut self, player: Cow<'_, str>, reason: Option<Cow<'_, str>>) -> std::io::Result<()> {
         if let Some(reason) = reason {
@@ -41,9 +41,9 @@ where
     }
 }
 
-impl Ban for Client
+impl<T> Ban for T
 where
-    Self: DayZ,
+    T: DayZ,
 {
     fn ban(&mut self, player: Cow<'_, str>, reason: Option<Cow<'_, str>>) -> std::io::Result<()> {
         if let Some(reason) = reason {
@@ -55,18 +55,18 @@ where
     }
 }
 
-impl Broadcast for Client
+impl<T> Broadcast for T
 where
-    Self: DayZ,
+    T: DayZ,
 {
     fn broadcast(&mut self, message: Cow<'_, str>) -> std::io::Result<()> {
         self.say(BROADCAST_TARGET.into(), message)
     }
 }
 
-impl Players for Client
+impl<T> Players for T
 where
-    Self: DayZ,
+    T: DayZ,
 {
     type Player = Player;
 
