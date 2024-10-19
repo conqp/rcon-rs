@@ -25,14 +25,22 @@ pub trait RCon: Debug {
     /// Returns an [`Error`] if any I/O errors occurred.
     fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool>;
 
-    /// Run a command returning the raw bytes from the server's response.
+    /// Run a command.
+    ///
+    /// # Returns
+    ///
+    /// Returns the raw bytes from the server's response.
     ///
     /// # Errors
     ///
     /// Returns an [`Error`] if any I/O errors occurred.
     fn run(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<Vec<u8>>;
 
-    /// Run a command returning a valid UTF-8 string.
+    /// Run a command.
+    ///
+    /// # Returns
+    ///
+    /// Returns a valid UTF-8 string.
     ///
     /// # Errors
     ///
@@ -43,7 +51,11 @@ pub trait RCon: Debug {
         })
     }
 
-    /// Run a command returning a valid UTF-8 string.
+    /// Run a command.
+    ///
+    /// # Returns
+    ///
+    /// Returns a valid UTF-8 string that may be truncated.
     ///
     /// This command will not error when the returned bytes contain
     /// invalid UTF-8 bytes, but will replace them accordingly.
