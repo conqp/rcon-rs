@@ -1,4 +1,4 @@
-//! Extension of the `BattlEye Rcon` client for `DayZ` server.
+#![cfg(feature = "dayz")]
 
 use crate::battleye::Client;
 use crate::extensions::traits::{Ban, Kick};
