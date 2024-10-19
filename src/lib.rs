@@ -25,3 +25,16 @@ pub trait RCon: Debug {
     /// Returns an [`std::io::Error`] on errors.
     fn run(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<Vec<u8>>;
 }
+
+impl<'a, T> RCon for &'a mut T
+where
+    T: RCon,
+{
+    fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool> {
+        <T as RCon>::login(self, password)
+    }
+
+    fn run(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<Vec<u8>> {
+        <T as RCon>::run(*self, args)
+    }
+}
