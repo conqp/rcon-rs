@@ -56,7 +56,7 @@ where
     C: RCon,
     P: Player,
 {
-    pub(crate) fn new(client: C, player: P) -> Self {
+    pub(crate) const fn new(client: C, player: P) -> Self {
         Self { client, player }
     }
 
