@@ -126,7 +126,11 @@ fn main() {
             Command::SayToAll { message } => client.players_mut().map(|mut players| {
                 while let Some(mut player) = players.next() {
                     player.say(message.clone()).unwrap_or_else(|error| {
-                        error!("Could not notify player #{}: {error}", player.id());
+                        error!(
+                            "Could not notify player #{} ({}): {error}",
+                            player.id(),
+                            player.name()
+                        );
                     });
                 }
             }),
