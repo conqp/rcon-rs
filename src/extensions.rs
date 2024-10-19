@@ -1,4 +1,4 @@
-#![cfg(feature = "dayz")]
+#[cfg(feature = "dayz")]
 mod dayz;
 mod traits;
 mod types;
