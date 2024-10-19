@@ -10,8 +10,7 @@ use crate::RCon;
 pub use client::Client;
 pub use quirks::Quirks;
 
-/// A trait to identify `Source RCON` clients.
-pub trait Source: RCon {}
+pub(crate) trait Source: RCon {}
 
 impl Source for Client {}
 
