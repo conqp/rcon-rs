@@ -1,5 +1,3 @@
-#![cfg(feature = "dayz")]
-
 use crate::battleye::BattlEye;
 use crate::extensions::traits::{Ban, Kick};
 use crate::{Broadcast, Players, RCon, Say};
