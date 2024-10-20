@@ -11,8 +11,8 @@ use log::warn;
 use crate::battleye::BattlEye;
 use crate::RCon;
 
+use banning::SECS_PER_MINUTE;
 pub use banning::{BanListEntry, Target};
-use banning::{PERM_BAN, SECS_PER_MINUTE};
 pub use player::Player;
 
 mod banning;
@@ -173,11 +173,12 @@ where
             Target::Uuid(uuid) => args.push(uuid.to_string().replace('-', "").into()),
         }
 
-        if let Some(duration) = duration {
-            args.push((duration.as_secs() / SECS_PER_MINUTE).to_string().into());
-        } else if reason.is_some() {
-            args.push(PERM_BAN.into());
-        }
+        args.push(
+            duration
+                .map_or(0, |duration| duration.as_secs() / SECS_PER_MINUTE)
+                .to_string()
+                .into(),
+        );
 
         // FIXME: The appended reason currently does not appear in the ban list.
         // TODO: Investigate this.
