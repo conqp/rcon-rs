@@ -1,14 +1,15 @@
-use super::packet::Packet;
-use super::quirks::Quirks;
-use super::server_data::ServerData;
-use super::util::invalid_data;
-use crate::RCon;
 use std::borrow::Cow;
 use std::net::SocketAddr;
 
 use log::{debug, error, trace};
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
+
+use super::packet::Packet;
+use super::quirks::Quirks;
+use super::server_data::ServerData;
+use super::util::invalid_data;
+use crate::RCon;
 
 /// A Source `RCON` client.
 #[derive(Debug)]
