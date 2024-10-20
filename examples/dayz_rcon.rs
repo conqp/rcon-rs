@@ -150,7 +150,7 @@ async fn main() -> ExitCode {
         Command::Players => client
             .players()
             .await
-            .map(|players| players.iter().for_each(|player| println!("{player:?}"))),
+            .map(|players| players.iter().for_each(|player| println!("{player}"))),
         Command::SayToAll { message } => match client.players_mut().await {
             Ok(mut players) => {
                 while let Some(mut player) = players.next() {
@@ -174,7 +174,7 @@ async fn main() -> ExitCode {
         Command::Bans => client
             .bans()
             .await
-            .map(|bans| bans.for_each(|ban| println!("{ban:?}"))),
+            .map(|bans| bans.for_each(|ban| println!("{ban}"))),
         Command::AddBan {
             target,
             duration,

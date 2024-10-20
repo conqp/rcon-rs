@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -31,6 +32,29 @@ impl crate::BanListEntry for BanListEntry {
 
     fn reason(&self) -> Option<&str> {
         self.reason.as_deref()
+    }
+}
+
+impl Display for BanListEntry {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "#{} of ", self.id)?;
+
+        match self.target {
+            Target::Ip(ip) => Display::fmt(&ip, f)?,
+            Target::Uuid(uuid) => Display::fmt(&uuid, f)?,
+        }
+
+        if let Some(duration) = self.duration {
+            write!(f, " for {} more seconds", duration.as_secs())?;
+        } else {
+            write!(f, " forever")?;
+        }
+
+        if let Some(reason) = &self.reason {
+            write!(f, r#" because of "{reason}""#)?;
+        }
+
+        Ok(())
     }
 }
 
