@@ -19,7 +19,7 @@ pub trait Players {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if listing the players fails.
-    fn players(&mut self) -> impl Future<Output = std::io::Result<Vec<Self::Player>>>;
+    fn players(&mut self) -> impl Future<Output = std::io::Result<Vec<Self::Player>>> + Send;
 
     /// Returns an iterator over player proxies.
     ///
@@ -35,7 +35,7 @@ pub trait Players {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if listing the players fails.
-    fn players_mut(&mut self) -> impl Future<Output = std::io::Result<PlayersMut<'_, Self>>>
+    fn players_mut(&mut self) -> impl Future<Output = std::io::Result<PlayersMut<'_, Self>>> + Send
     where
         Self: RCon + Sized,
     {

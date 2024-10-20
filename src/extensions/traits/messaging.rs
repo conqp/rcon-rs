@@ -12,7 +12,7 @@ pub trait Say {
         &mut self,
         target: Cow<'_, str>,
         message: Cow<'_, str>,
-    ) -> impl Future<Output = std::io::Result<()>>;
+    ) -> impl Future<Output = std::io::Result<()>> + Send;
 }
 
 /// Broadcast messages to all players on the server.
@@ -22,5 +22,8 @@ pub trait Broadcast {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if sending the message fails.
-    fn broadcast(&mut self, message: Cow<'_, str>) -> impl Future<Output = std::io::Result<()>>;
+    fn broadcast(
+        &mut self,
+        message: Cow<'_, str>,
+    ) -> impl Future<Output = std::io::Result<()>> + Send;
 }

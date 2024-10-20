@@ -33,7 +33,7 @@ pub trait Ban {
         &mut self,
         player: Cow<'_, str>,
         reason: Option<Cow<'_, str>>,
-    ) -> impl Future<Output = std::io::Result<()>>;
+    ) -> impl Future<Output = std::io::Result<()>> + Send;
 }
 
 /// View the ban list of the server.
@@ -48,7 +48,7 @@ pub trait Bans {
     /// Returns an [`std::io::Error`] if querying the ban list fails.
     fn bans(
         &mut self,
-    ) -> impl Future<Output = std::io::Result<impl Iterator<Item = Self::BanListEntry>>>;
+    ) -> impl Future<Output = std::io::Result<impl Iterator<Item = Self::BanListEntry>>> + Send;
 }
 
 /// An entry of a ban list.
@@ -84,7 +84,7 @@ pub trait AddBan {
         ban: Target,
         duration: Option<Duration>,
         reason: Option<Cow<'_, str>>,
-    ) -> impl Future<Output = std::io::Result<()>>;
+    ) -> impl Future<Output = std::io::Result<()>> + Send;
 }
 
 /// Remove player bans.
@@ -94,5 +94,5 @@ pub trait RemoveBan {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if unbanning  the player fails.
-    fn remove_ban(&mut self, id: u64) -> impl Future<Output = std::io::Result<()>>;
+    fn remove_ban(&mut self, id: u64) -> impl Future<Output = std::io::Result<()>> + Send;
 }
