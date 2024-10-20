@@ -1,31 +1,31 @@
+use log::{debug, trace};
 use std::borrow::Cow;
 use std::io::{Error, ErrorKind};
-use std::net::SocketAddr;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::SeqCst;
 use std::sync::Arc;
-
-use log::{debug, trace};
-use tokio::io::AsyncWriteExt;
+use std::time::Duration;
 use tokio::spawn;
-use tokio::sync::mpsc::{channel, Receiver};
+use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tokio::task::JoinHandle;
-use udp_stream::UdpStream;
 
 use crate::battleye::client::handler::Handler;
-use crate::battleye::into_bytes::IntoBytes;
 use crate::battleye::packet::{command, login, CommunicationResult, Request, Response};
 use crate::RCon;
 
 mod handler;
 
 const DEFAULT_CHANNEL_SIZE: usize = 8;
+const DEFAULT_BUF_SIZE: usize = 1024;
+const DEFAULT_DURATION: Option<Duration> = Some(Duration::from_secs(10));
+const DEFAULT_TIMEOUT: Option<Duration> = Some(Duration::from_millis(100));
 
 /// A `BattlEye Rcon` client.
 #[derive(Debug)]
 pub struct Client {
-    udp_stream: UdpStream,
     running: Arc<AtomicBool>,
+    requests: Sender<Request>,
     responses: Receiver<std::io::Result<Response>>,
     handler: Option<JoinHandle<()>>,
     buffer: Vec<command::Response>,
@@ -37,56 +37,40 @@ impl Client {
     /// # Errors
     ///
     /// Returns an [`Error`] if connecting to the UDP server fails.
-    pub async fn new<T>(address: T) -> std::io::Result<Self>
-    where
-        T: Into<SocketAddr> + Send,
-    {
-        Self::new_ext(address, DEFAULT_CHANNEL_SIZE).await
-    }
-
-    /// Creates a new instance of the client with additional information.
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`Error`] if connecting to the UDP server fails.
-    pub async fn new_ext<T>(address: T, channel_size: usize) -> std::io::Result<Self>
-    where
-        T: Into<SocketAddr> + Send,
-    {
-        let address = address.into();
+    #[must_use]
+    pub fn new(
+        udp_socket: UdpSocket,
+        channel_size: usize,
+        buf_size: usize,
+        handler_interval: Option<Duration>,
+    ) -> Self {
         let running = Arc::new(AtomicBool::new(true));
+        let (requests_tx, requests_rx) = channel::<Request>(channel_size);
         let (response_tx, response_rx) = channel(channel_size);
         let handler = Handler::new(
-            UdpStream::connect(address).await?,
+            udp_socket,
             running.clone(),
+            requests_rx,
             response_tx,
+            handler_interval,
+            buf_size,
         );
         let join_handle = spawn(handler.run());
-        UdpStream::connect(address).await.map(|udp_stream| Self {
-            udp_stream,
+        Self {
             running,
+            requests: requests_tx,
             responses: response_rx,
             handler: Some(join_handle),
             buffer: Vec::new(),
-        })
+        }
     }
 
     async fn communicate(&mut self, request: Request) -> std::io::Result<CommunicationResult> {
         trace!("Sending request {:?}", request);
-        match request {
-            Request::Command(command) => {
-                let bytes = command.into_bytes();
-                let bytes = bytes.as_ref();
-                trace!("Sending bytes {bytes:#04X?}");
-                self.udp_stream.write_all(bytes).await?;
-            }
-            Request::Login(login) => {
-                let bytes = login.into_bytes();
-                let bytes = bytes.as_ref();
-                trace!("Sending bytes {bytes:#04X?}");
-                self.udp_stream.write_all(bytes).await?;
-            }
-        }
+        self.requests
+            .send(request)
+            .await
+            .map_err(|_| Error::new(ErrorKind::BrokenPipe, "Failed to send request to handler"))?;
 
         debug!("Clearing buffer");
         self.buffer.clear();
@@ -145,7 +129,20 @@ impl RCon for Client {
         Self: Sized,
         T: Into<SocketAddr> + Send,
     {
-        Self::new(address).await
+        let address = address.into();
+        let socket = UdpSocket::bind(if address.is_ipv4() {
+            SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)
+        } else {
+            SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
+        })?;
+        socket.set_read_timeout(DEFAULT_TIMEOUT)?;
+        socket.connect(address)?;
+        Ok(Self::new(
+            socket,
+            DEFAULT_CHANNEL_SIZE,
+            DEFAULT_BUF_SIZE,
+            DEFAULT_DURATION,
+        ))
     }
 
     async fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool> {

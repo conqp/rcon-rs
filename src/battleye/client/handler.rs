@@ -1,29 +1,32 @@
 use std::error::Error;
 use std::io::ErrorKind;
+use std::net::UdpSocket;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
 use log::{debug, error, trace, warn};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::sync::mpsc::Sender;
-use udp_stream::UdpStream;
+use tokio::sync::mpsc::error::TryRecvError;
+use tokio::sync::mpsc::{Receiver, Sender};
+use tokio::time::sleep;
 
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
 use crate::battleye::into_bytes::IntoBytes;
 use crate::battleye::packet::server::{Ack, Message};
-use crate::battleye::packet::{command, login, server, Response};
+use crate::battleye::packet::{command, login, server, Request, Response};
 
 /// Idle timeout according to protocol definition: <https://www.battleye.com/downloads/BERConProtocol.txt>
 const IDLE_TIMEOUT: Duration = Duration::from_secs(45);
 
 #[derive(Debug)]
 pub struct Handler {
-    udp_stream: UdpStream,
+    udp_socket: UdpSocket,
     running: Arc<AtomicBool>,
+    requests: Receiver<Request>,
     responses: Sender<std::io::Result<Response>>,
+    interval: Option<Duration>,
     last_command: Option<SystemTime>,
     buffer: Vec<u8>,
 }
@@ -31,32 +34,82 @@ pub struct Handler {
 impl Handler {
     #[must_use]
     pub fn new(
-        udp_stream: UdpStream,
+        udp_socket: UdpSocket,
         running: Arc<AtomicBool>,
+        requests: Receiver<Request>,
         responses: Sender<std::io::Result<Response>>,
+        interval: Option<Duration>,
+        buf_size: usize,
     ) -> Self {
         Self {
-            udp_stream,
+            udp_socket,
             running,
+            requests,
             responses,
+            interval,
             last_command: None,
-            buffer: vec![0; 1024],
+            buffer: vec![0; buf_size],
         }
     }
 
     pub async fn run(mut self) {
         while self.running.load(Relaxed) {
-            trace!("Processing incoming message");
-            self.process_incoming_message().await;
-            trace!("Performing keepalive");
-            self.keepalive().await;
+            trace!("Receiving request");
+            match self.requests.try_recv() {
+                Ok(request) => {
+                    trace!("Received request: {request:?}");
+                    self.handle_request(request);
+                }
+                Err(error) => match error {
+                    TryRecvError::Disconnected => {
+                        error!("Request channel disconnected");
+                        return;
+                    }
+                    TryRecvError::Empty => {
+                        self.process_incoming_messages().await;
+                        self.keepalive();
+
+                        if let Some(interval) = self.interval {
+                            debug!("Sleeping for {interval:?}");
+                            sleep(interval).await;
+                        }
+                    }
+                },
+            }
         }
     }
 
-    async fn process_incoming_message(&mut self) {
+    fn handle_request(&self, request: Request) {
+        trace!("Handling request: {request:?}");
+
+        if let Err(error) = self.send(request) {
+            error!("{error}");
+        }
+    }
+
+    fn send(&self, request: Request) -> std::io::Result<usize> {
+        trace!("Sending request: {request:?}");
+
+        match request {
+            Request::Command(request) => {
+                let owner = request.into_bytes();
+                let bytes = owner.as_ref();
+                trace!("Sending bytes: {bytes:#04X?}");
+                self.udp_socket.send(bytes)
+            }
+            Request::Login(request) => {
+                let owner = request.into_bytes();
+                let bytes = owner.as_ref();
+                trace!("Sending bytes: {bytes:#04X?}");
+                self.udp_socket.send(bytes)
+            }
+        }
+    }
+
+    async fn process_incoming_messages(&mut self) {
         debug!("Processing incoming messages");
 
-        match self.receive_message().await {
+        match self.receive_response() {
             Ok(result) => {
                 if let Some(response) = result {
                     self.forward(Ok(response)).await;
@@ -74,18 +127,10 @@ impl Handler {
         }
     }
 
-    async fn receive_message(&mut self) -> std::io::Result<Option<Response>> {
-        trace!("Clearing buffer");
-        self.buffer.clear();
-
+    fn receive_response(&mut self) -> std::io::Result<Option<Response>> {
         debug!("Receiving packet from UDP socket");
-        let bytes = self.udp_stream.read(&mut self.buffer).await?;
+        let bytes = self.udp_socket.recv(&mut self.buffer)?;
         trace!("Received {bytes} bytes");
-
-        if bytes == 0 {
-            debug!("Received 0 bytes");
-            return Ok(None);
-        }
 
         trace!("Setting up byte stream");
         let mut stream = self.buffer.iter().take(bytes).copied();
@@ -117,8 +162,7 @@ impl Handler {
                     &Message::read_from(&mut stream)
                         .map(|f| f(header))
                         .and_then(FromServer::validate)?,
-                )
-                .await;
+                );
             }
             other => {
                 error!("Received packet of invalid type: {other:#04X}");
@@ -137,30 +181,25 @@ impl Handler {
         }
     }
 
-    async fn ack(&mut self, message: &Message) {
+    fn ack(&self, message: &Message) {
         debug!("Ack'ing message #{}", message.seq());
         trace!("Message: {message:?}");
 
         if let Err(error) = self
-            .udp_stream
-            .write_all(Ack::new(message.seq()).into_bytes().as_ref())
-            .await
+            .udp_socket
+            .send(Ack::new(message.seq()).into_bytes().as_ref())
         {
             error!("Error sending ack: {error}");
         }
     }
 
-    async fn keepalive(&mut self) {
+    fn keepalive(&self) {
         debug!("Performing keepalive check");
 
         if self.needs_keepalive() {
             debug!("Need to send a keepalive message");
 
-            if let Err(error) = self
-                .udp_stream
-                .write_all(command::Request::from("").into_bytes().as_ref())
-                .await
-            {
+            if let Err(error) = self.send(Self::keepalive_packet()) {
                 error!("Error sending keepalive packet: {error}");
             }
         } else {
@@ -178,5 +217,9 @@ impl Handler {
                     .map(|elapsed| elapsed > IDLE_TIMEOUT / 2)
             })
             .unwrap_or_default()
+    }
+
+    fn keepalive_packet() -> Request {
+        Request::Command(command::Request::from(""))
     }
 }
