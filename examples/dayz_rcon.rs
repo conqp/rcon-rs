@@ -7,7 +7,7 @@ use std::process::ExitCode;
 use std::time::Duration;
 
 use clap::{Parser, Subcommand};
-use log::error;
+use log::{error, info, warn};
 use rcon::{battleye::Client, Ban, BanList, Broadcast, Kick, Player, Players, RCon, Say, Target};
 use rpassword::prompt_password;
 use uuid::Uuid;
@@ -205,22 +205,14 @@ async fn main() -> ExitCode {
 }
 
 async fn say_to_all(client: &mut Client, message: Cow<'static, str>) -> std::io::Result<()> {
-    match client.players_mut().await {
-        Ok(mut players) => {
-            while let Some(mut player) = players.next() {
-                player.say(message.clone()).await.unwrap_or_else(|error| {
-                    error!(
-                        "Could not notify player #{} ({}): {error}",
-                        player.id(),
-                        player.name()
-                    );
-                });
-            }
+    let mut players = client.players_mut().await?;
 
-            Ok(())
-        }
-        Err(error) => Err(error),
+    while let Some(mut player) = players.next() {
+        player.say(message.clone()).await?;
+        info!("Notified {player}");
     }
+
+    Ok(())
 }
 
 async fn kick_by_name(
@@ -229,11 +221,18 @@ async fn kick_by_name(
     reason: Option<Cow<'static, str>>,
 ) -> std::io::Result<()> {
     let mut players = client.players_mut().await?;
+    let mut kicked = Vec::new();
 
     while let Some(mut player) = players.next() {
         if player.name() == name {
             player.kick(reason.clone()).await?;
+            info!("Kicked {player}");
+            kicked.push(player.id());
         }
+    }
+
+    if kicked.is_empty() {
+        warn!("No matching players found.");
     }
 
     Ok(())
@@ -244,19 +243,20 @@ async fn kick_by_uuid(
     uuid: Uuid,
     reason: Option<Cow<'static, str>>,
 ) -> std::io::Result<()> {
-    match client.players_mut().await {
-        Ok(mut players) => {
-            while let Some(mut player) = players.next() {
-                if player.uuid() == Some(uuid) {
-                    player
-                        .kick(reason.clone())
-                        .await
-                        .unwrap_or_else(|error| error!(r#"Failed to kick player {uuid}: {error}"#));
-                }
-            }
+    let mut players = client.players_mut().await?;
+    let mut kicked = Vec::new();
 
-            Ok(())
+    while let Some(mut player) = players.next() {
+        if player.uuid() == Some(uuid) {
+            player.kick(reason.clone()).await?;
+            info!("Kicked {player}");
+            kicked.push(player.id());
         }
-        Err(error) => Err(error),
     }
+
+    if kicked.is_empty() {
+        warn!("No matching players found.");
+    }
+
+    Ok(())
 }
