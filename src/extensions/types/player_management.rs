@@ -113,7 +113,7 @@ where
         self.player.id()
     }
 
-    fn numeric_id(&self) -> Option<i64> {
+    fn numeric_id(&self) -> Option<u64> {
         self.player.numeric_id()
     }
 

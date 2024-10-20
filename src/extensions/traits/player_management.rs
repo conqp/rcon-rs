@@ -59,8 +59,8 @@ pub trait Player {
     fn id(&self) -> Cow<'_, str>;
 
     /// Returns the player's ID.
-    fn numeric_id(&self) -> Option<i64> {
-        i64::from_str(self.name().as_ref()).ok()
+    fn numeric_id(&self) -> Option<u64> {
+        u64::from_str(self.name().as_ref()).ok()
     }
 
     /// The player's descriptive name.
