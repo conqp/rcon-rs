@@ -18,7 +18,7 @@ mod player;
 const BROADCAST_TARGET: i8 = -1;
 const INVALID_BAN_FORMAT_MESSAGE: &str = "Invalid ban format";
 
-/// Extended `BattlEye Rcon` client for `DayZ` servers.
+/// Sealing trait for `BattlEye Rcon` clients for `DayZ` servers.
 trait DayZ: RCon + BattlEye {}
 
 impl<T> DayZ for T where T: RCon + BattlEye {}
