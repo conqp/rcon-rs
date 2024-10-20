@@ -133,18 +133,18 @@ async fn main() -> ExitCode {
         }
     };
 
-    let logged_in = match client.login(password.into()).await {
-        Ok(logged_in) => logged_in,
+    match client.login(password.into()).await {
+        Ok(logged_in) => {
+            if !logged_in {
+                error!("Login failed.");
+                return ExitCode::from(4);
+            }
+        }
         Err(error) => {
             error!("{error}");
             return ExitCode::from(3);
         }
     };
-
-    if !logged_in {
-        error!("Login failed.");
-        return ExitCode::from(4);
-    }
 
     if let Err(error) = match args.command {
         Command::Players => client
