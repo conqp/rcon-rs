@@ -1,10 +1,10 @@
-use std::borrow::Cow;
-
 use super::packet::Packet;
 use super::quirks::Quirks;
 use super::server_data::ServerData;
 use super::util::invalid_data;
 use crate::RCon;
+use std::borrow::Cow;
+use std::net::SocketAddr;
 
 use log::{debug, error, trace};
 use tokio::io::AsyncWriteExt;
@@ -99,6 +99,14 @@ impl From<TcpStream> for Client {
 }
 
 impl RCon for Client {
+    async fn connect<T>(address: T) -> std::io::Result<Self>
+    where
+        Self: Sized,
+        T: Into<SocketAddr> + Send,
+    {
+        TcpStream::connect(address.into()).await.map(Self::from)
+    }
+
     async fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool> {
         self.send(Packet::login(password)).await?;
         let mut packet;

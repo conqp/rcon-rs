@@ -138,6 +138,14 @@ impl Drop for Client {
 }
 
 impl RCon for Client {
+    async fn connect<T>(address: T) -> std::io::Result<Self>
+    where
+        Self: Sized,
+        T: Into<SocketAddr> + Send,
+    {
+        Self::new(address).await
+    }
+
     async fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool> {
         match self
             .communicate(Request::Login(login::Request::from(password)))

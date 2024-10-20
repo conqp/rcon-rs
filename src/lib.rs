@@ -3,6 +3,7 @@
 use std::borrow::Cow;
 use std::future::Future;
 use std::io::{Error, ErrorKind};
+use std::net::SocketAddr;
 
 #[cfg(feature = "battleye")]
 pub mod battleye;
@@ -14,6 +15,16 @@ pub use extensions::*;
 
 /// Common API for `RCON` protocol clients
 pub trait RCon {
+    /// Create an `RCON` client by connecting to the specified address.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`Error`] if any I/O errors occurred.
+    fn connect<T>(address: T) -> impl Future<Output = std::io::Result<Self>>
+    where
+        Self: Sized,
+        T: Into<SocketAddr> + Send;
+
     /// Perform a login.
     ///
     /// # Returns
