@@ -3,7 +3,7 @@
 use std::borrow::Cow;
 use std::io::{stdout, Write};
 use std::net::{IpAddr, SocketAddr};
-use std::process::exit;
+use std::process::ExitCode;
 use std::time::Duration;
 
 use clap::{Parser, Subcommand};
@@ -110,38 +110,43 @@ impl From<BanTarget> for Target {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> ExitCode {
     env_logger::init();
     let args = Args::parse();
 
-    let mut client = Client::connect(args.server).await.unwrap_or_else(|error| {
-        error!("{error}");
-        exit(1);
-    });
-
-    let password = args
-        .password
-        .as_ref()
-        .map_or_else(
-            || prompt_password("Enter password: "),
-            |password| Ok(password.clone()),
-        )
-        .unwrap_or_else(|error| {
+    let mut client = match Client::connect(args.server).await {
+        Ok(client) => client,
+        Err(error) => {
             error!("{error}");
-            exit(2);
-        });
+            return ExitCode::from(1);
+        }
+    };
 
-    let logged_in = client.login(password.into()).await.unwrap_or_else(|error| {
-        error!("{error}");
-        exit(3);
-    });
+    let password = match args.password.as_ref().map_or_else(
+        || prompt_password("Enter password: "),
+        |password| Ok(password.clone()),
+    ) {
+        Ok(password) => password,
+        Err(error) => {
+            error!("{error}");
+            return ExitCode::from(2);
+        }
+    };
+
+    let logged_in = match client.login(password.into()).await {
+        Ok(logged_in) => logged_in,
+        Err(error) => {
+            error!("{error}");
+            return ExitCode::from(3);
+        }
+    };
 
     if !logged_in {
         error!("Login failed.");
-        exit(4);
+        return ExitCode::from(4);
     }
 
-    match args.command {
+    if let Err(error) = match args.command {
         Command::Players => client
             .players()
             .await
@@ -184,8 +189,10 @@ async fn main() {
             .run(command.as_ref())
             .await
             .and_then(|result| stdout().lock().write_all(&result)),
-    }
-    .unwrap_or_else(|error| {
+    } {
         error!("{error}");
-    });
+        return ExitCode::from(5);
+    }
+
+    ExitCode::SUCCESS
 }

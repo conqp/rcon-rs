@@ -1,8 +1,8 @@
 //! An example `RCON` client supporting both `Source RCON` and `BattlEye Rcon`.
 
 use std::borrow::Cow;
-use std::io::{stdout, Write};
-use std::process::exit;
+use std::io::{stdout, Error, Write};
+use std::process::ExitCode;
 
 use args::Args;
 use clap::Parser;
@@ -14,32 +14,50 @@ use args::Protocol;
 mod args;
 
 #[tokio::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> ExitCode {
     env_logger::init();
     let args = Args::parse();
 
-    let response = run(&args).await.unwrap_or_else(|error| {
-        error!("{error}");
-        exit(3)
-    });
+    if let Err(code) = run(&args).await.and_then(|response| {
+        stdout()
+            .lock()
+            .write_all(&response)
+            .map_err(io_error_to_exit_code)
+    }) {
+        return code;
+    };
 
-    stdout().lock().write_all(&response)
+    ExitCode::SUCCESS
 }
 
-async fn run(args: &Args) -> std::io::Result<Vec<u8>> {
+async fn run(args: &Args) -> Result<Vec<u8>, ExitCode> {
     match args.protocol() {
         Protocol::BattlEye { command } => {
-            let client = battleye::Client::connect(args.server()).await?;
-            run_impl(client, args.password()?, command).await
+            let client = battleye::Client::connect(args.server())
+                .await
+                .map_err(io_error_to_exit_code)?;
+            run_impl(
+                client,
+                args.password().map_err(io_error_to_exit_code)?,
+                command,
+            )
+            .await
         }
         Protocol::Source { command, quirks } => {
-            let mut client = source::Client::connect(args.server()).await?;
+            let mut client = source::Client::connect(args.server())
+                .await
+                .map_err(io_error_to_exit_code)?;
 
             if let Some(quirks) = quirks.iter().copied().reduce(|acc, quirk| acc | quirk) {
                 client.enable_quirk(quirks);
             }
 
-            run_impl(client, args.password()?, command).await
+            run_impl(
+                client,
+                args.password().map_err(io_error_to_exit_code)?,
+                command,
+            )
+            .await
         }
     }
 }
@@ -48,14 +66,24 @@ async fn run_impl<T>(
     mut client: T,
     password: String,
     command: &[Cow<'static, str>],
-) -> std::io::Result<Vec<u8>>
+) -> Result<Vec<u8>, ExitCode>
 where
     T: RCon + Send,
 {
-    if !client.login(password.into()).await? {
+    if !client
+        .login(password.into())
+        .await
+        .map_err(io_error_to_exit_code)?
+    {
         error!("Login failed.");
-        exit(4);
+        return Err(ExitCode::from(4));
     }
 
-    client.run(command).await
+    client.run(command).await.map_err(io_error_to_exit_code)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+fn io_error_to_exit_code(error: Error) -> ExitCode {
+    error!("{error}");
+    ExitCode::from(5)
 }
