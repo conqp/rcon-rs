@@ -12,26 +12,28 @@ edition = "2021"
 
 [dependencies]
 bitflags = { version = "2.6", optional = true }
-clap = { version = "4.5", optional = true }
 crc = { version = "3.2", optional = true }
-env_logger = { version = "0.11", optional = true }
-log = "0.4"
+log = { version = "0.4", optional = true }
 num-derive = { version = "0.4.2", optional = true }
 num-traits = { version = "0.2.19", optional = true }
 rand = { version = "0.9.0-alpha.2", optional = true }
-rpassword = { version = "7.3", optional = true }
-tokio = "1.40.0"
-uuid = { version = "1.11.0", features = ["v4"] }
+tokio = { version = "1.40.0", optional = true }
+uuid = { version = "1.11.0" }
+
+[dev-dependencies]
+clap = { version = "4.5" }
+env_logger = { version = "0.11" }
+rpassword = { version = "7.3" }
 
 [features]
-battleye = ["crc", "tokio/time", "tokio/sync"]
-source = ["bitflags", "num-derive", "num-traits", "rand", "tokio/net", "tokio/io-util"]
-cli = ["clap/derive", "env_logger", "rpassword", "tokio/rt", "tokio/rt-multi-thread", "tokio/macros"]
+battleye = ["crc", "log", "tokio/rt", "tokio/time", "tokio/sync"]
+source = ["bitflags", "log", "num-derive", "num-traits", "rand", "tokio/io-util", "tokio/net"]
+cli = ["clap/derive", "tokio/rt-multi-thread", "tokio/macros"]
 dayz = ["battleye"]
 
 [[example]]
 name = "rconclt"
-required-features = ["battleye", "source", "cli"]
+required-features = ["battleye", "cli", "source"]
 
 [[example]]
 name = "dayz_rcon"
