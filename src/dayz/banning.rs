@@ -59,7 +59,11 @@ impl Display for BanListEntry {
         }
 
         if let Some(duration) = self.duration {
-            write!(f, " for {} more seconds", duration.as_secs())?;
+            write!(
+                f,
+                " for {} more minutes",
+                duration.as_secs() / SECS_PER_MINUTE
+            )?;
         } else {
             write!(f, " forever")?;
         }
