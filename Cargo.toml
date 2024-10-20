@@ -21,17 +21,15 @@ num-traits = { version = "0.2.19", optional = true }
 rand = { version = "0.9.0-alpha.2", optional = true }
 rpassword = { version = "7.3", optional = true }
 tokio = "1.40.0"
-udp-stream = { version = "0.0.12", optional = true }
 uuid = { version = "1.11.0", features = ["v4"] }
 
 [features]
-battleye = ["crc", "udp-stream", "tokio/time"]
-source = ["bitflags", "num-derive", "num-traits", "rand", "tokio/net"]
+battleye = ["crc", "tokio/time", "tokio/sync"]
+source = ["bitflags", "num-derive", "num-traits", "rand", "tokio/net", "tokio/io-util"]
 cli = ["clap/derive", "env_logger", "rpassword", "tokio/rt", "tokio/rt-multi-thread", "tokio/macros"]
 dayz = ["battleye"]
-udp-stream = ["dep:udp-stream"]
 
-[[bin]]
+[[example]]
 name = "rconclt"
 required-features = ["battleye", "source", "cli"]
 
