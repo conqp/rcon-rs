@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::fmt::Debug;
 use std::net::{IpAddr, SocketAddr};
 use std::time::Duration;
 use std::vec::IntoIter;
@@ -12,6 +13,7 @@ use crate::{Ban, Kick, Player, Players, RCon, Say};
 pub struct PlayersMut<'client, C>
 where
     C: RCon + Players,
+    <C as Players>::Player: Debug,
 {
     client: &'client mut C,
     players: IntoIter<<C as Players>::Player>,
@@ -20,6 +22,7 @@ where
 impl<'client, C> PlayersMut<'client, C>
 where
     C: RCon + Players,
+    <C as Players>::Player: Debug,
 {
     pub(crate) fn new(client: &'client mut C, players: Vec<<C as Players>::Player>) -> Self {
         Self {
@@ -64,7 +67,8 @@ where
     /// Returns an [`std::io::Error`] if sending the message fails.
     pub async fn say(&mut self, message: Cow<'_, str>) -> std::io::Result<()>
     where
-        C: Say,
+        C: Say + Send,
+        P: Send,
     {
         Say::say(self.client, self.player.id(), message).await
     }
@@ -78,7 +82,8 @@ where
     /// Returns an [`std::io::Error`] if kicking the player fails.
     pub async fn kick(&mut self, reason: Option<Cow<'_, str>>) -> std::io::Result<()>
     where
-        C: Kick,
+        C: Kick + Send,
+        P: Send,
     {
         Kick::kick(self.client, self.player.id(), reason).await
     }
@@ -92,7 +97,8 @@ where
     /// Returns an [`std::io::Error`] if banning  the player fails.
     pub async fn ban(&mut self, reason: Option<Cow<'_, str>>) -> std::io::Result<()>
     where
-        C: Ban,
+        C: Ban + Send,
+        P: Send,
     {
         Ban::ban(self.client, self.player.id(), reason).await
     }

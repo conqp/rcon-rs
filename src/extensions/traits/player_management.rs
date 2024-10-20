@@ -37,7 +37,8 @@ pub trait Players {
     /// Returns an [`std::io::Error`] if listing the players fails.
     fn players_mut(&mut self) -> impl Future<Output = std::io::Result<PlayersMut<'_, Self>>> + Send
     where
-        Self: RCon + Sized,
+        Self: RCon + Sized + Send,
+        Self::Player: Debug,
     {
         async {
             self.players()
@@ -48,7 +49,7 @@ pub trait Players {
 }
 
 /// Information about a player.
-pub trait Player: Debug + Send {
+pub trait Player {
     /// Returns the player's ID.
     ///
     /// This is the only mandatory method of `Player` and may return

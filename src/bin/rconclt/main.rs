@@ -60,7 +60,7 @@ async fn run_impl<T>(
     command: &[Cow<'static, str>],
 ) -> std::io::Result<Vec<u8>>
 where
-    T: RCon,
+    T: RCon + Send,
 {
     if !client.login(password.into()).await? {
         error!("Login failed.");

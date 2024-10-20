@@ -25,7 +25,7 @@ impl<T> DayZ for T where T: RCon + BattlEye {}
 
 impl<T> Say for T
 where
-    T: DayZ,
+    T: DayZ + Send,
 {
     async fn say(&mut self, target: Cow<'_, str>, message: Cow<'_, str>) -> std::io::Result<()> {
         self.run(&["say".into(), target, message]).await.map(drop)
@@ -34,7 +34,7 @@ where
 
 impl<T> Kick for T
 where
-    T: DayZ,
+    T: DayZ + Send,
 {
     async fn kick(
         &mut self,
@@ -52,7 +52,7 @@ where
 
 impl<T> Ban for T
 where
-    T: DayZ,
+    T: DayZ + Send,
 {
     async fn ban(
         &mut self,
@@ -91,7 +91,7 @@ where
 
 impl<T> AddBan for T
 where
-    T: DayZ,
+    T: DayZ + Send,
 {
     async fn add_ban(
         &mut self,
@@ -133,7 +133,7 @@ where
 
 impl<T> RemoveBan for T
 where
-    T: DayZ,
+    T: DayZ + Send,
 {
     async fn remove_ban(&mut self, id: u64) -> std::io::Result<()> {
         self.run(&["removeBan".into(), id.to_string().into()])
@@ -144,7 +144,7 @@ where
 
 impl<T> Broadcast for T
 where
-    T: DayZ,
+    T: DayZ + Send,
 {
     async fn broadcast(&mut self, message: Cow<'_, str>) -> std::io::Result<()> {
         self.say(BROADCAST_TARGET.into(), message).await
@@ -153,7 +153,7 @@ where
 
 impl<T> Players for T
 where
-    T: DayZ,
+    T: DayZ + Send,
 {
     type Player = Player;
 
