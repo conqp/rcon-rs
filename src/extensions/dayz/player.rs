@@ -8,7 +8,7 @@ use uuid::Uuid;
 /// Information about a player on a `DayZ` server.
 #[derive(Clone, Debug)]
 pub struct Player {
-    id: i64,
+    id: u64,
     socket_addr: SocketAddr,
     ping: Duration,
     guid: Uuid,
@@ -57,7 +57,7 @@ impl crate::Player for Player {
         self.id.to_string().into()
     }
 
-    fn numeric_id(&self) -> Option<i64> {
+    fn numeric_id(&self) -> Option<u64> {
         Some(self.id)
     }
 

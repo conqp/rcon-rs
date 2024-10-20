@@ -1,14 +1,15 @@
 use std::borrow::Cow;
 use std::io::{Error, ErrorKind};
-use std::net::UdpSocket;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::SeqCst;
-use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Arc;
-use std::thread::{spawn, JoinHandle};
 use std::time::Duration;
 
 use log::{debug, trace};
+use tokio::spawn;
+use tokio::sync::mpsc::{channel, Receiver, Sender};
+use tokio::task::JoinHandle;
 
 use crate::battleye::client::handler::Handler;
 use crate::battleye::packet::{command, login, CommunicationResult, Request, Response};
@@ -16,8 +17,9 @@ use crate::RCon;
 
 mod handler;
 
-const DEFAULT_HANDLER_INTERVAL: Duration = Duration::from_millis(100);
+const DEFAULT_CHANNEL_SIZE: usize = 8;
 const DEFAULT_BUF_SIZE: usize = 1024;
+const DEFAULT_SOCKET_TIMEOUT: Option<Duration> = Some(Duration::from_millis(100));
 
 /// A `BattlEye Rcon` client.
 #[derive(Debug)]
@@ -31,52 +33,41 @@ pub struct Client {
 
 impl Client {
     /// Creates a new instance of the client.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`Error`] if connecting to the UDP server fails.
     #[must_use]
-    pub fn new(udp_socket: UdpSocket) -> Self {
-        Self::new_ext(udp_socket, DEFAULT_BUF_SIZE, Some(DEFAULT_HANDLER_INTERVAL))
-    }
-
-    /// Creates a new instance of the client with additional information.
-    #[must_use]
-    pub fn new_ext(
-        udp_socket: UdpSocket,
-        buf_size: usize,
-        handler_interval: Option<Duration>,
-    ) -> Self {
+    pub fn new<const BUFFER_SIZE: usize>(udp_socket: UdpSocket, channel_size: usize) -> Self {
         let running = Arc::new(AtomicBool::new(true));
-        let (request_tx, request_rx) = channel();
-        let (response_tx, response_rx) = channel();
-        let handler = Handler::new(
-            udp_socket,
-            running.clone(),
-            request_rx,
-            response_tx,
-            handler_interval,
-            buf_size,
-        );
-        let join_handle = spawn(|| handler.run());
+        let (requests_tx, requests_rx) = channel::<Request>(channel_size);
+        let (response_tx, response_rx) = channel(channel_size);
+        let handler =
+            Handler::<BUFFER_SIZE>::new(udp_socket, running.clone(), requests_rx, response_tx);
+        let join_handle = spawn(handler.run());
         Self {
             running,
-            requests: request_tx,
+            requests: requests_tx,
             responses: response_rx,
             handler: Some(join_handle),
             buffer: Vec::new(),
         }
     }
 
-    fn communicate(&mut self, request: Request) -> std::io::Result<CommunicationResult> {
+    async fn communicate(&mut self, request: Request) -> std::io::Result<CommunicationResult> {
         trace!("Sending request {:?}", request);
         self.requests
             .send(request)
-            .map_err(|_| ErrorKind::BrokenPipe)?;
+            .await
+            .map_err(|_| Error::new(ErrorKind::BrokenPipe, "Failed to send request to handler"))?;
 
         debug!("Clearing buffer");
         self.buffer.clear();
 
         loop {
             debug!("Receiving response");
-            match self.responses.recv() {
-                Ok(response) => match response? {
+            match self.responses.recv().await {
+                Some(response) => match response? {
                     Response::Command(response) => {
                         debug!("Received command response");
                         trace!("Received response {:?}", response);
@@ -96,7 +87,7 @@ impl Client {
                         return Ok(CommunicationResult::Login(response));
                     }
                 },
-                Err(_) => return Err(ErrorKind::BrokenPipe.into()),
+                None => return Err(ErrorKind::BrokenPipe.into()),
             }
         }
     }
@@ -116,14 +107,33 @@ impl Drop for Client {
         self.running.store(false, SeqCst);
 
         if let Some(handler) = self.handler.take() {
-            handler.join().expect("Failed to join handler");
+            handler.abort();
         }
     }
 }
 
 impl RCon for Client {
-    fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool> {
-        match self.communicate(Request::Login(login::Request::from(password)))? {
+    async fn connect<T>(address: T) -> std::io::Result<Self>
+    where
+        Self: Sized,
+        T: Into<SocketAddr> + Send,
+    {
+        let address = address.into();
+        let socket = UdpSocket::bind(if address.is_ipv4() {
+            SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)
+        } else {
+            SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
+        })?;
+        socket.set_read_timeout(DEFAULT_SOCKET_TIMEOUT)?;
+        socket.connect(address)?;
+        Ok(Self::new::<DEFAULT_BUF_SIZE>(socket, DEFAULT_CHANNEL_SIZE))
+    }
+
+    async fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool> {
+        match self
+            .communicate(Request::Login(login::Request::from(password)))
+            .await?
+        {
             CommunicationResult::Login(response) => Ok(response.success()),
             CommunicationResult::Command(_) => Err(Error::new(
                 ErrorKind::InvalidData,
@@ -132,10 +142,13 @@ impl RCon for Client {
         }
     }
 
-    fn run(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<Vec<u8>> {
+    async fn run(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<Vec<u8>> {
         let command = args.join(" ");
 
-        match self.communicate(Request::Command(command::Request::from(command.as_str())))? {
+        match self
+            .communicate(Request::Command(command::Request::from(command.as_str())))
+            .await?
+        {
             CommunicationResult::Command(bytes) => Ok(bytes),
             CommunicationResult::Login(_) => Err(Error::new(
                 ErrorKind::InvalidData,

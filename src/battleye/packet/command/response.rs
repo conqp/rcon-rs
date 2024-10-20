@@ -1,5 +1,4 @@
-use std::io::ErrorKind;
-use std::sync::Arc;
+use std::io::{Error, ErrorKind};
 
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
@@ -8,28 +7,25 @@ use crate::battleye::header::Header;
 pub struct Response {
     header: Header,
     seq: u8,
-    payload: Arc<[u8]>,
+    payload: Vec<u8>,
 }
 
 impl Response {
-    #[must_use]
-    pub const fn new(header: Header, seq: u8, payload: Arc<[u8]>) -> Self {
-        Self {
-            header,
-            seq,
-            payload,
-        }
-    }
-
     pub fn read_from<T>(mut src: T) -> std::io::Result<impl FnOnce(Header) -> Self>
     where
         T: Iterator<Item = u8>,
     {
-        let seq = src
-            .next()
-            .ok_or_else(|| std::io::Error::from(ErrorKind::UnexpectedEof))?;
-        let payload: Vec<u8> = src.collect();
-        Ok(move |header| Self::new(header, seq, payload.into()))
+        let seq = src.next().ok_or_else(|| {
+            Error::new(
+                ErrorKind::UnexpectedEof,
+                "Too few bytes to construct response",
+            )
+        })?;
+        Ok(move |header| Self {
+            header,
+            seq,
+            payload: src.collect(),
+        })
     }
 
     #[must_use]

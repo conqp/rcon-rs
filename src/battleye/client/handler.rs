@@ -3,12 +3,12 @@ use std::io::ErrorKind;
 use std::net::UdpSocket;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::Relaxed;
-use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use std::sync::Arc;
-use std::thread::sleep;
 use std::time::{Duration, SystemTime};
 
 use log::{debug, error, trace, warn};
+use tokio::sync::mpsc::error::TryRecvError;
+use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
@@ -20,38 +20,34 @@ use crate::battleye::packet::{command, login, server, Request, Response};
 const IDLE_TIMEOUT: Duration = Duration::from_secs(45);
 
 #[derive(Debug)]
-pub struct Handler {
+pub struct Handler<const BUFFER_SIZE: usize> {
     udp_socket: UdpSocket,
     running: Arc<AtomicBool>,
     requests: Receiver<Request>,
     responses: Sender<std::io::Result<Response>>,
-    interval: Option<Duration>,
     last_command: Option<SystemTime>,
-    buffer: Vec<u8>,
+    buffer: [u8; BUFFER_SIZE],
 }
 
-impl Handler {
+impl<const BUFFER_SIZE: usize> Handler<BUFFER_SIZE> {
     #[must_use]
-    pub fn new(
+    pub const fn new(
         udp_socket: UdpSocket,
         running: Arc<AtomicBool>,
         requests: Receiver<Request>,
         responses: Sender<std::io::Result<Response>>,
-        interval: Option<Duration>,
-        buf_size: usize,
     ) -> Self {
         Self {
             udp_socket,
             running,
             requests,
             responses,
-            interval,
             last_command: None,
-            buffer: vec![0; buf_size],
+            buffer: [0; BUFFER_SIZE],
         }
     }
 
-    pub fn run(mut self) {
+    pub async fn run(mut self) {
         while self.running.load(Relaxed) {
             trace!("Receiving request");
             match self.requests.try_recv() {
@@ -65,13 +61,8 @@ impl Handler {
                         return;
                     }
                     TryRecvError::Empty => {
-                        self.process_incoming_messages();
+                        self.process_incoming_messages().await;
                         self.keepalive();
-
-                        if let Some(interval) = self.interval {
-                            debug!("Sleeping for {interval:?}");
-                            sleep(interval);
-                        }
                     }
                 },
             }
@@ -105,60 +96,63 @@ impl Handler {
         }
     }
 
-    fn process_incoming_messages(&mut self) {
+    async fn process_incoming_messages(&mut self) {
         debug!("Processing incoming messages");
 
-        match self.process_incoming_message_fallible() {
+        match self.receive_response() {
+            Ok(result) => {
+                if let Some(response) = result {
+                    self.forward(Ok(response)).await;
+                }
+            }
             Err(error) => {
                 debug!("Error while processing incoming messages: {error}");
                 trace!("Error kind: {:?}", error.kind());
                 trace!("Error source: {:?}", error.source());
 
                 if error.kind() != ErrorKind::TimedOut && error.kind() != ErrorKind::WouldBlock {
-                    self.forward(Err(error));
-                }
-            }
-            Ok(result) => {
-                if let Some(response) = result {
-                    self.forward(Ok(response));
+                    self.forward(Err(error)).await;
                 }
             }
         }
     }
 
-    fn process_incoming_message_fallible(&mut self) -> std::io::Result<Option<Response>> {
+    fn receive_response(&mut self) -> std::io::Result<Option<Response>> {
         debug!("Receiving packet from UDP socket");
-        let mut bytes = self.receive()?.iter().copied();
+        let bytes = self.udp_socket.recv(&mut self.buffer)?;
+        trace!("Received {bytes} bytes");
+
+        trace!("Setting up byte stream");
+        let mut stream = self.buffer.iter().take(bytes).copied();
+
         debug!("Parsing header from buffer");
-        let header = Header::read_from(&mut bytes)?;
+        let header = Header::read_from(&mut stream)?;
         trace!("Received header: {header:?}");
 
         match header.typ() {
             command::TYPE => {
                 debug!("Received command response");
-                let response = command::Response::read_from(&mut bytes)
+                return command::Response::read_from(&mut stream)
                     .map(|f| f(header))
                     .and_then(FromServer::validate)
-                    .map(Response::Command)?;
-                trace!("Command response: {response:?}");
-                return Ok(Some(response));
+                    .map(Response::Command)
+                    .map(Some);
             }
             login::TYPE => {
                 debug!("Received login response");
-                let response = login::Response::read_from(&mut bytes)
+                return login::Response::read_from(&mut stream)
                     .map(|f| f(header))
                     .and_then(FromServer::validate)
-                    .map(Response::Login)?;
-                trace!("Login response: {response:?}");
-                return Ok(Some(response));
+                    .map(Response::Login)
+                    .map(Some);
             }
             server::TYPE => {
                 debug!("Received server message");
-                let message = Message::read_from(&mut bytes)
-                    .map(|f| f(header))
-                    .and_then(FromServer::validate)?;
-                trace!("Server message: {message:?}");
-                self.ack(&message);
+                self.ack(
+                    &Message::read_from(&mut stream)
+                        .map(|f| f(header))
+                        .and_then(FromServer::validate)?,
+                );
             }
             other => {
                 error!("Received packet of invalid type: {other:#04X}");
@@ -168,16 +162,11 @@ impl Handler {
         Ok(None)
     }
 
-    fn receive(&mut self) -> std::io::Result<&[u8]> {
-        let len = self.udp_socket.recv(&mut self.buffer)?;
-        Ok(&self.buffer[..len])
-    }
-
-    fn forward(&self, response: std::io::Result<Response>) {
+    async fn forward(&self, response: std::io::Result<Response>) {
         debug!("Forwarding response from UDP stream");
         trace!("Response: {response:?}");
 
-        if let Err(error) = self.responses.send(response) {
+        if let Err(error) = self.responses.send(response).await {
             error!("Error sending response: {error}");
         }
     }

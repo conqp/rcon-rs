@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::future::Future;
 use std::time::Duration;
 
 use crate::Target;
@@ -12,7 +13,11 @@ pub trait Kick {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if kicking the player fails.
-    fn kick(&mut self, player: Cow<'_, str>, reason: Option<Cow<'_, str>>) -> std::io::Result<()>;
+    fn kick(
+        &mut self,
+        player: Cow<'_, str>,
+        reason: Option<Cow<'_, str>>,
+    ) -> impl Future<Output = std::io::Result<()>> + Send;
 }
 
 /// Ban players from the server.
@@ -24,7 +29,11 @@ pub trait Ban {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if banning  the player fails.
-    fn ban(&mut self, player: Cow<'_, str>, reason: Option<Cow<'_, str>>) -> std::io::Result<()>;
+    fn ban(
+        &mut self,
+        player: Cow<'_, str>,
+        reason: Option<Cow<'_, str>>,
+    ) -> impl Future<Output = std::io::Result<()>> + Send;
 }
 
 /// View the ban list of the server.
@@ -37,11 +46,13 @@ pub trait Bans {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if querying the ban list fails.
-    fn bans(&mut self) -> std::io::Result<impl Iterator<Item = Self::BanListEntry>>;
+    fn bans(
+        &mut self,
+    ) -> impl Future<Output = std::io::Result<impl Iterator<Item = Self::BanListEntry>>> + Send;
 }
 
 /// An entry of a ban list.
-pub trait BanListEntry {
+pub trait BanListEntry: Send {
     /// The unique ID of the entry.
     fn id(&self) -> u64;
 
@@ -70,10 +81,10 @@ pub trait AddBan {
     /// Returns an [`std::io::Error`] if banning  the player fails.
     fn add_ban(
         &mut self,
-        ban: Target,
+        target: Target,
         duration: Option<Duration>,
         reason: Option<Cow<'_, str>>,
-    ) -> std::io::Result<()>;
+    ) -> impl Future<Output = std::io::Result<()>> + Send;
 }
 
 /// Remove player bans.
@@ -83,5 +94,5 @@ pub trait RemoveBan {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if unbanning  the player fails.
-    fn remove_ban(&mut self, id: u64) -> std::io::Result<()>;
+    fn remove_ban(&mut self, id: u64) -> impl Future<Output = std::io::Result<()>> + Send;
 }

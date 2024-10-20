@@ -1,4 +1,4 @@
-use std::io::ErrorKind;
+use std::io::{Error, ErrorKind};
 
 use crc::{Crc, CRC_32_ISO_HDLC};
 use log::{debug, error};
@@ -41,7 +41,12 @@ impl Header {
             .take(Self::SIZE)
             .collect::<Vec<_>>()
             .try_into()
-            .map_err(|_| std::io::Error::from(ErrorKind::UnexpectedEof))?;
+            .map_err(|_| {
+                Error::new(
+                    ErrorKind::UnexpectedEof,
+                    "Too few bytes to construct header",
+                )
+            })?;
         Ok(Self::from(buffer))
     }
 

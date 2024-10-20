@@ -10,6 +10,8 @@ use crate::RCon;
 pub use client::Client;
 pub use quirks::Quirks;
 
-pub(crate) trait Source: RCon {}
+/// Trait to identify `Source RCON` clients.
+#[allow(private_bounds)]
+pub trait Source: RCon {}
 
 impl Source for Client {}

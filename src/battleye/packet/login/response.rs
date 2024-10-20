@@ -1,6 +1,7 @@
+use std::io::{Error, ErrorKind};
+
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
-use std::io::ErrorKind;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Response {
@@ -18,9 +19,12 @@ impl Response {
     where
         T: Iterator<Item = u8>,
     {
-        let success = src
-            .next()
-            .ok_or_else(|| std::io::Error::from(ErrorKind::UnexpectedEof))?;
+        let success = src.next().ok_or_else(|| {
+            Error::new(
+                ErrorKind::UnexpectedEof,
+                "Too few bytes to construct login response",
+            )
+        })?;
         Ok(move |header| Self::new(header, success != 0))
     }
 

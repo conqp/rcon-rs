@@ -1,14 +1,14 @@
-use log::{debug, error, trace};
-use std::borrow::Cow;
-use std::io;
-use std::io::Write;
-use std::net::TcpStream;
-
 use super::packet::Packet;
 use super::quirks::Quirks;
 use super::server_data::ServerData;
 use super::util::invalid_data;
 use crate::RCon;
+use std::borrow::Cow;
+use std::net::SocketAddr;
+
+use log::{debug, error, trace};
+use tokio::io::AsyncWriteExt;
+use tokio::net::TcpStream;
 
 /// A Source `RCON` client.
 #[derive(Debug)]
@@ -47,15 +47,19 @@ impl Client {
         self
     }
 
-    fn send(&mut self, packet: Packet) -> io::Result<()> {
+    async fn send(&mut self, packet: Packet) -> std::io::Result<()> {
         let bytes: Vec<_> = packet.try_into().map_err(invalid_data)?;
         debug!("Sending bytes: {bytes:?}");
-        self.tcp_stream.write_all(bytes.as_slice())
+        self.tcp_stream.write_all(bytes.as_slice()).await
     }
 
-    fn read_responses(&mut self, command_id: i32, sentinel_id: i32) -> io::Result<Vec<u8>> {
+    async fn read_responses(
+        &mut self,
+        command_id: i32,
+        sentinel_id: i32,
+    ) -> std::io::Result<Vec<u8>> {
         loop {
-            let packet = Packet::read_from(&mut self.tcp_stream)?;
+            let packet = Packet::read_from(&mut self.tcp_stream).await?;
 
             match packet.typ {
                 ServerData::ExecCommandOrAuthResponse => return Ok(packet.payload),
@@ -95,13 +99,21 @@ impl From<TcpStream> for Client {
 }
 
 impl RCon for Client {
-    fn login(&mut self, password: Cow<'_, str>) -> io::Result<bool> {
-        self.send(Packet::login(password))?;
+    async fn connect<T>(address: T) -> std::io::Result<Self>
+    where
+        Self: Sized,
+        T: Into<SocketAddr> + Send,
+    {
+        TcpStream::connect(address.into()).await.map(Self::from)
+    }
+
+    async fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool> {
+        self.send(Packet::login(password)).await?;
         let mut packet;
 
         loop {
             debug!("Reading response packet.");
-            packet = Packet::read_from(&mut self.tcp_stream)?;
+            packet = Packet::read_from(&mut self.tcp_stream).await?;
             if packet.typ == ServerData::ExecCommandOrAuthResponse {
                 break;
             }
@@ -110,13 +122,13 @@ impl RCon for Client {
         Ok(packet.id >= 0)
     }
 
-    fn run(&mut self, args: &[Cow<'_, str>]) -> io::Result<Vec<u8>> {
+    async fn run(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<Vec<u8>> {
         let command = Packet::command(args);
         let command_id = command.id;
         let sentinel = Packet::sentinel(command.id);
         let sentinel_id = sentinel.id;
-        self.send(command)?;
-        self.send(sentinel)?;
-        self.read_responses(command_id, sentinel_id)
+        self.send(command).await?;
+        self.send(sentinel).await?;
+        self.read_responses(command_id, sentinel_id).await
     }
 }

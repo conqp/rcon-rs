@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::fmt::Debug;
+use std::future::Future;
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use std::time::Duration;
@@ -18,7 +19,7 @@ pub trait Players {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if listing the players fails.
-    fn players(&mut self) -> std::io::Result<Vec<Self::Player>>;
+    fn players(&mut self) -> impl Future<Output = std::io::Result<Vec<Self::Player>>> + Send;
 
     /// Returns an iterator over player proxies.
     ///
@@ -34,16 +35,21 @@ pub trait Players {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if listing the players fails.
-    fn players_mut(&mut self) -> std::io::Result<PlayersMut<'_, Self>>
+    fn players_mut(&mut self) -> impl Future<Output = std::io::Result<PlayersMut<'_, Self>>> + Send
     where
-        Self: RCon + Sized,
+        Self: RCon + Sized + Send,
+        Self::Player: Debug,
     {
-        self.players().map(|players| PlayersMut::new(self, players))
+        async {
+            self.players()
+                .await
+                .map(|players| PlayersMut::new(self, players))
+        }
     }
 }
 
 /// Information about a player.
-pub trait Player: Debug {
+pub trait Player {
     /// Returns the player's ID.
     ///
     /// This is the only mandatory method of `Player` and may return
@@ -53,8 +59,8 @@ pub trait Player: Debug {
     fn id(&self) -> Cow<'_, str>;
 
     /// Returns the player's ID.
-    fn numeric_id(&self) -> Option<i64> {
-        i64::from_str(self.name().as_ref()).ok()
+    fn numeric_id(&self) -> Option<u64> {
+        u64::from_str(self.name().as_ref()).ok()
     }
 
     /// The player's descriptive name.

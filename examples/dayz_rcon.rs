@@ -2,31 +2,31 @@
 
 use std::borrow::Cow;
 use std::io::{stdout, Write};
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket};
+use std::net::{IpAddr, SocketAddr};
 use std::process::exit;
 use std::time::Duration;
 
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use log::error;
-use rcon::{battleye, Ban, Bans, Broadcast, Kick, Player, Players, RCon, Say};
+use rcon::{
+    battleye::Client, AddBan, Ban, Bans, Broadcast, Kick, Player, Players, RCon, RemoveBan, Say,
+    Target,
+};
 use rpassword::prompt_password;
-
-const DEFAULT_TIMEOUT: Duration = Duration::from_secs(5);
+use uuid::Uuid;
 
 #[derive(Debug, Parser)]
 #[command(author, version, about = "An RCon CLI client.")]
 struct Args {
     #[arg(index = 1, help = "The server address to connect to")]
     server: SocketAddr,
-    #[arg(short, long, help = "Connection timeout in seconds", default_value_t = DEFAULT_TIMEOUT.as_secs())]
-    timeout: u64,
     #[arg(short, long, help = "The password for the RCON server")]
     password: Option<String>,
     #[clap(subcommand)]
     command: Command,
 }
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Subcommand)]
 #[command(subcommand_value_name = "COMMAND")]
 enum Command {
     #[command(about = "List players on the server", name = "players")]
@@ -67,6 +67,20 @@ enum Command {
     },
     #[command(about = "Show the ban list", name = "bans")]
     Bans,
+    #[command(about = "Add an entry to the ban list", name = "add-ban")]
+    AddBan {
+        #[clap(subcommand)]
+        target: BanTarget,
+        #[arg(help = "The duration of the ban in minutes")]
+        duration: Option<u64>,
+        #[arg(help = "The reason for the ban")]
+        reason: Option<Cow<'static, str>>,
+    },
+    #[command(about = "Remove an entry from the ban list", name = "remove-ban")]
+    RemoveBan {
+        #[arg(help = "The Id of the entry to remove")]
+        id: u64,
+    },
     #[command(about = "Execute a raw command", name = "exec")]
     Exec {
         #[arg(help = "The command to execute")]
@@ -74,60 +88,71 @@ enum Command {
     },
 }
 
-impl Args {
-    fn client(&self) -> std::io::Result<battleye::Client> {
-        UdpSocket::bind(if self.server.is_ipv4() {
-            SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)
-        } else {
-            SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
-        })
-        .and_then(|socket| {
-            socket.set_read_timeout(Some(self.timeout()))?;
-            socket.set_write_timeout(Some(self.timeout()))?;
-            socket.connect(self.server)?;
-            Ok(socket)
-        })
-        .map(battleye::Client::new)
-        .map(Into::into)
-    }
+#[derive(Debug, Subcommand)]
+#[command(subcommand_value_name = "TARGET")]
+enum BanTarget {
+    #[command(about = "Ban an IP address", name = "ip")]
+    Ip {
+        #[arg(help = "The IP address to ban")]
+        ip: IpAddr,
+    },
+    #[command(about = "Ban a UUID", name = "uuid")]
+    Uuid {
+        #[arg(help = "The UUID to ban")]
+        uuid: Uuid,
+    },
+}
 
-    const fn timeout(&self) -> Duration {
-        Duration::from_secs(self.timeout)
-    }
-
-    fn password(&self) -> std::io::Result<String> {
-        self.password.as_ref().map_or_else(
-            || prompt_password("Enter password: "),
-            |password| Ok(password.clone()),
-        )
+impl From<BanTarget> for Target {
+    fn from(target: BanTarget) -> Self {
+        match target {
+            BanTarget::Ip { ip } => Self::Ip(ip),
+            BanTarget::Uuid { uuid } => Self::Uuid(uuid),
+        }
     }
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     env_logger::init();
     let args = Args::parse();
 
-    let mut client = args.client().unwrap_or_else(|error| {
+    let mut client = Client::connect(args.server).await.unwrap_or_else(|error| {
         error!("{error}");
         exit(1);
     });
 
-    let logged_in = args
-        .password()
-        .and_then(|password| client.login(password.into()))
+    let password = args
+        .password
+        .as_ref()
+        .map_or_else(
+            || prompt_password("Enter password: "),
+            |password| Ok(password.clone()),
+        )
         .unwrap_or_else(|error| {
             error!("{error}");
-            exit(3);
+            exit(2);
         });
 
-    if logged_in {
-        match args.command {
-            Command::Players => client
-                .players()
-                .map(|players| players.iter().for_each(|player| println!("{player:?}"))),
-            Command::SayToAll { message } => client.players_mut().map(|mut players| {
+    let logged_in = client.login(password.into()).await.unwrap_or_else(|error| {
+        error!("{error}");
+        exit(3);
+    });
+
+    if !logged_in {
+        error!("Login failed.");
+        exit(4);
+    }
+
+    match args.command {
+        Command::Players => client
+            .players()
+            .await
+            .map(|players| players.iter().for_each(|player| println!("{player:?}"))),
+        Command::SayToAll { message } => match client.players_mut().await {
+            Ok(mut players) => {
                 while let Some(mut player) = players.next() {
-                    player.say(message.clone()).unwrap_or_else(|error| {
+                    player.say(message.clone()).await.unwrap_or_else(|error| {
                         error!(
                             "Could not notify player #{} ({}): {error}",
                             player.id(),
@@ -135,23 +160,35 @@ fn main() {
                         );
                     });
                 }
-            }),
-            Command::Say { player, message } => client.say(player, message),
-            Command::Broadcast { message } => client.broadcast(message),
-            Command::Kick { player, reason } => client.kick(player, reason),
-            Command::Ban { player, reason } => client.ban(player, reason),
-            Command::Bans => client
-                .bans()
-                .map(|bans| bans.for_each(|ban| println!("{ban:?}"))),
-            Command::Exec { command } => client
-                .run(command.as_ref())
-                .and_then(|result| stdout().lock().write_all(&result)),
+
+                Ok(())
+            }
+            Err(error) => Err(error),
+        },
+        Command::Say { player, message } => client.say(player, message).await,
+        Command::Broadcast { message } => client.broadcast(message).await,
+        Command::Kick { player, reason } => client.kick(player, reason).await,
+        Command::Ban { player, reason } => client.ban(player, reason).await,
+        Command::Bans => client
+            .bans()
+            .await
+            .map(|bans| bans.for_each(|ban| println!("{ban:?}"))),
+        Command::AddBan {
+            target,
+            duration,
+            reason,
+        } => {
+            client
+                .add_ban(target.into(), duration.map(Duration::from_secs), reason)
+                .await
         }
-        .unwrap_or_else(|error| {
-            error!("{error}");
-        });
-    } else {
-        error!("Login failed.");
-        exit(4);
+        Command::RemoveBan { id } => client.remove_ban(id).await,
+        Command::Exec { command } => client
+            .run(command.as_ref())
+            .await
+            .and_then(|result| stdout().lock().write_all(&result)),
     }
+    .unwrap_or_else(|error| {
+        error!("{error}");
+    });
 }
