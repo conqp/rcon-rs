@@ -1,7 +1,6 @@
 //! A common interface for different `RCON` protocols.
 
 use std::borrow::Cow;
-use std::fmt::Debug;
 use std::future::Future;
 use std::io::{Error, ErrorKind};
 

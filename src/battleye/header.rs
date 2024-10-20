@@ -1,5 +1,3 @@
-use std::io::ErrorKind;
-
 use crc::{Crc, CRC_32_ISO_HDLC};
 use log::{debug, error};
 use tokio::io::AsyncReadExt;

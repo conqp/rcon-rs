@@ -33,7 +33,7 @@ pub struct Handler {
 
 impl Handler {
     #[must_use]
-    pub fn new(
+    pub const fn new(
         udp_stream: UdpStream,
         running: Arc<AtomicBool>,
         requests: Receiver<Request>,
