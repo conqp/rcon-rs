@@ -75,14 +75,16 @@ impl Client {
         trace!("Sending request {:?}", request);
         match request {
             Request::Command(command) => {
-                self.udp_stream
-                    .write_all(command.into_bytes().as_ref())
-                    .await?;
+                let bytes = command.into_bytes();
+                let bytes = bytes.as_ref();
+                debug!("Sending bytes {bytes:#04X?}");
+                self.udp_stream.write_all(bytes).await?;
             }
             Request::Login(login) => {
-                self.udp_stream
-                    .write_all(login.into_bytes().as_ref())
-                    .await?;
+                let bytes = login.into_bytes();
+                let bytes = bytes.as_ref();
+                debug!("Sending bytes {bytes:#04X?}");
+                self.udp_stream.write_all(bytes).await?;
             }
         }
 
