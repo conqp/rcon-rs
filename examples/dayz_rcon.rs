@@ -55,6 +55,26 @@ enum Command {
         #[arg(short, long, help = "An optional reason for the kick")]
         reason: Option<Cow<'static, str>>,
     },
+    #[command(
+        about = "Kick a player from the server given their name",
+        name = "kick-by-name"
+    )]
+    KickByName {
+        #[arg(help = "The name of the player to kick")]
+        name: Cow<'static, str>,
+        #[arg(short, long, help = "An optional reason for the kick")]
+        reason: Option<Cow<'static, str>>,
+    },
+    #[command(
+        about = "Kick a player from the server given their UUID",
+        name = "kick-by-uuid"
+    )]
+    KickByUuid {
+        #[arg(help = "The UUID of the player to kick")]
+        uuid: Uuid,
+        #[arg(short, long, help = "An optional reason for the kick")]
+        reason: Option<Cow<'static, str>>,
+    },
     #[command(about = "Ban a player from the server", name = "ban")]
     Ban {
         #[arg(help = "The player to ban")]
@@ -151,25 +171,12 @@ async fn main() -> ExitCode {
             .players()
             .await
             .map(|players| players.iter().for_each(|player| println!("{player}"))),
-        Command::SayToAll { message } => match client.players_mut().await {
-            Ok(mut players) => {
-                while let Some(mut player) = players.next() {
-                    player.say(message.clone()).await.unwrap_or_else(|error| {
-                        error!(
-                            "Could not notify player #{} ({}): {error}",
-                            player.id(),
-                            player.name()
-                        );
-                    });
-                }
-
-                Ok(())
-            }
-            Err(error) => Err(error),
-        },
+        Command::SayToAll { message } => say_to_all(&mut client, message).await,
         Command::Say { player, message } => client.say(player, message).await,
         Command::Broadcast { message } => client.broadcast(message).await,
         Command::Kick { player, reason } => client.kick(player, reason).await,
+        Command::KickByName { name, reason } => kick_by_name(&mut client, name, reason).await,
+        Command::KickByUuid { uuid, reason } => kick_by_uuid(&mut client, uuid, reason).await,
         Command::Ban { player, reason } => client.ban(player, reason).await,
         Command::Bans => client
             .bans()
@@ -195,4 +202,61 @@ async fn main() -> ExitCode {
     }
 
     ExitCode::SUCCESS
+}
+
+async fn say_to_all(client: &mut Client, message: Cow<'static, str>) -> std::io::Result<()> {
+    match client.players_mut().await {
+        Ok(mut players) => {
+            while let Some(mut player) = players.next() {
+                player.say(message.clone()).await.unwrap_or_else(|error| {
+                    error!(
+                        "Could not notify player #{} ({}): {error}",
+                        player.id(),
+                        player.name()
+                    );
+                });
+            }
+
+            Ok(())
+        }
+        Err(error) => Err(error),
+    }
+}
+
+async fn kick_by_name(
+    client: &mut Client,
+    name: Cow<'static, str>,
+    reason: Option<Cow<'static, str>>,
+) -> std::io::Result<()> {
+    let mut players = client.players_mut().await?;
+
+    while let Some(mut player) = players.next() {
+        if player.name() == name {
+            player.kick(reason.clone()).await?;
+        }
+    }
+
+    Ok(())
+}
+
+async fn kick_by_uuid(
+    client: &mut Client,
+    uuid: Uuid,
+    reason: Option<Cow<'static, str>>,
+) -> std::io::Result<()> {
+    match client.players_mut().await {
+        Ok(mut players) => {
+            while let Some(mut player) = players.next() {
+                if player.uuid() == Some(uuid) {
+                    player
+                        .kick(reason.clone())
+                        .await
+                        .unwrap_or_else(|error| error!(r#"Failed to kick player {uuid}: {error}"#));
+                }
+            }
+
+            Ok(())
+        }
+        Err(error) => Err(error),
+    }
 }
