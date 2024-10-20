@@ -1,16 +1,11 @@
 use std::borrow::Cow;
-use std::fmt::{Debug, Display};
 use std::future::Future;
-use std::hash::Hash;
 use std::time::Duration;
 
 use crate::Target;
 
 /// Kick players from the server.
 pub trait Kick {
-    /// The type of ID the player is identified with.
-    type Id: Clone + Debug + Display + Eq + Hash;
-
     /// Kick a player from the server.
     ///
     /// You may specify an optional reason for the kick to forward to the player.
@@ -18,18 +13,17 @@ pub trait Kick {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if kicking the player fails.
-    fn kick(
+    fn kick<T>(
         &mut self,
-        player: Self::Id,
+        player: T,
         reason: Option<Cow<'_, str>>,
-    ) -> impl Future<Output = std::io::Result<()>> + Send;
+    ) -> impl Future<Output = std::io::Result<()>> + Send
+    where
+        T: ToString + Send;
 }
 
 /// Ban players from the server.
 pub trait Ban {
-    /// The type of ID the player is identified with.
-    type Id: Clone + Debug + Display + Eq + Hash;
-
     /// Ban a player from the server.
     ///
     /// You may specify an optional reason for the ban to forward to the player.
@@ -37,11 +31,13 @@ pub trait Ban {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if banning  the player fails.
-    fn ban(
+    fn ban<T>(
         &mut self,
-        player: Self::Id,
+        player: T,
         reason: Option<Cow<'_, str>>,
-    ) -> impl Future<Output = std::io::Result<()>> + Send;
+    ) -> impl Future<Output = std::io::Result<()>> + Send
+    where
+        T: ToString + Send;
 }
 
 /// Manage the server's ban list.

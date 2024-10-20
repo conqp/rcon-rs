@@ -27,9 +27,10 @@ impl<T> Say for T
 where
     T: DayZ + Send,
 {
-    type Id = i64;
-
-    async fn say(&mut self, player: Self::Id, message: Cow<'_, str>) -> std::io::Result<()> {
+    async fn say<P>(&mut self, player: P, message: Cow<'_, str>) -> std::io::Result<()>
+    where
+        P: ToString + Send,
+    {
         self.run(&["say".into(), player.to_string().into(), message])
             .await
             .map(drop)
@@ -40,13 +41,10 @@ impl<T> Kick for T
 where
     T: DayZ + Send,
 {
-    type Id = u64;
-
-    async fn kick(
-        &mut self,
-        player: Self::Id,
-        reason: Option<Cow<'_, str>>,
-    ) -> std::io::Result<()> {
+    async fn kick<P>(&mut self, player: P, reason: Option<Cow<'_, str>>) -> std::io::Result<()>
+    where
+        P: ToString + Send,
+    {
         if let Some(reason) = reason {
             self.run(&["kick".into(), player.to_string().into(), reason])
                 .await
@@ -61,9 +59,10 @@ impl<T> Ban for T
 where
     T: DayZ + Send,
 {
-    type Id = u64;
-
-    async fn ban(&mut self, player: Self::Id, reason: Option<Cow<'_, str>>) -> std::io::Result<()> {
+    async fn ban<P>(&mut self, player: P, reason: Option<Cow<'_, str>>) -> std::io::Result<()>
+    where
+        P: ToString + Send,
+    {
         if let Some(reason) = reason {
             self.run(&["ban".into(), player.to_string().into(), reason])
                 .await

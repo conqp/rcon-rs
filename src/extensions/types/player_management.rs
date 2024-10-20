@@ -67,7 +67,7 @@ where
     /// Returns an [`std::io::Error`] if sending the message fails.
     pub async fn say(&mut self, message: Cow<'_, str>) -> std::io::Result<()>
     where
-        C: Say<Id = P::Id> + Send,
+        C: Say + Send,
         P: Send,
     {
         Say::say(self.client, self.player.id(), message).await
@@ -82,7 +82,7 @@ where
     /// Returns an [`std::io::Error`] if kicking the player fails.
     pub async fn kick(&mut self, reason: Option<Cow<'_, str>>) -> std::io::Result<()>
     where
-        C: Kick<Id = P::Id> + Send,
+        C: Kick + Send,
         P: Send,
     {
         Kick::kick(self.client, self.player.id(), reason).await
@@ -97,7 +97,7 @@ where
     /// Returns an [`std::io::Error`] if banning  the player fails.
     pub async fn ban(&mut self, reason: Option<Cow<'_, str>>) -> std::io::Result<()>
     where
-        C: Ban<Id = P::Id> + Send,
+        C: Ban + Send,
         P: Send,
     {
         Ban::ban(self.client, self.player.id(), reason).await

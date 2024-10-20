@@ -1,23 +1,20 @@
 use std::borrow::Cow;
-use std::fmt::{Debug, Display};
 use std::future::Future;
-use std::hash::Hash;
 
 /// Send direct messages to players.
 pub trait Say {
-    /// The type of ID the player is identified with.
-    type Id: Clone + Debug + Display + Eq + Hash;
-
     /// Send a message to a player.
     ///
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if sending the message fails.
-    fn say(
+    fn say<T>(
         &mut self,
-        player: Self::Id,
+        player: T,
         message: Cow<'_, str>,
-    ) -> impl Future<Output = std::io::Result<()>> + Send;
+    ) -> impl Future<Output = std::io::Result<()>> + Send
+    where
+        T: ToString + Send;
 }
 
 /// Broadcast messages to all players on the server.

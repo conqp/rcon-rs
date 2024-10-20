@@ -51,7 +51,7 @@ pub trait Players {
 /// Information about a player.
 pub trait Player {
     /// The type of ID the player is identified with.
-    type Id: Clone + Debug + Display + Eq + Hash;
+    type Id: Clone + Debug + Display + Eq + Hash + Send;
 
     /// Returns the player's ID.
     ///
