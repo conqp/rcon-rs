@@ -30,18 +30,17 @@ pub struct Handler {
 
 impl Handler {
     #[must_use]
-    pub fn new(
+    pub const fn new(
         udp_stream: UdpStream,
         running: Arc<AtomicBool>,
         responses: Sender<std::io::Result<Response>>,
-        buf_size: usize,
     ) -> Self {
         Self {
             udp_stream,
             running,
             responses,
             last_command: None,
-            buffer: vec![0; buf_size],
+            buffer: Vec::new(),
         }
     }
 
@@ -76,6 +75,9 @@ impl Handler {
     }
 
     async fn receive_message(&mut self) -> std::io::Result<Option<Response>> {
+        trace!("Clearing buffer");
+        self.buffer.clear();
+
         debug!("Receiving packet from UDP socket");
         let bytes = self.udp_stream.read_to_end(&mut self.buffer).await?;
         trace!("Received {bytes} bytes");

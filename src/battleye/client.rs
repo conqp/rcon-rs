@@ -20,7 +20,6 @@ use crate::RCon;
 mod handler;
 
 const DEFAULT_CHANNEL_SIZE: usize = 8;
-const DEFAULT_BUFFER_SIZE: usize = 1024;
 
 /// A `BattlEye Rcon` client.
 #[derive(Debug)]
@@ -42,7 +41,7 @@ impl Client {
     where
         T: Into<SocketAddr> + Send,
     {
-        Self::new_ext(address, DEFAULT_CHANNEL_SIZE, DEFAULT_BUFFER_SIZE).await
+        Self::new_ext(address, DEFAULT_CHANNEL_SIZE).await
     }
 
     /// Creates a new instance of the client with additional information.
@@ -50,11 +49,7 @@ impl Client {
     /// # Errors
     ///
     /// Returns an [`Error`] if connecting to the UDP server fails.
-    pub async fn new_ext<T>(
-        address: T,
-        channel_size: usize,
-        buf_size: usize,
-    ) -> std::io::Result<Self>
+    pub async fn new_ext<T>(address: T, channel_size: usize) -> std::io::Result<Self>
     where
         T: Into<SocketAddr> + Send,
     {
@@ -65,7 +60,6 @@ impl Client {
             UdpStream::connect(address).await?,
             running.clone(),
             response_tx,
-            buf_size,
         );
         let join_handle = spawn(handler.run());
         UdpStream::connect(address).await.map(|udp_stream| Self {
