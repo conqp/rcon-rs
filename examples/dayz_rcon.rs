@@ -2,13 +2,18 @@
 
 use std::borrow::Cow;
 use std::io::{stdout, Write};
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::process::exit;
+use std::time::Duration;
 
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use log::error;
-use rcon::{battleye::Client, Ban, Bans, Broadcast, Kick, Player, Players, RCon, Say};
+use rcon::{
+    battleye::Client, AddBan, Ban, Bans, Broadcast, Kick, Player, Players, RCon, RemoveBan, Say,
+    Target,
+};
 use rpassword::prompt_password;
+use uuid::Uuid;
 
 #[derive(Debug, Parser)]
 #[command(author, version, about = "An RCon CLI client.")]
@@ -21,7 +26,7 @@ struct Args {
     command: Command,
 }
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Subcommand)]
 #[command(subcommand_value_name = "COMMAND")]
 enum Command {
     #[command(about = "List players on the server", name = "players")]
@@ -62,11 +67,49 @@ enum Command {
     },
     #[command(about = "Show the ban list", name = "bans")]
     Bans,
+    #[command(about = "Add an entry to the ban list", name = "add-ban")]
+    AddBan {
+        #[clap(subcommand)]
+        target: BanTarget,
+        #[arg(help = "The duration of the ban in minutes")]
+        duration: Option<u64>,
+        #[arg(help = "The reason for the ban")]
+        reason: Option<Cow<'static, str>>,
+    },
+    #[command(about = "Remove an entry from the ban list", name = "remove-ban")]
+    RemoveBan {
+        #[arg(help = "The Id of the entry to remove")]
+        id: u64,
+    },
     #[command(about = "Execute a raw command", name = "exec")]
     Exec {
         #[arg(help = "The command to execute")]
         command: Vec<Cow<'static, str>>,
     },
+}
+
+#[derive(Debug, Subcommand)]
+#[command(subcommand_value_name = "TARGET")]
+enum BanTarget {
+    #[command(about = "Ban an IP address", name = "ip")]
+    Ip {
+        #[arg(help = "The IP address to ban")]
+        ip: IpAddr,
+    },
+    #[command(about = "Ban a UUID", name = "uuid")]
+    Uuid {
+        #[arg(help = "The UUID to ban")]
+        uuid: Uuid,
+    },
+}
+
+impl From<BanTarget> for Target {
+    fn from(target: BanTarget) -> Self {
+        match target {
+            BanTarget::Ip { ip } => Self::Ip(ip),
+            BanTarget::Uuid { uuid } => Self::Uuid(uuid),
+        }
+    }
 }
 
 #[tokio::main]
@@ -130,6 +173,16 @@ async fn main() {
             .bans()
             .await
             .map(|bans| bans.for_each(|ban| println!("{ban:?}"))),
+        Command::AddBan {
+            target,
+            duration,
+            reason,
+        } => {
+            client
+                .add_ban(target.into(), duration.map(Duration::from_secs), reason)
+                .await
+        }
+        Command::RemoveBan { id } => client.remove_ban(id).await,
         Command::Exec { command } => client
             .run(command.as_ref())
             .await
