@@ -18,7 +18,7 @@ num-derive = { version = "0.4", optional = true }
 num-traits = { version = "0.2", optional = true }
 rand = { version = "0.9.0-alpha.2", optional = true }
 tokio = { version = "1.40", optional = true }
-uuid = { version = "1.11" }
+uuid = { version = "1.11", optional = true }
 
 [dev-dependencies]
 clap = { version = "4.5" }
@@ -29,7 +29,7 @@ rpassword = { version = "7.3" }
 battleye = ["crc", "log", "tokio/rt", "tokio/time", "tokio/sync"]
 source = ["bitflags", "log", "num-derive", "num-traits", "rand", "tokio/io-util", "tokio/net"]
 cli = ["clap/derive", "tokio/rt-multi-thread", "tokio/macros"]
-dayz = ["battleye"]
+dayz = ["battleye", "uuid"]
 
 [[example]]
 name = "rconclt"

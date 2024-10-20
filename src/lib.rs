@@ -7,11 +7,12 @@ use std::net::SocketAddr;
 
 #[cfg(feature = "battleye")]
 pub mod battleye;
-mod extensions;
+#[cfg(feature = "dayz")]
+pub mod dayz;
 #[cfg(feature = "source")]
 pub mod source;
-
-pub use extensions::*;
+#[cfg(feature = "dayz")]
+pub use crate::dayz::DayZ;
 
 /// Common API for `RCON` protocol clients
 pub trait RCon {
