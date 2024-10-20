@@ -7,8 +7,9 @@ use std::process::ExitCode;
 use std::time::Duration;
 
 use clap::{Parser, Subcommand};
-use log::{error, info, warn};
-use rcon::{battleye::Client, Ban, BanList, Broadcast, Kick, Player, Players, RCon, Say, Target};
+use log::error;
+use rcon::dayz::Target;
+use rcon::{battleye::Client, DayZ, RCon};
 use rpassword::prompt_password;
 use uuid::Uuid;
 
@@ -32,14 +33,10 @@ enum Command {
         about = "Send a message directly to all players on the server",
         name = "say-to-all"
     )]
-    SayToAll {
-        #[arg(help = "The message")]
-        message: Cow<'static, str>,
-    },
     #[command(about = "Send a message to a player", name = "say")]
     Say {
         #[arg(help = "The player to send the message to")]
-        player: Cow<'static, str>,
+        player: u64,
         #[arg(help = "The message")]
         message: Cow<'static, str>,
     },
@@ -51,34 +48,14 @@ enum Command {
     #[command(about = "Kick a player from the server", name = "kick")]
     Kick {
         #[arg(help = "The player to kick")]
-        player: Cow<'static, str>,
-        #[arg(short, long, help = "An optional reason for the kick")]
-        reason: Option<Cow<'static, str>>,
-    },
-    #[command(
-        about = "Kick a player from the server given their name",
-        name = "kick-by-name"
-    )]
-    KickByName {
-        #[arg(help = "The name of the player to kick")]
-        name: Cow<'static, str>,
-        #[arg(short, long, help = "An optional reason for the kick")]
-        reason: Option<Cow<'static, str>>,
-    },
-    #[command(
-        about = "Kick a player from the server given their UUID",
-        name = "kick-by-uuid"
-    )]
-    KickByUuid {
-        #[arg(help = "The UUID of the player to kick")]
-        uuid: Uuid,
+        player: u64,
         #[arg(short, long, help = "An optional reason for the kick")]
         reason: Option<Cow<'static, str>>,
     },
     #[command(about = "Ban a player from the server", name = "ban")]
     Ban {
         #[arg(help = "The player to ban")]
-        player: Cow<'static, str>,
+        player: u64,
         #[arg(short, long, help = "An optional reason for the ban")]
         reason: Option<Cow<'static, str>>,
     },
@@ -171,12 +148,9 @@ async fn main() -> ExitCode {
             .players()
             .await
             .map(|players| players.iter().for_each(|player| println!("{player}"))),
-        Command::SayToAll { message } => say_to_all(&mut client, message).await,
         Command::Say { player, message } => client.say(player, message).await,
         Command::Broadcast { message } => client.broadcast(message).await,
         Command::Kick { player, reason } => client.kick(player, reason).await,
-        Command::KickByName { name, reason } => kick_by_name(&mut client, name, reason).await,
-        Command::KickByUuid { uuid, reason } => kick_by_uuid(&mut client, uuid, reason).await,
         Command::Ban { player, reason } => client.ban(player, reason).await,
         Command::Bans => client
             .bans()
@@ -202,61 +176,4 @@ async fn main() -> ExitCode {
     }
 
     ExitCode::SUCCESS
-}
-
-async fn say_to_all(client: &mut Client, message: Cow<'static, str>) -> std::io::Result<()> {
-    let mut players = client.players_mut().await?;
-
-    while let Some(mut player) = players.next() {
-        player.say(message.clone()).await?;
-        info!("Notified {player}");
-    }
-
-    Ok(())
-}
-
-async fn kick_by_name(
-    client: &mut Client,
-    name: Cow<'static, str>,
-    reason: Option<Cow<'static, str>>,
-) -> std::io::Result<()> {
-    let mut players = client.players_mut().await?;
-    let mut kicked = Vec::new();
-
-    while let Some(mut player) = players.next() {
-        if player.name() == name {
-            player.kick(reason.clone()).await?;
-            info!("Kicked {player}");
-            kicked.push(player.id());
-        }
-    }
-
-    if kicked.is_empty() {
-        warn!("No matching players found.");
-    }
-
-    Ok(())
-}
-
-async fn kick_by_uuid(
-    client: &mut Client,
-    uuid: Uuid,
-    reason: Option<Cow<'static, str>>,
-) -> std::io::Result<()> {
-    let mut players = client.players_mut().await?;
-    let mut kicked = Vec::new();
-
-    while let Some(mut player) = players.next() {
-        if player.uuid() == Some(uuid) {
-            player.kick(reason.clone()).await?;
-            info!("Kicked {player}");
-            kicked.push(player.id());
-        }
-    }
-
-    if kicked.is_empty() {
-        warn!("No matching players found.");
-    }
-
-    Ok(())
 }

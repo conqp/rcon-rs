@@ -1,7 +1,5 @@
 #[cfg(feature = "dayz")]
-mod dayz;
-mod traits;
-mod types;
+pub use dayz::DayZ;
 
-pub use traits::*;
-pub use types::*;
+#[cfg(feature = "dayz")]
+pub mod dayz;

@@ -3,7 +3,9 @@ use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use std::time::Duration;
 
-use crate::Target;
+pub use target::Target;
+
+mod target;
 
 pub const PERM_BAN: &str = "perm";
 pub const SECS_PER_MINUTE: u64 = 60;
@@ -11,33 +13,45 @@ pub const SECS_PER_MINUTE: u64 = 60;
 /// A ban list entry.
 #[derive(Debug)]
 pub struct BanListEntry {
-    id: u64,
+    index: u64,
     target: Target,
     duration: Option<Duration>,
     reason: Option<String>,
 }
 
-impl crate::BanListEntry for BanListEntry {
-    fn id(&self) -> u64 {
-        self.id
+impl BanListEntry {
+    /// The index of the ban list entry.
+    #[must_use]
+    pub const fn index(&self) -> u64 {
+        self.index
     }
 
-    fn target(&self) -> Target {
+    /// The target that was banned.
+    ///
+    /// This may either be an IP address or a UUID.
+    #[must_use]
+    pub const fn target(&self) -> Target {
         self.target
     }
 
-    fn duration(&self) -> Option<Duration> {
+    /// The duration of the ban.
+    ///
+    /// A value of `None` indicates a permanent ban.
+    #[must_use]
+    pub const fn duration(&self) -> Option<Duration> {
         self.duration
     }
 
-    fn reason(&self) -> Option<&str> {
+    /// Returns the reason for the ban.
+    #[must_use]
+    pub fn reason(&self) -> Option<&str> {
         self.reason.as_deref()
     }
 }
 
 impl Display for BanListEntry {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "#{} of ", self.id)?;
+        write!(f, "#{} of ", self.index)?;
 
         match self.target {
             Target::Ip(ip) => Display::fmt(&ip, f)?,
@@ -68,7 +82,8 @@ impl FromStr for BanListEntry {
             .parse()
             .map_err(|_| format!("Invalid u64 for ID: {id}"))?;
         let target = fields.next().ok_or("Missing ban target field")?;
-        let target = Target::from_str(target).map_err(|()| "Invalid ban type: {target}")?;
+        let target =
+            Target::from_str(target).map_err(|()| format!("Invalid ban type: {target}"))?;
         let duration = fields.next().ok_or("Missing duration field")?;
         let duration = if duration == PERM_BAN {
             None
@@ -80,7 +95,7 @@ impl FromStr for BanListEntry {
         let reason = fields.next().map(ToString::to_string);
 
         Ok(Self {
-            id,
+            index: id,
             target,
             duration,
             reason,

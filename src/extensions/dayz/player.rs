@@ -16,6 +16,52 @@ pub struct Player {
     name: String,
 }
 
+impl Player {
+    /// The index of the player on the server.
+    #[must_use]
+    pub const fn index(&self) -> u64 {
+        self.index
+    }
+
+    /// The socket address from which the player connected.
+    #[must_use]
+    pub const fn socket_addr(&self) -> SocketAddr {
+        self.socket_addr
+    }
+
+    /// The player's round trip time (RTT).
+    #[must_use]
+    pub const fn ping(&self) -> Duration {
+        self.ping
+    }
+
+    /// The player's globally unique identifier.
+    #[must_use]
+    pub const fn guid(&self) -> Uuid {
+        self.guid
+    }
+
+    /// The player's name.
+    #[must_use]
+    pub fn name(&self) -> Cow<'_, str> {
+        Cow::Borrowed(&self.name)
+    }
+}
+
+impl Display for Player {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            r#"#{} {} alias "{}" from {} with RTT of {}ms"#,
+            self.index,
+            self.guid,
+            self.name,
+            self.socket_addr,
+            self.ping.as_millis()
+        )
+    }
+}
+
 impl FromStr for Player {
     type Err = Cow<'static, str>;
 
@@ -50,47 +96,5 @@ impl FromStr for Player {
             guid,
             name,
         })
-    }
-}
-
-impl Display for Player {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            r#"#{} {} alias "{}" from {} with RTT of {}ms"#,
-            self.index,
-            self.guid,
-            self.name,
-            self.socket_addr,
-            self.ping.as_millis()
-        )
-    }
-}
-
-impl crate::Player for Player {
-    type Id = u64;
-
-    fn id(&self) -> Self::Id {
-        self.index
-    }
-
-    fn name(&self) -> Cow<'_, str> {
-        Cow::Borrowed(&self.name)
-    }
-
-    fn index(&self) -> Option<u64> {
-        Some(self.index)
-    }
-
-    fn uuid(&self) -> Option<Uuid> {
-        Some(self.guid)
-    }
-
-    fn socket_addr(&self) -> Option<SocketAddr> {
-        Some(self.socket_addr)
-    }
-
-    fn rtt(&self) -> Option<Duration> {
-        Some(self.ping)
     }
 }

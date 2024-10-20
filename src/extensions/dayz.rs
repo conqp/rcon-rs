@@ -1,4 +1,7 @@
+//! `BattlEye RCon` extensions for `DayZ` servers.
+
 use std::borrow::Cow;
+use std::future::Future;
 use std::io::ErrorKind;
 use std::str::FromStr;
 use std::time::Duration;
@@ -6,80 +9,144 @@ use std::time::Duration;
 use log::warn;
 
 use crate::battleye::BattlEye;
-use crate::extensions::traits::{Ban, Kick};
-use crate::{BanList, Broadcast, Players, RCon, Say, Target};
+use crate::RCon;
 
-use ban_list_entry::{BanListEntry, PERM_BAN, SECS_PER_MINUTE};
-use player::Player;
+pub use banning::{BanListEntry, Target};
+use banning::{PERM_BAN, SECS_PER_MINUTE};
+pub use player::Player;
 
-mod ban_list_entry;
+mod banning;
 mod player;
 
-const BROADCAST_TARGET: i8 = -1;
+const BROADCAST_TARGET: i64 = -1;
 const INVALID_BAN_FORMAT_MESSAGE: &str = "Invalid ban format";
 
-/// Sealing trait for `BattlEye Rcon` clients for `DayZ` servers.
-trait DayZ: RCon + BattlEye {}
+/// Extension trait for `BattlEye Rcon` clients for `DayZ` servers.
+pub trait DayZ: RCon + BattlEye {
+    /// Send a message to a player.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if sending the message fails.
+    fn say(
+        &mut self,
+        index: u64,
+        message: Cow<'_, str>,
+    ) -> impl Future<Output = std::io::Result<()>> + Send;
 
-impl<T> DayZ for T where T: RCon + BattlEye {}
+    /// Broadcast a message to all players on the server.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if sending the message fails.
+    fn broadcast(
+        &mut self,
+        message: Cow<'_, str>,
+    ) -> impl Future<Output = std::io::Result<()>> + Send;
 
-impl<T> Say for T
+    /// Kick a player from the server.
+    ///
+    /// You may specify an optional reason for the kick to forward to the player.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if kicking the player fails.
+    fn kick(
+        &mut self,
+        index: u64,
+        reason: Option<Cow<'_, str>>,
+    ) -> impl Future<Output = std::io::Result<()>> + Send;
+
+    /// Ban a player from the server.
+    ///
+    /// You may specify an optional reason for the ban to forward to the player.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if banning  the player fails.
+    fn ban(
+        &mut self,
+        index: u64,
+        reason: Option<Cow<'_, str>>,
+    ) -> impl Future<Output = std::io::Result<()>> + Send;
+
+    /// Returns an iterator over the server's current ban list.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if querying the ban list fails.
+    fn bans(
+        &mut self,
+    ) -> impl Future<Output = std::io::Result<impl Iterator<Item = BanListEntry>>> + Send;
+
+    /// Add an entry to the ban list.
+    ///
+    /// This can be either an IP address or a UUID.
+    ///
+    /// You may specify an optional duration and reason for the ban to add to the ban list.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if banning  the player fails.
+    fn add_ban(
+        &mut self,
+        target: Target,
+        duration: Option<Duration>,
+        reason: Option<Cow<'_, str>>,
+    ) -> impl Future<Output = std::io::Result<()>> + Send;
+
+    /// Remove a player ban entry from the server's ban list.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if unbanning  the player fails.
+    fn remove_ban(&mut self, index: u64) -> impl Future<Output = std::io::Result<()>> + Send;
+
+    /// List players on the server.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if listing the players fails.
+    fn players(&mut self) -> impl Future<Output = std::io::Result<Vec<Player>>> + Send;
+}
+
+impl<T> DayZ for T
 where
-    T: DayZ + Send,
+    T: RCon + BattlEye + Send,
 {
-    async fn say<P>(&mut self, player: P, message: Cow<'_, str>) -> std::io::Result<()>
-    where
-        P: ToString + Send,
-    {
-        self.run(&["say".into(), player.to_string().into(), message])
+    async fn say(&mut self, index: u64, message: Cow<'_, str>) -> std::io::Result<()> {
+        self.run(&["say".into(), index.to_string().into(), message])
             .await
             .map(drop)
     }
-}
 
-impl<T> Kick for T
-where
-    T: DayZ + Send,
-{
-    async fn kick<P>(&mut self, player: P, reason: Option<Cow<'_, str>>) -> std::io::Result<()>
-    where
-        P: ToString + Send,
-    {
+    async fn broadcast(&mut self, message: Cow<'_, str>) -> std::io::Result<()> {
+        self.run(&["say".into(), BROADCAST_TARGET.to_string().into(), message])
+            .await
+            .map(drop)
+    }
+
+    async fn kick(&mut self, index: u64, reason: Option<Cow<'_, str>>) -> std::io::Result<()> {
         if let Some(reason) = reason {
-            self.run(&["kick".into(), player.to_string().into(), reason])
+            self.run(&["kick".into(), index.to_string().into(), reason])
                 .await
         } else {
-            self.run(&["kick".into(), player.to_string().into()]).await
+            self.run(&["kick".into(), index.to_string().into()]).await
         }
         .map(drop)
     }
-}
 
-impl<T> Ban for T
-where
-    T: DayZ + Send,
-{
-    async fn ban<P>(&mut self, player: P, reason: Option<Cow<'_, str>>) -> std::io::Result<()>
-    where
-        P: ToString + Send,
-    {
+    async fn ban(&mut self, index: u64, reason: Option<Cow<'_, str>>) -> std::io::Result<()> {
         if let Some(reason) = reason {
-            self.run(&["ban".into(), player.to_string().into(), reason])
+            self.run(&["ban".into(), index.to_string().into(), reason])
                 .await
         } else {
-            self.run(&["ban".into(), player.to_string().into()]).await
+            self.run(&["ban".into(), index.to_string().into()]).await
         }
         .map(drop)
     }
-}
 
-impl<T> BanList for T
-where
-    T: DayZ + Send,
-{
-    type BanListEntry = BanListEntry;
-
-    async fn bans(&mut self) -> std::io::Result<impl Iterator<Item = Self::BanListEntry>> {
+    async fn bans(&mut self) -> std::io::Result<impl Iterator<Item = BanListEntry>> {
         self.run_utf8_lossy(&["bans".into()]).await.map(|text| {
             text.lines()
                 .filter(|line| line.chars().next().map_or(false, char::is_numeric))
@@ -135,24 +202,8 @@ where
             .await
             .map(drop)
     }
-}
 
-impl<T> Broadcast for T
-where
-    T: DayZ + Send,
-{
-    async fn broadcast(&mut self, message: Cow<'_, str>) -> std::io::Result<()> {
-        self.say(BROADCAST_TARGET, message).await
-    }
-}
-
-impl<T> Players for T
-where
-    T: DayZ + Send,
-{
-    type Player = Player;
-
-    async fn players(&mut self) -> std::io::Result<Vec<Self::Player>> {
+    async fn players(&mut self) -> std::io::Result<Vec<Player>> {
         let result = self.run(&["players".into()]).await?;
         let text = String::from_utf8(result).map_err(|_| {
             std::io::Error::new(ErrorKind::InvalidData, "Response is not valid UTF-8")
