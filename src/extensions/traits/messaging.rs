@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::future::Future;
 
 /// Send direct messages to players.
 pub trait Say {
@@ -7,7 +8,11 @@ pub trait Say {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if sending the message fails.
-    fn say(&mut self, target: Cow<'_, str>, message: Cow<'_, str>) -> std::io::Result<()>;
+    fn say(
+        &mut self,
+        target: Cow<'_, str>,
+        message: Cow<'_, str>,
+    ) -> impl Future<Output = std::io::Result<()>>;
 }
 
 /// Broadcast messages to all players on the server.
@@ -17,5 +22,5 @@ pub trait Broadcast {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if sending the message fails.
-    fn broadcast(&mut self, message: Cow<'_, str>) -> std::io::Result<()>;
+    fn broadcast(&mut self, message: Cow<'_, str>) -> impl Future<Output = std::io::Result<()>>;
 }

@@ -18,7 +18,6 @@ use crate::RCon;
 mod handler;
 
 const DEFAULT_HANDLER_INTERVAL: Duration = Duration::from_millis(100);
-const DEFAULT_BUF_SIZE: usize = 1024;
 const DEFAULT_CHANNEL_SIZE: usize = 8;
 
 /// A `BattlEye Rcon` client.
@@ -37,7 +36,6 @@ impl Client {
     pub fn new(udp_stream: UdpStream) -> Self {
         Self::new_ext(
             udp_stream,
-            DEFAULT_BUF_SIZE,
             DEFAULT_CHANNEL_SIZE,
             Some(DEFAULT_HANDLER_INTERVAL),
         )
@@ -47,7 +45,6 @@ impl Client {
     #[must_use]
     pub fn new_ext(
         udp_stream: UdpStream,
-        buf_size: usize,
         channel_size: usize,
         handler_interval: Option<Duration>,
     ) -> Self {
@@ -60,9 +57,8 @@ impl Client {
             request_rx,
             response_tx,
             handler_interval,
-            buf_size,
         );
-        let join_handle = spawn(|| handler.run());
+        let join_handle = spawn(handler.run());
         Self {
             running,
             requests: request_tx,

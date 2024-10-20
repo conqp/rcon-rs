@@ -1,6 +1,8 @@
+use tokio::io::AsyncReadExt;
+use udp_stream::UdpStream;
+
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
-use std::io::ErrorKind;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Response {
@@ -14,14 +16,10 @@ impl Response {
         Self { header, success }
     }
 
-    pub fn read_from<T>(mut src: T) -> std::io::Result<impl FnOnce(Header) -> Self>
-    where
-        T: Iterator<Item = u8>,
-    {
-        let success = src
-            .next()
-            .ok_or_else(|| std::io::Error::from(ErrorKind::UnexpectedEof))?;
-        Ok(move |header| Self::new(header, success != 0))
+    pub async fn read_from(src: &mut UdpStream) -> std::io::Result<impl FnOnce(Header) -> Self> {
+        let mut buffer = [0; 1];
+        src.read_exact(&mut buffer).await?;
+        Ok(move |header| Self::new(header, buffer[0] != 0))
     }
 
     #[must_use]

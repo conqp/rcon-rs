@@ -1,9 +1,10 @@
-use crate::battleye::from_server::FromServer;
-use crate::battleye::header::Header;
-use std::io::ErrorKind;
 use std::sync::Arc;
+
 use tokio::io::AsyncReadExt;
 use udp_stream::UdpStream;
+
+use crate::battleye::from_server::FromServer;
+use crate::battleye::header::Header;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Response {
@@ -25,7 +26,7 @@ impl Response {
     pub async fn read_from(src: &mut UdpStream) -> std::io::Result<impl FnOnce(Header) -> Self> {
         let mut buffer = Vec::new();
         src.read_to_end(&mut buffer).await?;
-        Ok(move |header| Self::new(header, buffer, payload.into()))
+        Ok(move |header| Self::new(header, buffer[..1][0], buffer[1..].into()))
     }
 
     #[must_use]

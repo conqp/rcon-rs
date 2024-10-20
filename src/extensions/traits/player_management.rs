@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::fmt::Debug;
+use std::future::Future;
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use std::time::Duration;
@@ -18,7 +19,7 @@ pub trait Players {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if listing the players fails.
-    fn players(&mut self) -> std::io::Result<Vec<Self::Player>>;
+    fn players(&mut self) -> impl Future<Output = std::io::Result<Vec<Self::Player>>>;
 
     /// Returns an iterator over player proxies.
     ///
@@ -34,11 +35,15 @@ pub trait Players {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if listing the players fails.
-    fn players_mut(&mut self) -> std::io::Result<PlayersMut<'_, Self>>
+    fn players_mut(&mut self) -> impl Future<Output = std::io::Result<PlayersMut<'_, Self>>>
     where
         Self: RCon + Sized,
     {
-        self.players().map(|players| PlayersMut::new(self, players))
+        async {
+            self.players()
+                .await
+                .map(|players| PlayersMut::new(self, players))
+        }
     }
 }
 

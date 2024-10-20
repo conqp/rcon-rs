@@ -27,8 +27,8 @@ impl<T> Say for T
 where
     T: DayZ,
 {
-    fn say(&mut self, target: Cow<'_, str>, message: Cow<'_, str>) -> std::io::Result<()> {
-        self.run(&["say".into(), target, message]).map(drop)
+    async fn say(&mut self, target: Cow<'_, str>, message: Cow<'_, str>) -> std::io::Result<()> {
+        self.run(&["say".into(), target, message]).await.map(drop)
     }
 }
 
@@ -36,11 +36,15 @@ impl<T> Kick for T
 where
     T: DayZ,
 {
-    fn kick(&mut self, player: Cow<'_, str>, reason: Option<Cow<'_, str>>) -> std::io::Result<()> {
+    async fn kick(
+        &mut self,
+        player: Cow<'_, str>,
+        reason: Option<Cow<'_, str>>,
+    ) -> std::io::Result<()> {
         if let Some(reason) = reason {
-            self.run(&["kick".into(), player, reason])
+            self.run(&["kick".into(), player, reason]).await
         } else {
-            self.run(&["kick".into(), player])
+            self.run(&["kick".into(), player]).await
         }
         .map(drop)
     }
@@ -50,11 +54,15 @@ impl<T> Ban for T
 where
     T: DayZ,
 {
-    fn ban(&mut self, player: Cow<'_, str>, reason: Option<Cow<'_, str>>) -> std::io::Result<()> {
+    async fn ban(
+        &mut self,
+        player: Cow<'_, str>,
+        reason: Option<Cow<'_, str>>,
+    ) -> std::io::Result<()> {
         if let Some(reason) = reason {
-            self.run(&["ban".into(), player, reason])
+            self.run(&["ban".into(), player, reason]).await
         } else {
-            self.run(&["ban".into(), player])
+            self.run(&["ban".into(), player]).await
         }
         .map(drop)
     }
@@ -62,12 +70,12 @@ where
 
 impl<T> Bans for T
 where
-    T: DayZ,
+    T: DayZ + Send,
 {
     type BanListEntry = BanListEntry;
 
-    fn bans(&mut self) -> std::io::Result<impl Iterator<Item = Self::BanListEntry>> {
-        self.run_utf8_lossy(&["bans".into()]).map(|text| {
+    async fn bans(&mut self) -> std::io::Result<impl Iterator<Item = Self::BanListEntry>> {
+        self.run_utf8_lossy(&["bans".into()]).await.map(|text| {
             text.lines()
                 .filter(|line| line.chars().next().map_or(false, char::is_numeric))
                 .filter_map(|line| {
@@ -85,7 +93,7 @@ impl<T> AddBan for T
 where
     T: DayZ,
 {
-    fn add_ban(
+    async fn add_ban(
         &mut self,
         ban: Target,
         duration: Option<Duration>,
@@ -110,7 +118,7 @@ where
             args.push(reason);
         }
 
-        self.run(&args).and_then(|response| {
+        self.run(&args).await.and_then(|response| {
             if response == INVALID_BAN_FORMAT_MESSAGE.as_bytes() {
                 Err(std::io::Error::new(
                     ErrorKind::InvalidData,
@@ -127,8 +135,9 @@ impl<T> RemoveBan for T
 where
     T: DayZ,
 {
-    fn remove_ban(&mut self, id: u64) -> std::io::Result<()> {
+    async fn remove_ban(&mut self, id: u64) -> std::io::Result<()> {
         self.run(&["removeBan".into(), id.to_string().into()])
+            .await
             .map(drop)
     }
 }
@@ -137,8 +146,8 @@ impl<T> Broadcast for T
 where
     T: DayZ,
 {
-    fn broadcast(&mut self, message: Cow<'_, str>) -> std::io::Result<()> {
-        self.say(BROADCAST_TARGET.into(), message)
+    async fn broadcast(&mut self, message: Cow<'_, str>) -> std::io::Result<()> {
+        self.say(BROADCAST_TARGET.into(), message).await
     }
 }
 
@@ -148,8 +157,8 @@ where
 {
     type Player = Player;
 
-    fn players(&mut self) -> std::io::Result<Vec<Self::Player>> {
-        let result = self.run(&["players".into()])?;
+    async fn players(&mut self) -> std::io::Result<Vec<Self::Player>> {
+        let result = self.run(&["players".into()]).await?;
         let text = String::from_utf8(result).map_err(|_| {
             std::io::Error::new(ErrorKind::InvalidData, "Response is not valid UTF-8")
         })?;
