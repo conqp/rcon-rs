@@ -1,9 +1,9 @@
 use std::borrow::Cow;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, TcpStream, UdpSocket};
+use std::net::SocketAddr;
 use std::time::Duration;
 
 use clap::Parser;
-use rcon::{battleye, source, RCon};
+use rcon::source;
 use rpassword::prompt_password;
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(5);
@@ -22,46 +22,11 @@ pub struct Args {
 }
 
 impl Args {
-    pub fn client(&self) -> std::io::Result<Box<dyn RCon>> {
-        match &self.protocol {
-            Protocol::BattlEye { .. } => {
-                let client = UdpSocket::bind(if self.server.is_ipv4() {
-                    SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)
-                } else {
-                    SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
-                })
-                .and_then(|socket| {
-                    socket.set_read_timeout(Some(self.timeout()))?;
-                    socket.set_write_timeout(Some(self.timeout()))?;
-                    socket.connect(self.server)?;
-                    Ok(socket)
-                })
-                .map(battleye::Client::new)?;
-                Ok(Box::new(client))
-            }
-            Protocol::Source { quirks, .. } => {
-                let client = TcpStream::connect(self.server)
-                    .and_then(|socket| {
-                        socket.set_read_timeout(Some(self.timeout()))?;
-                        socket.set_write_timeout(Some(self.timeout()))?;
-                        Ok(socket)
-                    })
-                    .map(source::Client::new)
-                    .map(|client| {
-                        if let Some(quirks) =
-                            quirks.iter().copied().reduce(|acc, quirk| acc | quirk)
-                        {
-                            client.with_quirk(quirks)
-                        } else {
-                            client
-                        }
-                    })?;
-                Ok(Box::new(client))
-            }
-        }
+    pub fn server(&self) -> SocketAddr {
+        self.server
     }
 
-    const fn timeout(&self) -> Duration {
+    pub(crate) const fn timeout(&self) -> Duration {
         Duration::from_secs(self.timeout)
     }
 
@@ -72,14 +37,14 @@ impl Args {
         )
     }
 
-    pub fn command(&self) -> &[Cow<'static, str>] {
-        self.protocol.command()
+    pub fn protocol(&self) -> &Protocol {
+        &self.protocol
     }
 }
 
 #[derive(Debug, Parser)]
 #[command(subcommand_value_name = "PROTOCOL")]
-enum Protocol {
+pub enum Protocol {
     #[command(about = "Use the Source RCON protocol", name = "source")]
     Source {
         #[arg(help = "The command to execute")]

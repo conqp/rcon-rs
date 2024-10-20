@@ -27,7 +27,7 @@ uuid = { version = "1.11.0", features = ["v4"] }
 [features]
 battleye = ["crc", "udp-stream", "tokio/time"]
 source = ["bitflags", "num-derive", "num-traits", "rand", "tokio/net"]
-cli = ["clap/derive", "env_logger", "rpassword"]
+cli = ["clap/derive", "env_logger", "rpassword", "tokio/rt", "tokio/rt-multi-thread", "tokio/macros"]
 dayz = ["battleye"]
 udp-stream = ["dep:udp-stream"]
 
