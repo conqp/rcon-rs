@@ -68,9 +68,9 @@ pub trait BanListEntry: Send {
     fn reason(&self) -> Option<&str>;
 }
 
-/// Ban list management.
+/// Add entries to the ban list.
 pub trait AddBan {
-    /// Add a ban to ban list.
+    /// Add an entry to the ban list.
     ///
     /// This can be either an IP address or a UUID.
     ///
