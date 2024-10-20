@@ -33,10 +33,6 @@ pub struct Client {
 
 impl Client {
     /// Creates a new instance of the client.
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`Error`] if connecting to the UDP server fails.
     #[must_use]
     pub fn new<const BUFFER_SIZE: usize>(udp_socket: UdpSocket, channel_size: usize) -> Self {
         let running = Arc::new(AtomicBool::new(true));
