@@ -9,6 +9,7 @@ mod packet;
 use crate::RCon;
 pub use client::Client;
 
-pub(crate) trait BattlEye: RCon {}
+/// Trait to identify `BattlEye RCon` clients.
+pub trait BattlEye: RCon {}
 
 impl BattlEye for Client {}
