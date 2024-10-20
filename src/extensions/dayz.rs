@@ -15,7 +15,7 @@ use player::Player;
 mod ban_list_entry;
 mod player;
 
-const BROADCAST_TARGET: i64 = -1;
+const BROADCAST_TARGET: i8 = -1;
 const INVALID_BAN_FORMAT_MESSAGE: &str = "Invalid ban format";
 
 /// Extended `BattlEye Rcon` client for `DayZ` servers.
