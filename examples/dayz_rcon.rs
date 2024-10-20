@@ -9,7 +9,6 @@ use clap::Parser;
 use log::error;
 use rcon::{battleye::Client, Ban, Bans, Broadcast, Kick, Player, Players, RCon, Say};
 use rpassword::prompt_password;
-use udp_stream::UdpStream;
 
 #[derive(Debug, Parser)]
 #[command(author, version, about = "An RCon CLI client.")]
@@ -70,33 +69,27 @@ enum Command {
     },
 }
 
-impl Args {
-    async fn client(&self) -> std::io::Result<Client> {
-        UdpStream::connect(self.server).await.map(Client::new)
-    }
-
-    fn password(&self) -> std::io::Result<String> {
-        self.password.as_ref().map_or_else(
-            || prompt_password("Enter password: "),
-            |password| Ok(password.clone()),
-        )
-    }
-}
-
 #[tokio::main]
 async fn main() {
     env_logger::init();
     let args = Args::parse();
 
-    let mut client = args.client().await.unwrap_or_else(|error| {
+    let mut client = Client::connect(args.server).await.unwrap_or_else(|error| {
         error!("{error}");
         exit(1);
     });
 
-    let password = args.password().unwrap_or_else(|error| {
-        error!("{error}");
-        exit(2);
-    });
+    let password = args
+        .password
+        .as_ref()
+        .map_or_else(
+            || prompt_password("Enter password: "),
+            |password| Ok(password.clone()),
+        )
+        .unwrap_or_else(|error| {
+            error!("{error}");
+            exit(2);
+        });
 
     let logged_in = client.login(password.into()).await.unwrap_or_else(|error| {
         error!("{error}");

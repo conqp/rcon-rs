@@ -8,7 +8,6 @@ use args::Args;
 use clap::Parser;
 use log::error;
 use rcon::{battleye, source, RCon};
-use tokio::net::TcpStream;
 
 use args::Protocol;
 
@@ -30,13 +29,11 @@ async fn main() -> std::io::Result<()> {
 async fn run(args: &Args) -> std::io::Result<Vec<u8>> {
     match args.protocol() {
         Protocol::BattlEye { command } => {
-            let client = battleye::Client::new(args.server()).await?;
+            let client = battleye::Client::connect(args.server()).await?;
             run_impl(client, args.password()?, command).await
         }
         Protocol::Source { command, quirks } => {
-            let mut client = TcpStream::connect(args.server())
-                .await
-                .map(source::Client::new)?;
+            let mut client = source::Client::connect(args.server()).await?;
 
             if let Some(quirks) = quirks.iter().copied().reduce(|acc, quirk| acc | quirk) {
                 client.enable_quirk(quirks);
