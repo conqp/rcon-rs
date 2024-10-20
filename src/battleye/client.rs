@@ -120,8 +120,10 @@ impl RCon for Client {
         } else {
             SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
         })?;
+
         socket.set_read_timeout(DEFAULT_SOCKET_TIMEOUT)?;
         socket.connect(address)?;
+
         Ok(Self::new::<DEFAULT_BUF_SIZE>(socket, DEFAULT_CHANNEL_SIZE))
     }
 
