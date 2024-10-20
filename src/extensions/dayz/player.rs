@@ -9,7 +9,7 @@ use uuid::Uuid;
 /// Information about a player on a `DayZ` server.
 #[derive(Clone, Debug)]
 pub struct Player {
-    id: u64,
+    index: u64,
     socket_addr: SocketAddr,
     ping: Duration,
     guid: Uuid,
@@ -44,7 +44,7 @@ impl FromStr for Player {
             .map_err(|error| format!("invalid GUID: {error}"))?;
         let name = fields.collect::<Vec<_>>().join("");
         Ok(Self {
-            id,
+            index: id,
             socket_addr,
             ping: Duration::from_millis(ping),
             guid,
@@ -55,19 +55,23 @@ impl FromStr for Player {
 
 impl Display for Player {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} (#{}): {}", self.name, self.id, self.guid)
+        write!(f, "{} (#{}): {}", self.name, self.index, self.guid)
     }
 }
 
 impl crate::Player for Player {
-    type Id = u64;
+    type Id = Uuid;
 
     fn id(&self) -> Self::Id {
-        self.id
+        self.guid
     }
 
     fn name(&self) -> Cow<'_, str> {
         Cow::Borrowed(&self.name)
+    }
+
+    fn index(&self) -> Option<u64> {
+        Some(self.index)
     }
 
     fn uuid(&self) -> Option<Uuid> {
