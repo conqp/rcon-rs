@@ -9,7 +9,6 @@ use std::time::{Duration, SystemTime};
 use log::{debug, error, trace, warn};
 use tokio::sync::mpsc::error::TryRecvError;
 use tokio::sync::mpsc::{Receiver, Sender};
-use tokio::time::sleep;
 
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
@@ -26,7 +25,6 @@ pub struct Handler {
     running: Arc<AtomicBool>,
     requests: Receiver<Request>,
     responses: Sender<std::io::Result<Response>>,
-    interval: Option<Duration>,
     last_command: Option<SystemTime>,
     buffer: Vec<u8>,
 }
@@ -38,7 +36,6 @@ impl Handler {
         running: Arc<AtomicBool>,
         requests: Receiver<Request>,
         responses: Sender<std::io::Result<Response>>,
-        interval: Option<Duration>,
         buf_size: usize,
     ) -> Self {
         Self {
@@ -46,7 +43,6 @@ impl Handler {
             running,
             requests,
             responses,
-            interval,
             last_command: None,
             buffer: vec![0; buf_size],
         }
@@ -68,11 +64,6 @@ impl Handler {
                     TryRecvError::Empty => {
                         self.process_incoming_messages().await;
                         self.keepalive();
-
-                        if let Some(interval) = self.interval {
-                            debug!("Sleeping for {interval:?}");
-                            sleep(interval).await;
-                        }
                     }
                 },
             }

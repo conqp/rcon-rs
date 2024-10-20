@@ -18,7 +18,6 @@ mod handler;
 
 const DEFAULT_CHANNEL_SIZE: usize = 8;
 const DEFAULT_BUF_SIZE: usize = 1024;
-const DEFAULT_HANDLER_INTERVAL: Option<Duration> = Some(Duration::from_secs(1));
 const DEFAULT_SOCKET_TIMEOUT: Option<Duration> = Some(Duration::from_millis(100));
 
 /// A `BattlEye Rcon` client.
@@ -38,12 +37,7 @@ impl Client {
     ///
     /// Returns an [`Error`] if connecting to the UDP server fails.
     #[must_use]
-    pub fn new(
-        udp_socket: UdpSocket,
-        channel_size: usize,
-        buf_size: usize,
-        handler_interval: Option<Duration>,
-    ) -> Self {
+    pub fn new(udp_socket: UdpSocket, channel_size: usize, buf_size: usize) -> Self {
         let running = Arc::new(AtomicBool::new(true));
         let (requests_tx, requests_rx) = channel::<Request>(channel_size);
         let (response_tx, response_rx) = channel(channel_size);
@@ -52,7 +46,6 @@ impl Client {
             running.clone(),
             requests_rx,
             response_tx,
-            handler_interval,
             buf_size,
         );
         let join_handle = spawn(handler.run());
@@ -137,12 +130,7 @@ impl RCon for Client {
         })?;
         socket.set_read_timeout(DEFAULT_SOCKET_TIMEOUT)?;
         socket.connect(address)?;
-        Ok(Self::new(
-            socket,
-            DEFAULT_CHANNEL_SIZE,
-            DEFAULT_BUF_SIZE,
-            DEFAULT_HANDLER_INTERVAL,
-        ))
+        Ok(Self::new(socket, DEFAULT_CHANNEL_SIZE, DEFAULT_BUF_SIZE))
     }
 
     async fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool> {
