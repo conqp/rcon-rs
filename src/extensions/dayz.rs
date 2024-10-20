@@ -95,13 +95,13 @@ where
 {
     async fn add_ban(
         &mut self,
-        ban: Target,
+        target: Target,
         duration: Option<Duration>,
         reason: Option<Cow<'_, str>>,
     ) -> std::io::Result<()> {
         let mut args: Vec<Cow<'_, str>> = vec!["addBan".into()];
 
-        match ban {
+        match target {
             Target::Ip(ip) => args.push(ip.to_string().into()),
             Target::Uuid(uuid) => args.push(uuid.to_string().replace('-', "").into()),
         }

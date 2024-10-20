@@ -81,7 +81,7 @@ pub trait AddBan {
     /// Returns an [`std::io::Error`] if banning  the player fails.
     fn add_ban(
         &mut self,
-        ban: Target,
+        target: Target,
         duration: Option<Duration>,
         reason: Option<Cow<'_, str>>,
     ) -> impl Future<Output = std::io::Result<()>> + Send;
