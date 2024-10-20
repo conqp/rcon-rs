@@ -9,7 +9,6 @@ use clap::Parser;
 use log::error;
 use rcon::{battleye, source, RCon};
 use tokio::net::TcpStream;
-use udp_stream::UdpStream;
 
 use args::Protocol;
 
@@ -31,14 +30,8 @@ async fn main() -> std::io::Result<()> {
 async fn run(args: &Args) -> std::io::Result<Vec<u8>> {
     match args.protocol() {
         Protocol::BattlEye { command } => {
-            run_impl(
-                UdpStream::connect(args.server())
-                    .await
-                    .map(battleye::Client::new)?,
-                args.password()?,
-                command,
-            )
-            .await
+            let client = battleye::Client::new(args.server()).await?;
+            run_impl(client, args.password()?, command).await
         }
         Protocol::Source { command, quirks } => {
             let mut client = TcpStream::connect(args.server())

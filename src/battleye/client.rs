@@ -1,31 +1,32 @@
 use std::borrow::Cow;
 use std::io::{Error, ErrorKind};
+use std::net::SocketAddr;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::SeqCst;
 use std::sync::Arc;
-use std::time::Duration;
 
 use log::{debug, trace};
+use tokio::io::AsyncWriteExt;
 use tokio::spawn;
-use tokio::sync::mpsc::{channel, Receiver, Sender};
+use tokio::sync::mpsc::{channel, Receiver};
 use tokio::task::JoinHandle;
 use udp_stream::UdpStream;
 
 use crate::battleye::client::handler::Handler;
+use crate::battleye::into_bytes::IntoBytes;
 use crate::battleye::packet::{command, login, CommunicationResult, Request, Response};
 use crate::RCon;
 
 mod handler;
 
-const DEFAULT_HANDLER_INTERVAL: Duration = Duration::from_millis(100);
 const DEFAULT_CHANNEL_SIZE: usize = 8;
 const DEFAULT_BUFFER_SIZE: usize = 1024;
 
 /// A `BattlEye Rcon` client.
 #[derive(Debug)]
 pub struct Client {
+    udp_stream: UdpStream,
     running: Arc<AtomicBool>,
-    requests: Sender<Request>,
     responses: Receiver<std::io::Result<Response>>,
     handler: Option<JoinHandle<()>>,
     buffer: Vec<command::Response>,
@@ -33,51 +34,63 @@ pub struct Client {
 
 impl Client {
     /// Creates a new instance of the client.
-    #[must_use]
-    pub fn new(udp_stream: UdpStream) -> Self {
-        Self::new_ext(
-            udp_stream,
-            DEFAULT_CHANNEL_SIZE,
-            DEFAULT_BUFFER_SIZE,
-            Some(DEFAULT_HANDLER_INTERVAL),
-        )
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`Error`] if connecting to the UDP server fails.
+    pub async fn new<T>(address: T) -> std::io::Result<Self>
+    where
+        T: Into<SocketAddr> + Send,
+    {
+        Self::new_ext(address, DEFAULT_CHANNEL_SIZE, DEFAULT_BUFFER_SIZE).await
     }
 
     /// Creates a new instance of the client with additional information.
-    #[must_use]
-    pub fn new_ext(
-        udp_stream: UdpStream,
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`Error`] if connecting to the UDP server fails.
+    pub async fn new_ext<T>(
+        address: T,
         channel_size: usize,
         buf_size: usize,
-        handler_interval: Option<Duration>,
-    ) -> Self {
+    ) -> std::io::Result<Self>
+    where
+        T: Into<SocketAddr> + Send,
+    {
+        let address = address.into();
         let running = Arc::new(AtomicBool::new(true));
-        let (request_tx, request_rx) = channel(channel_size);
         let (response_tx, response_rx) = channel(channel_size);
         let handler = Handler::new(
-            udp_stream,
+            UdpStream::connect(address).await?,
             running.clone(),
-            request_rx,
             response_tx,
-            handler_interval,
             buf_size,
         );
         let join_handle = spawn(handler.run());
-        Self {
+        UdpStream::connect(address).await.map(|udp_stream| Self {
+            udp_stream,
             running,
-            requests: request_tx,
             responses: response_rx,
             handler: Some(join_handle),
             buffer: Vec::new(),
-        }
+        })
     }
 
     async fn communicate(&mut self, request: Request) -> std::io::Result<CommunicationResult> {
         trace!("Sending request {:?}", request);
-        self.requests
-            .send(request)
-            .await
-            .map_err(|_| ErrorKind::BrokenPipe)?;
+        match request {
+            Request::Command(command) => {
+                self.udp_stream
+                    .write_all(command.into_bytes().as_ref())
+                    .await?;
+            }
+            Request::Login(login) => {
+                self.udp_stream
+                    .write_all(login.into_bytes().as_ref())
+                    .await?;
+            }
+        }
 
         debug!("Clearing buffer");
         self.buffer.clear();
