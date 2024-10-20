@@ -55,7 +55,15 @@ impl FromStr for Player {
 
 impl Display for Player {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} (#{}): {}", self.name, self.index, self.guid)
+        write!(
+            f,
+            r#"#{} {} alias "{}" from {} with RTT of {}ms"#,
+            self.index,
+            self.guid,
+            self.name,
+            self.socket_addr,
+            self.ping.as_millis()
+        )
     }
 }
 
