@@ -1,8 +1,8 @@
 use std::borrow::Cow;
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::future::Future;
+use std::hash::Hash;
 use std::net::{IpAddr, SocketAddr};
-use std::str::FromStr;
 use std::time::Duration;
 
 use uuid::Uuid;
@@ -50,25 +50,20 @@ pub trait Players {
 
 /// Information about a player.
 pub trait Player {
+    /// The type of ID the player is identified with.
+    type Id: Clone + Debug + Display + Eq + Hash;
+
     /// Returns the player's ID.
-    ///
-    /// This is the only mandatory method of `Player` and may return
-    /// the player's name or the string representation of a numeric ID.
     ///
     /// Its return value shall be a value that can be used to securely identify the player.
-    fn id(&self) -> Cow<'_, str>;
-
-    /// Returns the player's ID.
-    fn numeric_id(&self) -> Option<u64> {
-        u64::from_str(self.name().as_ref()).ok()
-    }
+    fn id(&self) -> Self::Id;
 
     /// The player's descriptive name.
-    ///
-    /// This defaults to the return value of [`id`](Self::id) but unlike the
-    /// latter this method should not be used to safely identify players.
-    fn name(&self) -> Cow<'_, str> {
-        self.id()
+    fn name(&self) -> Cow<'_, str>;
+
+    /// Returns the index of the player if applicable.
+    fn index(&self) -> Option<u64> {
+        None
     }
 
     /// Returns the player's UUID.

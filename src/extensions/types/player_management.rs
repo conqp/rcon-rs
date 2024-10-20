@@ -67,7 +67,7 @@ where
     /// Returns an [`std::io::Error`] if sending the message fails.
     pub async fn say(&mut self, message: Cow<'_, str>) -> std::io::Result<()>
     where
-        C: Say + Send,
+        C: Say<Id = P::Id> + Send,
         P: Send,
     {
         Say::say(self.client, self.player.id(), message).await
@@ -82,7 +82,7 @@ where
     /// Returns an [`std::io::Error`] if kicking the player fails.
     pub async fn kick(&mut self, reason: Option<Cow<'_, str>>) -> std::io::Result<()>
     where
-        C: Kick + Send,
+        C: Kick<Id = P::Id> + Send,
         P: Send,
     {
         Kick::kick(self.client, self.player.id(), reason).await
@@ -97,7 +97,7 @@ where
     /// Returns an [`std::io::Error`] if banning  the player fails.
     pub async fn ban(&mut self, reason: Option<Cow<'_, str>>) -> std::io::Result<()>
     where
-        C: Ban + Send,
+        C: Ban<Id = P::Id> + Send,
         P: Send,
     {
         Ban::ban(self.client, self.player.id(), reason).await
@@ -109,16 +109,18 @@ where
     C: RCon,
     P: Player,
 {
-    fn id(&self) -> Cow<'_, str> {
-        self.player.id()
-    }
+    type Id = P::Id;
 
-    fn numeric_id(&self) -> Option<u64> {
-        self.player.numeric_id()
+    fn id(&self) -> Self::Id {
+        self.player.id()
     }
 
     fn name(&self) -> Cow<'_, str> {
         self.player.name()
+    }
+
+    fn index(&self) -> Option<u64> {
+        self.player.index()
     }
 
     fn uuid(&self) -> Option<Uuid> {

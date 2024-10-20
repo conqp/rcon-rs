@@ -15,7 +15,7 @@ use player::Player;
 mod ban_list_entry;
 mod player;
 
-const BROADCAST_TARGET: &str = "-1";
+const BROADCAST_TARGET: i64 = -1;
 const INVALID_BAN_FORMAT_MESSAGE: &str = "Invalid ban format";
 
 /// Extended `BattlEye Rcon` client for `DayZ` servers.
@@ -27,8 +27,12 @@ impl<T> Say for T
 where
     T: DayZ + Send,
 {
-    async fn say(&mut self, target: Cow<'_, str>, message: Cow<'_, str>) -> std::io::Result<()> {
-        self.run(&["say".into(), target, message]).await.map(drop)
+    type Id = i64;
+
+    async fn say(&mut self, player: Self::Id, message: Cow<'_, str>) -> std::io::Result<()> {
+        self.run(&["say".into(), player.to_string().into(), message])
+            .await
+            .map(drop)
     }
 }
 
@@ -36,15 +40,18 @@ impl<T> Kick for T
 where
     T: DayZ + Send,
 {
+    type Id = u64;
+
     async fn kick(
         &mut self,
-        player: Cow<'_, str>,
+        player: Self::Id,
         reason: Option<Cow<'_, str>>,
     ) -> std::io::Result<()> {
         if let Some(reason) = reason {
-            self.run(&["kick".into(), player, reason]).await
+            self.run(&["kick".into(), player.to_string().into(), reason])
+                .await
         } else {
-            self.run(&["kick".into(), player]).await
+            self.run(&["kick".into(), player.to_string().into()]).await
         }
         .map(drop)
     }
@@ -54,15 +61,14 @@ impl<T> Ban for T
 where
     T: DayZ + Send,
 {
-    async fn ban(
-        &mut self,
-        player: Cow<'_, str>,
-        reason: Option<Cow<'_, str>>,
-    ) -> std::io::Result<()> {
+    type Id = u64;
+
+    async fn ban(&mut self, player: Self::Id, reason: Option<Cow<'_, str>>) -> std::io::Result<()> {
         if let Some(reason) = reason {
-            self.run(&["ban".into(), player, reason]).await
+            self.run(&["ban".into(), player.to_string().into(), reason])
+                .await
         } else {
-            self.run(&["ban".into(), player]).await
+            self.run(&["ban".into(), player.to_string().into()]).await
         }
         .map(drop)
     }
@@ -137,7 +143,7 @@ where
     T: DayZ + Send,
 {
     async fn broadcast(&mut self, message: Cow<'_, str>) -> std::io::Result<()> {
-        self.say(BROADCAST_TARGET.into(), message).await
+        self.say(BROADCAST_TARGET, message).await
     }
 }
 

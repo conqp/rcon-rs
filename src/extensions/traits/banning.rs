@@ -1,11 +1,16 @@
 use std::borrow::Cow;
+use std::fmt::{Debug, Display};
 use std::future::Future;
+use std::hash::Hash;
 use std::time::Duration;
 
 use crate::Target;
 
 /// Kick players from the server.
 pub trait Kick {
+    /// The type of ID the player is identified with.
+    type Id: Clone + Debug + Display + Eq + Hash;
+
     /// Kick a player from the server.
     ///
     /// You may specify an optional reason for the kick to forward to the player.
@@ -15,13 +20,16 @@ pub trait Kick {
     /// Returns an [`std::io::Error`] if kicking the player fails.
     fn kick(
         &mut self,
-        player: Cow<'_, str>,
+        player: Self::Id,
         reason: Option<Cow<'_, str>>,
     ) -> impl Future<Output = std::io::Result<()>> + Send;
 }
 
 /// Ban players from the server.
 pub trait Ban {
+    /// The type of ID the player is identified with.
+    type Id: Clone + Debug + Display + Eq + Hash;
+
     /// Ban a player from the server.
     ///
     /// You may specify an optional reason for the ban to forward to the player.
@@ -31,7 +39,7 @@ pub trait Ban {
     /// Returns an [`std::io::Error`] if banning  the player fails.
     fn ban(
         &mut self,
-        player: Cow<'_, str>,
+        player: Self::Id,
         reason: Option<Cow<'_, str>>,
     ) -> impl Future<Output = std::io::Result<()>> + Send;
 }
