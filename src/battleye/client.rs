@@ -19,6 +19,7 @@ mod handler;
 
 const DEFAULT_HANDLER_INTERVAL: Duration = Duration::from_millis(100);
 const DEFAULT_CHANNEL_SIZE: usize = 8;
+const DEFAULT_BUFFER_SIZE: usize = 1024;
 
 /// A `BattlEye Rcon` client.
 #[derive(Debug)]
@@ -37,6 +38,7 @@ impl Client {
         Self::new_ext(
             udp_stream,
             DEFAULT_CHANNEL_SIZE,
+            DEFAULT_BUFFER_SIZE,
             Some(DEFAULT_HANDLER_INTERVAL),
         )
     }
@@ -46,6 +48,7 @@ impl Client {
     pub fn new_ext(
         udp_stream: UdpStream,
         channel_size: usize,
+        buf_size: usize,
         handler_interval: Option<Duration>,
     ) -> Self {
         let running = Arc::new(AtomicBool::new(true));
@@ -57,6 +60,7 @@ impl Client {
             request_rx,
             response_tx,
             handler_interval,
+            buf_size,
         );
         let join_handle = spawn(handler.run());
         Self {
