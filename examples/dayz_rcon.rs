@@ -8,10 +8,7 @@ use std::time::Duration;
 
 use clap::{Parser, Subcommand};
 use log::error;
-use rcon::{
-    battleye::Client, AddBan, Ban, Bans, Broadcast, Kick, Player, Players, RCon, RemoveBan, Say,
-    Target,
-};
+use rcon::{battleye::Client, Ban, BanList, Broadcast, Kick, Player, Players, RCon, Say, Target};
 use rpassword::prompt_password;
 use uuid::Uuid;
 

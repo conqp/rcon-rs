@@ -7,7 +7,7 @@ use log::warn;
 
 use crate::battleye::BattlEye;
 use crate::extensions::traits::{Ban, Kick};
-use crate::{AddBan, Bans, Broadcast, Players, RCon, RemoveBan, Say, Target};
+use crate::{BanList, Broadcast, Players, RCon, Say, Target};
 
 use ban_list_entry::{BanListEntry, PERM_BAN, SECS_PER_MINUTE};
 use player::Player;
@@ -68,7 +68,7 @@ where
     }
 }
 
-impl<T> Bans for T
+impl<T> BanList for T
 where
     T: DayZ + Send,
 {
@@ -87,12 +87,7 @@ where
                 .into_iter()
         })
     }
-}
 
-impl<T> AddBan for T
-where
-    T: DayZ + Send,
-{
     async fn add_ban(
         &mut self,
         target: Target,
@@ -129,12 +124,7 @@ where
             }
         })
     }
-}
 
-impl<T> RemoveBan for T
-where
-    T: DayZ + Send,
-{
     async fn remove_ban(&mut self, id: u64) -> std::io::Result<()> {
         self.run(&["removeBan".into(), id.to_string().into()])
             .await
