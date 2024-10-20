@@ -65,9 +65,9 @@ enum Command {
     AddBan {
         #[clap(subcommand)]
         target: BanTarget,
-        #[arg(help = "The duration of the ban in minutes")]
+        #[arg(short, long, help = "The duration of the ban in minutes")]
         duration: Option<u64>,
-        #[arg(help = "The reason for the ban")]
+        #[arg(short, long, help = "The reason for the ban")]
         reason: Option<Cow<'static, str>>,
     },
     #[command(about = "Remove an entry from the ban list", name = "remove-ban")]
