@@ -1,4 +1,4 @@
-//! Client implementation of the `BattlEye Rcon` protocol.
+//! Client implementation of the [`BattlEye Rcon`](https://www.battleye.com/downloads/BERConProtocol.txt) protocol.
 
 mod client;
 mod from_server;

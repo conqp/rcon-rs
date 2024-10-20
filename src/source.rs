@@ -1,4 +1,4 @@
-//! Client implementation for the Source `RCON` protocol.
+//! Client implementation for the [`Source RCON`](https://developer.valvesoftware.com/wiki/Source_RCON_Protocol) protocol.
 
 mod client;
 mod packet;
