@@ -68,10 +68,10 @@ impl Display for Player {
 }
 
 impl crate::Player for Player {
-    type Id = Uuid;
+    type Id = u64;
 
     fn id(&self) -> Self::Id {
-        self.guid
+        self.index
     }
 
     fn name(&self) -> Cow<'_, str> {
