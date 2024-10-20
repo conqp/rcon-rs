@@ -37,17 +37,12 @@ impl Client {
     ///
     /// Returns an [`Error`] if connecting to the UDP server fails.
     #[must_use]
-    pub fn new(udp_socket: UdpSocket, channel_size: usize, buf_size: usize) -> Self {
+    pub fn new<const BUFFER_SIZE: usize>(udp_socket: UdpSocket, channel_size: usize) -> Self {
         let running = Arc::new(AtomicBool::new(true));
         let (requests_tx, requests_rx) = channel::<Request>(channel_size);
         let (response_tx, response_rx) = channel(channel_size);
-        let handler = Handler::new(
-            udp_socket,
-            running.clone(),
-            requests_rx,
-            response_tx,
-            buf_size,
-        );
+        let handler =
+            Handler::<BUFFER_SIZE>::new(udp_socket, running.clone(), requests_rx, response_tx);
         let join_handle = spawn(handler.run());
         Self {
             running,
@@ -130,7 +125,7 @@ impl RCon for Client {
         })?;
         socket.set_read_timeout(DEFAULT_SOCKET_TIMEOUT)?;
         socket.connect(address)?;
-        Ok(Self::new(socket, DEFAULT_CHANNEL_SIZE, DEFAULT_BUF_SIZE))
+        Ok(Self::new::<DEFAULT_BUF_SIZE>(socket, DEFAULT_CHANNEL_SIZE))
     }
 
     async fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool> {
