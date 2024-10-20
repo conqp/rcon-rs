@@ -1,7 +1,7 @@
+use std::io::{Error, ErrorKind};
+
 use crc::{Crc, CRC_32_ISO_HDLC};
 use log::{debug, error};
-use tokio::io::AsyncReadExt;
-use udp_stream::UdpStream;
 
 const INFIX: u8 = 0xFF;
 const PREFIX: &[u8; 2] = b"BE";
@@ -33,9 +33,20 @@ impl Header {
         Self::new(*PREFIX, crc32(typ, INFIX, payload), INFIX, typ)
     }
 
-    pub async fn read_from(src: &mut UdpStream) -> std::io::Result<Self> {
-        let mut buffer = [0; Self::SIZE];
-        src.read_exact(&mut buffer).await?;
+    pub fn read_from<T>(src: T) -> std::io::Result<Self>
+    where
+        T: Iterator<Item = u8>,
+    {
+        let buffer: [u8; Self::SIZE] = src
+            .take(Self::SIZE)
+            .collect::<Vec<_>>()
+            .try_into()
+            .map_err(|_| {
+                Error::new(
+                    ErrorKind::UnexpectedEof,
+                    "Too few bytes to construct header",
+                )
+            })?;
         Ok(Self::from(buffer))
     }
 

@@ -1,7 +1,4 @@
-use std::sync::Arc;
-
-use tokio::io::AsyncReadExt;
-use udp_stream::UdpStream;
+use std::io::{Error, ErrorKind};
 
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
@@ -10,23 +7,25 @@ use crate::battleye::header::Header;
 pub struct Response {
     header: Header,
     seq: u8,
-    payload: Arc<[u8]>,
+    payload: Vec<u8>,
 }
 
 impl Response {
-    #[must_use]
-    pub const fn new(header: Header, seq: u8, payload: Arc<[u8]>) -> Self {
-        Self {
+    pub fn read_from<T>(mut src: T) -> std::io::Result<impl FnOnce(Header) -> Self>
+    where
+        T: Iterator<Item = u8>,
+    {
+        let seq = src.next().ok_or_else(|| {
+            Error::new(
+                ErrorKind::UnexpectedEof,
+                "Too few bytes to construct response",
+            )
+        })?;
+        Ok(move |header| Self {
             header,
             seq,
-            payload,
-        }
-    }
-
-    pub async fn read_from(src: &mut UdpStream) -> std::io::Result<impl FnOnce(Header) -> Self> {
-        let mut buffer = Vec::new();
-        src.read_to_end(&mut buffer).await?;
-        Ok(move |header| Self::new(header, buffer[..1][0], buffer[1..].into()))
+            payload: src.collect(),
+        })
     }
 
     #[must_use]

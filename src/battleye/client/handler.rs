@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
 use log::{debug, error, trace, warn};
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::mpsc::error::TryRecvError;
 use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::time::sleep;
@@ -29,6 +29,7 @@ pub struct Handler {
     responses: Sender<std::io::Result<Response>>,
     interval: Option<Duration>,
     last_command: Option<SystemTime>,
+    buffer: Vec<u8>,
 }
 
 impl Handler {
@@ -47,6 +48,7 @@ impl Handler {
             responses,
             interval,
             last_command: None,
+            buffer: Vec::new(),
         }
     }
 
@@ -107,7 +109,7 @@ impl Handler {
     async fn process_incoming_messages(&mut self) {
         debug!("Processing incoming messages");
 
-        match self.process_incoming_message_fallible().await {
+        match self.receive_response().await {
             Err(error) => {
                 debug!("Error while processing incoming messages: {error}");
                 trace!("Error kind: {:?}", error.kind());
@@ -125,41 +127,45 @@ impl Handler {
         }
     }
 
-    async fn process_incoming_message_fallible(&mut self) -> std::io::Result<Option<Response>> {
+    async fn receive_response(&mut self) -> std::io::Result<Option<Response>> {
+        trace!("Clearing buffer");
+        self.buffer.clear();
+
         debug!("Receiving packet from UDP socket");
+        self.udp_stream.read_to_end(&mut self.buffer).await?;
+
+        trace!("Setting up byte stream");
+        let mut stream = self.buffer.iter().copied();
+
         debug!("Parsing header from buffer");
-        let header = Header::read_from(&mut self.udp_stream).await?;
+        let header = Header::read_from(&mut stream)?;
         trace!("Received header: {header:?}");
 
         match header.typ() {
             command::TYPE => {
                 debug!("Received command response");
-                let response = command::Response::read_from(&mut self.udp_stream)
-                    .await
+                return command::Response::read_from(&mut stream)
                     .map(|f| f(header))
                     .and_then(FromServer::validate)
-                    .map(Response::Command)?;
-                trace!("Command response: {response:?}");
-                return Ok(Some(response));
+                    .map(Response::Command)
+                    .map(Some);
             }
             login::TYPE => {
                 debug!("Received login response");
-                let response = login::Response::read_from(&mut self.udp_stream)
-                    .await
+                return login::Response::read_from(&mut stream)
                     .map(|f| f(header))
                     .and_then(FromServer::validate)
-                    .map(Response::Login)?;
-                trace!("Login response: {response:?}");
-                return Ok(Some(response));
+                    .map(Response::Login)
+                    .map(Some);
             }
             server::TYPE => {
                 debug!("Received server message");
-                let message = Message::read_from(&mut self.udp_stream)
-                    .await
-                    .map(|f| f(header))
-                    .and_then(FromServer::validate)?;
-                trace!("Server message: {message:?}");
-                self.ack(&message).await;
+                self.ack(
+                    &Message::read_from(&mut stream)
+                        .map(|f| f(header))
+                        .and_then(FromServer::validate)?,
+                )
+                .await;
             }
             other => {
                 error!("Received packet of invalid type: {other:#04X}");

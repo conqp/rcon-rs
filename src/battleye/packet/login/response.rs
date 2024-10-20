@@ -1,5 +1,4 @@
-use tokio::io::AsyncReadExt;
-use udp_stream::UdpStream;
+use std::io::{Error, ErrorKind};
 
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
@@ -16,10 +15,17 @@ impl Response {
         Self { header, success }
     }
 
-    pub async fn read_from(src: &mut UdpStream) -> std::io::Result<impl FnOnce(Header) -> Self> {
-        let mut buffer = [0; 1];
-        src.read_exact(&mut buffer).await?;
-        Ok(move |header| Self::new(header, buffer[0] != 0))
+    pub fn read_from<T>(mut src: T) -> std::io::Result<impl FnOnce(Header) -> Self>
+    where
+        T: Iterator<Item = u8>,
+    {
+        let success = src.next().ok_or_else(|| {
+            Error::new(
+                ErrorKind::UnexpectedEof,
+                "Too few bytes to construct login response",
+            )
+        })?;
+        Ok(move |header| Self::new(header, success != 0))
     }
 
     #[must_use]
