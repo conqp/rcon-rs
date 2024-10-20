@@ -77,13 +77,13 @@ impl Client {
             Request::Command(command) => {
                 let bytes = command.into_bytes();
                 let bytes = bytes.as_ref();
-                debug!("Sending bytes {bytes:#04X?}");
+                trace!("Sending bytes {bytes:#04X?}");
                 self.udp_stream.write_all(bytes).await?;
             }
             Request::Login(login) => {
                 let bytes = login.into_bytes();
                 let bytes = bytes.as_ref();
-                debug!("Sending bytes {bytes:#04X?}");
+                trace!("Sending bytes {bytes:#04X?}");
                 self.udp_stream.write_all(bytes).await?;
             }
         }
