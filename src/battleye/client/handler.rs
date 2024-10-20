@@ -130,7 +130,7 @@ impl Handler {
 
     async fn receive_response(&mut self) -> std::io::Result<Option<Response>> {
         debug!("Receiving packet from UDP socket");
-        let bytes = self.udp_stream.read(&mut self.buffer).await?;
+        let bytes = self.udp_stream.read_to_end(&mut self.buffer).await?;
         trace!("Received {bytes} bytes");
 
         trace!("Setting up byte stream");
