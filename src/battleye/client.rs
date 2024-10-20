@@ -18,8 +18,8 @@ mod handler;
 
 const DEFAULT_CHANNEL_SIZE: usize = 8;
 const DEFAULT_BUF_SIZE: usize = 1024;
-const DEFAULT_DURATION: Option<Duration> = Some(Duration::from_secs(10));
-const DEFAULT_TIMEOUT: Option<Duration> = Some(Duration::from_millis(100));
+const DEFAULT_HANDLER_INTERVAL: Option<Duration> = Some(Duration::from_secs(1));
+const DEFAULT_SOCKET_TIMEOUT: Option<Duration> = Some(Duration::from_millis(100));
 
 /// A `BattlEye Rcon` client.
 #[derive(Debug)]
@@ -135,13 +135,13 @@ impl RCon for Client {
         } else {
             SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
         })?;
-        socket.set_read_timeout(DEFAULT_TIMEOUT)?;
+        socket.set_read_timeout(DEFAULT_SOCKET_TIMEOUT)?;
         socket.connect(address)?;
         Ok(Self::new(
             socket,
             DEFAULT_CHANNEL_SIZE,
             DEFAULT_BUF_SIZE,
-            DEFAULT_DURATION,
+            DEFAULT_HANDLER_INTERVAL,
         ))
     }
 
