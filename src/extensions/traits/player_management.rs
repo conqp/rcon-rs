@@ -49,7 +49,7 @@ pub trait Players {
 }
 
 /// Information about a player.
-pub trait Player {
+pub trait Player: Display {
     /// The type of ID the player is identified with.
     type Id: Clone + Debug + Display + Eq + Hash + Send;
 

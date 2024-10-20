@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::fmt::{Display, Formatter};
 use std::net::SocketAddr;
 use std::str::FromStr;
 use std::time::Duration;
@@ -49,6 +50,12 @@ impl FromStr for Player {
             guid,
             name,
         })
+    }
+}
+
+impl Display for Player {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} (#{}): {}", self.name, self.id, self.guid)
     }
 }
 

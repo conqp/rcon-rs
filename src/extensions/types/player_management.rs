@@ -1,5 +1,5 @@
 use std::borrow::Cow;
-use std::fmt::Debug;
+use std::fmt::{Debug, Display, Formatter};
 use std::net::{IpAddr, SocketAddr};
 use std::time::Duration;
 use std::vec::IntoIter;
@@ -101,6 +101,16 @@ where
         P: Send,
     {
         Ban::ban(self.client, self.player.id(), reason).await
+    }
+}
+
+impl<'client, C, P> Display for PlayerProxy<'client, C, P>
+where
+    C: RCon,
+    P: Player,
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(&self.player, f)
     }
 }
 
