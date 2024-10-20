@@ -14,7 +14,7 @@ pub mod source;
 pub use extensions::*;
 
 /// Common API for `RCON` protocol clients
-pub trait RCon: Debug {
+pub trait RCon: Debug + Send {
     /// Perform a login.
     ///
     /// # Returns

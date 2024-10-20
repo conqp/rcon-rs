@@ -17,7 +17,7 @@ pub trait Kick {
         &mut self,
         player: Cow<'_, str>,
         reason: Option<Cow<'_, str>>,
-    ) -> impl Future<Output = std::io::Result<()>>;
+    ) -> impl Future<Output = std::io::Result<()>> + Send;
 }
 
 /// Ban players from the server.
@@ -52,7 +52,7 @@ pub trait Bans {
 }
 
 /// An entry of a ban list.
-pub trait BanListEntry {
+pub trait BanListEntry: Send {
     /// The unique ID of the entry.
     fn id(&self) -> u64;
 

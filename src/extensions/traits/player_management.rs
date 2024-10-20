@@ -48,7 +48,7 @@ pub trait Players {
 }
 
 /// Information about a player.
-pub trait Player: Debug {
+pub trait Player: Debug + Send {
     /// Returns the player's ID.
     ///
     /// This is the only mandatory method of `Player` and may return
