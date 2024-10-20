@@ -1,20 +1,15 @@
 use std::borrow::Cow;
 use std::net::SocketAddr;
-use std::time::Duration;
 
 use clap::Parser;
 use rcon::source;
 use rpassword::prompt_password;
-
-const DEFAULT_TIMEOUT: Duration = Duration::from_secs(5);
 
 #[derive(Debug, Parser)]
 #[command(author, version, about = "An RCon CLI client.")]
 pub struct Args {
     #[arg(index = 1, help = "The server address to connect to")]
     server: SocketAddr,
-    #[arg(short, long, help = "Connection timeout in seconds", default_value_t = DEFAULT_TIMEOUT.as_secs())]
-    timeout: u64,
     #[arg(short, long, help = "The password for the RCON server")]
     password: Option<String>,
     #[clap(subcommand)]
@@ -22,12 +17,8 @@ pub struct Args {
 }
 
 impl Args {
-    pub fn server(&self) -> SocketAddr {
+    pub const fn server(&self) -> SocketAddr {
         self.server
-    }
-
-    pub(crate) const fn timeout(&self) -> Duration {
-        Duration::from_secs(self.timeout)
     }
 
     pub fn password(&self) -> std::io::Result<String> {
@@ -37,7 +28,7 @@ impl Args {
         )
     }
 
-    pub fn protocol(&self) -> &Protocol {
+    pub const fn protocol(&self) -> &Protocol {
         &self.protocol
     }
 }
@@ -57,12 +48,4 @@ pub enum Protocol {
         #[arg(help = "The command to execute")]
         command: Vec<Cow<'static, str>>,
     },
-}
-
-impl Protocol {
-    pub fn command(&self) -> &[Cow<'static, str>] {
-        match self {
-            Self::Source { command, .. } | Self::BattlEye { command, .. } => command.as_slice(),
-        }
-    }
 }
