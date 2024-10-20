@@ -8,6 +8,7 @@ pub use target::Target;
 mod target;
 
 pub const PERM_BAN: &str = "perm";
+/// Amount of seconds in a minute.
 pub const SECS_PER_MINUTE: u64 = 60;
 
 /// A ban list entry.

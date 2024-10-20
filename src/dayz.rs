@@ -11,8 +11,7 @@ use log::warn;
 use crate::battleye::BattlEye;
 use crate::RCon;
 
-use banning::SECS_PER_MINUTE;
-pub use banning::{BanListEntry, Target};
+pub use banning::{BanListEntry, Target, SECS_PER_MINUTE};
 pub use player::Player;
 
 mod banning;

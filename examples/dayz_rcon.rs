@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use clap::{Parser, Subcommand};
 use log::error;
-use rcon::dayz::Target;
+use rcon::dayz::{Target, SECS_PER_MINUTE};
 use rcon::{battleye::Client, DayZ, RCon};
 use rpassword::prompt_password;
 use uuid::Uuid;
@@ -162,7 +162,11 @@ async fn main() -> ExitCode {
             reason,
         } => {
             client
-                .add_ban(target.into(), duration.map(Duration::from_secs), reason)
+                .add_ban(
+                    target.into(),
+                    duration.map(|minutes| Duration::from_secs(minutes * SECS_PER_MINUTE)),
+                    reason,
+                )
                 .await
         }
         Command::RemoveBan { id } => client.remove_ban(id).await,
