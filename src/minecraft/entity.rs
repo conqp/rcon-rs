@@ -15,6 +15,18 @@ pub enum Entity<T> {
     Uuid(Uuid),
 }
 
+impl<T> From<String> for Entity<T> {
+    fn from(s: String) -> Self {
+        Self::PlayerName(s)
+    }
+}
+
+impl<T> From<Uuid> for Entity<T> {
+    fn from(uuid: Uuid) -> Self {
+        Self::Uuid(uuid)
+    }
+}
+
 impl<T> Serialize for Entity<T>
 where
     T: Serialize,

@@ -41,6 +41,10 @@ required-features = ["battleye", "cli", "source"]
 name = "dayz_rcon"
 required-features = ["cli", "dayz"]
 
+[[example]]
+name = "minecraft_java_edition"
+required-features = ["cli", ",minecraft-java-edition"]
+
 [profile.release]
 strip = true
 lto = true

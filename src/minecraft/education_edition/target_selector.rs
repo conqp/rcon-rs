@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use crate::minecraft::Serialize;
+use crate::minecraft::{Entity, Serialize};
 
 pub use argument::Argument;
 
@@ -38,6 +38,12 @@ pub enum TargetSelector {
     /// Selects the player who interacts with a button in a JSON NPC dialogue.
     #[cfg(feature = "minecraft-bedrock-edition")]
     Initiator(Option<Vec<Argument>>),
+}
+
+impl From<TargetSelector> for Entity<TargetSelector> {
+    fn from(selector: TargetSelector) -> Self {
+        Self::Target(selector)
+    }
 }
 
 impl Serialize for TargetSelector {

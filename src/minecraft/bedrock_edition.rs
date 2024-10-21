@@ -2,7 +2,7 @@
 
 use std::future::Future;
 
-use crate::minecraft::util::parse_response;
+use crate::minecraft::parse_response;
 use crate::Minecraft;
 
 /// Extension trait for `Source RCON` clients for the `Minecraft: Bedrock Edition`.

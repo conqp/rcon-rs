@@ -23,3 +23,5 @@ pub trait EducationEdition: BedrockEdition {
         ability::Proxy::new(self, target)
     }
 }
+
+impl<T> EducationEdition for T where T: BedrockEdition {}

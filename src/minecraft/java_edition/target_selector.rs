@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use crate::minecraft::Serialize;
+use crate::minecraft::{Entity, Serialize};
 
 pub use argument::{Argument, Sort};
 
@@ -27,6 +27,12 @@ pub enum TargetSelector {
     ///
     /// It does not select anything if the command was run by a command block or server console.
     Executor(Option<Vec<Argument>>),
+}
+
+impl From<TargetSelector> for Entity<TargetSelector> {
+    fn from(selector: TargetSelector) -> Self {
+        Self::Target(selector)
+    }
 }
 
 impl Serialize for TargetSelector {
