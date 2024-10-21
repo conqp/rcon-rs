@@ -82,13 +82,16 @@ impl FromStr for BanListEntry {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut fields = s.split_whitespace();
+
         let id = fields.next().ok_or("Missing ID field")?;
         let id: u64 = id
             .parse()
             .map_err(|_| format!("Invalid u64 for ID: {id}"))?;
+
         let target = fields.next().ok_or("Missing ban target field")?;
         let target =
             Target::from_str(target).map_err(|()| format!("Invalid ban type: {target}"))?;
+
         let duration = fields.next().ok_or("Missing duration field")?;
         let duration = if duration == PERM_BAN {
             None
@@ -99,6 +102,7 @@ impl FromStr for BanListEntry {
                 .map(|minutes| Some(Duration::from_secs(minutes * SECS_PER_MINUTE)))
                 .map_err(|_| format!(r#"Invalid duration: "{duration}""#))?
         };
+
         let reason = fields.next().map(ToString::to_string);
 
         Ok(Self {
