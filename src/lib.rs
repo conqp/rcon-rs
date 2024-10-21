@@ -69,13 +69,18 @@ pub trait RCon {
     /// # Errors
     ///
     /// Returns an [`Error`] if any I/O errors occurred or if the returned bytes are not valid UTF-8.
-    async fn run_utf8(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<String>
+    fn run_utf8(
+        &mut self,
+        args: &[Cow<'_, str>],
+    ) -> impl Future<Output = std::io::Result<String>> + Send
     where
         Self: Send,
     {
-        self.run(args).await.and_then(|bytes| {
-            String::from_utf8(bytes).map_err(|error| Error::new(ErrorKind::InvalidData, error))
-        })
+        async {
+            self.run(args).await.and_then(|bytes| {
+                String::from_utf8(bytes).map_err(|error| Error::new(ErrorKind::InvalidData, error))
+            })
+        }
     }
 
     /// Run a command.
@@ -92,12 +97,17 @@ pub trait RCon {
     /// # Errors
     ///
     /// Returns an [`Error`] if any I/O errors occurred.
-    async fn run_utf8_lossy(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<String>
+    fn run_utf8_lossy(
+        &mut self,
+        args: &[Cow<'_, str>],
+    ) -> impl Future<Output = std::io::Result<String>> + Send
     where
         Self: Send,
     {
-        self.run(args)
-            .await
-            .map(|bytes| String::from_utf8_lossy(&bytes).to_string())
+        async {
+            self.run(args)
+                .await
+                .map(|bytes| String::from_utf8_lossy(&bytes).to_string())
+        }
     }
 }
