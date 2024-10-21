@@ -11,7 +11,7 @@ pub use sort::Sort;
 
 mod sort;
 
-/// A target_selector selection argument.
+/// A target selector argument.
 ///
 /// See the [Minecraft wiki](https://minecraft.fandom.com/wiki/Target_selectors) for details.
 #[derive(Clone, Debug, PartialEq)]
@@ -32,6 +32,8 @@ pub enum Argument {
     Limit(u64),
     Level(Range<u64>),
     GameMode(Negate<GameMode>),
+    // TODO implement further selector attributes
+    // <https://minecraft.fandom.com/wiki/Target_selectors>
 }
 
 impl Serialize for Argument {
