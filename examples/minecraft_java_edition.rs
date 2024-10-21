@@ -1,17 +1,13 @@
 //! An example `RCON` client to test the extensions for `Minecraft: Java Edition`.
 
-use std::borrow::Cow;
 use std::io::{stdout, Write};
-use std::net::{IpAddr, SocketAddr};
+use std::net::SocketAddr;
 use std::process::ExitCode;
-use std::time::Duration;
 
 use clap::{Parser, Subcommand};
 use log::error;
-use rcon::dayz::{Target, SECS_PER_MINUTE};
 use rcon::{minecraft::JavaEdition, source::Client, RCon};
 use rpassword::prompt_password;
-use uuid::Uuid;
 
 #[derive(Debug, Parser)]
 #[command(author, version, about = "An RCon CLI client.")]
@@ -80,7 +76,11 @@ async fn main() -> ExitCode {
             target,
             attribute,
             scale,
-        } => client.attribute(target.into(), attribute).get(scale).await,
+        } => client
+            .attribute(target.into(), attribute)
+            .get(scale)
+            .await
+            .and_then(|result| stdout().lock().write_all(result.as_bytes())),
     } {
         error!("{error}");
         return ExitCode::from(5);
