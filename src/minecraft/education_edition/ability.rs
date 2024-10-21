@@ -1,7 +1,8 @@
-use crate::minecraft::serialize::Serialize;
-use crate::minecraft::target_selector::TargetSelector;
-use crate::minecraft::util::parse_response;
-use crate::Minecraft;
+use crate::minecraft::parse_response;
+use crate::minecraft::Serialize;
+
+use super::target_selector::TargetSelector;
+use super::EducationEdition;
 
 use ability::Ability;
 
@@ -9,7 +10,7 @@ mod ability;
 
 pub struct Proxy<'client, T>
 where
-    T: Minecraft,
+    T: EducationEdition,
 {
     client: &'client mut T,
     target: TargetSelector,
@@ -17,7 +18,7 @@ where
 
 impl<'client, T> Proxy<'client, T>
 where
-    T: Minecraft + Send,
+    T: EducationEdition + Send,
 {
     pub(crate) fn new(client: &'client mut T, target: TargetSelector) -> Self {
         Self { client, target }

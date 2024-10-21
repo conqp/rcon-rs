@@ -1,22 +1,24 @@
 use std::borrow::Cow;
 
 use crate::minecraft::serialize::Serialize;
-use crate::minecraft::target_selector::TargetSelector;
 
 use uuid::Uuid;
 
 /// Identifies an entity.
 #[derive(Clone, Debug, PartialEq)]
-pub enum Entity {
+pub enum Entity<T> {
     /// Identified by player name.
     PlayerName(String),
     /// Identified by target_selector selector.
-    Target(TargetSelector),
+    Target(T),
     /// Identified by UUID.
     Uuid(Uuid),
 }
 
-impl Serialize for Entity {
+impl<T> Serialize for Entity<T>
+where
+    T: Serialize,
+{
     fn serialize(&self) -> Cow<'_, str> {
         match self {
             Self::PlayerName(name) => name.serialize(),

@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use super::serialize::Serialize;
+use crate::minecraft::serialize::Serialize;
 
 /// Available game modes.
 #[derive(Clone, Debug, Eq, PartialEq)]

@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::ops::Not;
 
-use super::serialize::Serialize;
+use crate::minecraft::serialize::Serialize;
 
 /// A value that may be either included or excluded.
 #[derive(Clone, Debug, Eq, PartialEq)]

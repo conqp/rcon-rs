@@ -1,7 +1,9 @@
-use crate::minecraft::entity::Entity;
-use crate::minecraft::serialize::Serialize;
-use crate::minecraft::util::parse_response;
+use crate::minecraft::parse_response;
+use crate::minecraft::Entity;
+use crate::minecraft::Serialize;
 use crate::Minecraft;
+
+use super::TargetSelector;
 
 pub use grant::Grant;
 
@@ -15,14 +17,14 @@ where
     T: Minecraft,
 {
     client: &'client mut T,
-    target: Entity,
+    target: Entity<TargetSelector>,
 }
 
 impl<'client, T> Proxy<'client, T>
 where
     T: Minecraft + Send,
 {
-    pub(crate) fn new(client: &'client mut T, target: Entity) -> Self {
+    pub(crate) fn new(client: &'client mut T, target: Entity<TargetSelector>) -> Self {
         Proxy { client, target }
     }
 

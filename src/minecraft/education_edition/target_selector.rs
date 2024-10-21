@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
-use super::serialize::Serialize;
+use crate::minecraft::Serialize;
 
-pub use argument::{Argument, Sort};
+pub use argument::Argument;
 
 mod argument;
 
@@ -28,12 +28,15 @@ pub enum TargetSelector {
     /// It does not select anything if the command was run by a command block or server console.
     Executor(Option<Vec<Argument>>),
     /// Selects the player's agent only.
+    #[cfg(feature = "minecraft-education-edition")]
     PlayerAgent(Option<Vec<Argument>>),
     /// Selects all agents.
     ///
     /// Works only if more than one agent exists.
+    #[cfg(feature = "minecraft-education-edition")]
     AllAgents(Option<Vec<Argument>>),
     /// Selects the player who interacts with a button in a JSON NPC dialogue.
+    #[cfg(feature = "minecraft-bedrock-edition")]
     Initiator(Option<Vec<Argument>>),
 }
 
@@ -45,8 +48,11 @@ impl Serialize for TargetSelector {
             Self::EveryPlayer(arguments) => format!("@a{}", arguments.serialize()).into(),
             Self::AliveEntities(arguments) => format!("@e{}", arguments.serialize()).into(),
             Self::Executor(arguments) => format!("@s{}", arguments.serialize()).into(),
+            #[cfg(feature = "minecraft-education-edition")]
             Self::PlayerAgent(arguments) => format!("@c{}", arguments.serialize()).into(),
+            #[cfg(feature = "minecraft-education-edition")]
             Self::AllAgents(arguments) => format!("@v{}", arguments.serialize()).into(),
+            #[cfg(feature = "minecraft-bedrock-edition")]
             Self::Initiator(arguments) => format!("@initiator{}", arguments.serialize()).into(),
         }
     }

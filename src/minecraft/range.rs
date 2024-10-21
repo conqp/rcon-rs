@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::ops::{RangeFrom, RangeInclusive, RangeToInclusive};
 
-use super::serialize::Serialize;
+use crate::minecraft::serialize::Serialize;
 
 /// A range of non-negative floats.
 ///

@@ -6,29 +6,40 @@ use std::future::Future;
 use crate::source::Source;
 use crate::RCon;
 
-pub use advancement::Grant;
 pub use entity::Entity;
 pub use game_mode::GameMode;
 pub use negate::Negate;
 pub use range::Range;
 pub use resource_location::ResourceLocation;
-pub use target_selector::{Argument, Sort, TargetSelector};
+pub use serialize::Serialize;
 pub use unsigned_float::UnsignedFloat;
+use util::parse_response;
+
+#[cfg(feature = "minecraft-bedrock-edition")]
+pub use bedrock_edition::BedrockEdition;
 
 #[cfg(feature = "minecraft-education-edition")]
-mod ability;
-mod advancement;
+pub use education_edition::EducationEdition;
+
+#[cfg(feature = "minecraft-java-edition")]
+pub use java_edition::JavaEdition;
+
+#[cfg(feature = "minecraft-bedrock-edition")]
+pub mod bedrock_edition;
+#[cfg(feature = "minecraft-education-edition")]
+pub mod education_edition;
 mod entity;
 mod game_mode;
+#[cfg(feature = "minecraft-java-edition")]
+pub mod java_edition;
 mod negate;
 mod range;
 mod resource_location;
 mod serialize;
-mod target_selector;
 mod unsigned_float;
 mod util;
 
-/// Extension trait for `Source RCON` clients for Minecraft servers.
+/// Extension trait for `Source RCON` clients for generic Minecraft servers.
 pub trait Minecraft: RCon + Source {
     /// Print information about available commands on the server.
     ///
@@ -40,45 +51,16 @@ pub trait Minecraft: RCon + Source {
     fn help(
         &mut self,
         command: Option<Cow<'_, str>>,
-    ) -> impl Future<Output = std::io::Result<String>> + Send;
-
-    /// Manage the target's ability.
-    ///
-    /// # Returns
-    ///
-    /// Returns an [`ability::Proxy`] which can be used to execute
-    /// ability-related commands pertaining to the `target`.
-    #[cfg(feature = "minecraft-education-edition")]
-    fn ability(&mut self, target: TargetSelector) -> ability::Proxy<'_, Self>
+    ) -> impl Future<Output = std::io::Result<String>> + Send
     where
-        Self: Sized + Send,
+        Self: Send,
     {
-        ability::Proxy::new(self, target)
-    }
-
-    /// Manage the target's ability.
-    ///
-    /// # Returns
-    ///
-    /// Returns an [`advancement::Proxy`] which can be used to execute
-    /// advancement-related commands pertaining to the `target`.
-    fn advancement(&mut self, target: Entity) -> advancement::Proxy<'_, Self>
-    where
-        Self: Sized + Send,
-    {
-        advancement::Proxy::new(self, target)
-    }
-}
-
-impl<T> Minecraft for T
-where
-    T: RCon + Source + Send,
-{
-    async fn help(&mut self, command: Option<Cow<'_, str>>) -> std::io::Result<String> {
-        if let Some(command) = command {
-            self.run_utf8(&["help".into(), command]).await
-        } else {
-            self.run_utf8(&["help".into()]).await
+        async {
+            if let Some(command) = command {
+                self.run_utf8(&["help".into(), command]).await
+            } else {
+                self.run_utf8(&["help".into()]).await
+            }
         }
     }
 }

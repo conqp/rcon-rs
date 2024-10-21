@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
-use crate::minecraft::resource_location::ResourceLocation;
-use crate::minecraft::serialize::Serialize;
+use crate::minecraft::ResourceLocation;
+use crate::minecraft::Serialize;
 
 /// An advancement grant.
 ///

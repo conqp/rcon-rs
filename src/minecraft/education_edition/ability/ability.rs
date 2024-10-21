@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use crate::minecraft::serialize::Serialize;
+use crate::minecraft::Serialize;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Ability {
