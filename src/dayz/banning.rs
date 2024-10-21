@@ -27,7 +27,7 @@ impl BanListEntry {
         self.index
     }
 
-    /// The target that was banned.
+    /// The target_selector that was banned.
     ///
     /// This may either be an IP address or a UUID.
     #[must_use]
@@ -86,7 +86,7 @@ impl FromStr for BanListEntry {
         let id: u64 = id
             .parse()
             .map_err(|_| format!("Invalid u64 for ID: {id}"))?;
-        let target = fields.next().ok_or("Missing ban target field")?;
+        let target = fields.next().ok_or("Missing ban target_selector field")?;
         let target =
             Target::from_str(target).map_err(|()| format!("Invalid ban type: {target}"))?;
         let duration = fields.next().ok_or("Missing duration field")?;

@@ -30,6 +30,8 @@ battleye = ["crc", "log", "tokio/rt", "tokio/time", "tokio/sync"]
 source = ["bitflags", "log", "num-derive", "num-traits", "rand", "tokio/io-util", "tokio/net"]
 cli = ["clap/derive", "tokio/rt-multi-thread", "tokio/macros"]
 dayz = ["battleye", "uuid"]
+minecraft = ["source"]
+education = ["minecraft"]
 
 [[example]]
 name = "rconclt"

@@ -9,10 +9,16 @@ use std::net::SocketAddr;
 pub mod battleye;
 #[cfg(feature = "dayz")]
 pub mod dayz;
+#[cfg(feature = "minecraft")]
+pub mod minecraft;
 #[cfg(feature = "source")]
 pub mod source;
+
 #[cfg(feature = "dayz")]
 pub use crate::dayz::DayZ;
+
+#[cfg(feature = "minecraft")]
+pub use minecraft::Minecraft;
 
 /// Common API for `RCON` protocol clients
 pub trait RCon {
