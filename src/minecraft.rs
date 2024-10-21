@@ -15,7 +15,7 @@ pub use resource_location::ResourceLocation;
 pub use target_selector::TargetSelector;
 pub use unsigned_float::UnsignedFloat;
 
-#[cfg(feature = "education")]
+#[cfg(feature = "minecraft-education-edition")]
 mod abilities;
 mod advancement;
 mod entity;
@@ -48,7 +48,7 @@ pub trait Minecraft: RCon + Source {
     ///
     /// Returns an [`abilities::Proxy`] which can be used to execute
     /// ability-related commands pertaining to the `target`.
-    #[cfg(feature = "education")]
+    #[cfg(feature = "minecraft-education-edition")]
     fn ability(&mut self, target: TargetSelector) -> abilities::Proxy<'_, Self>
     where
         Self: Sized + Send,
