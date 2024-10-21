@@ -3,10 +3,12 @@ use crate::minecraft::serialize::Serialize;
 use crate::minecraft::util::parse_response;
 use crate::Minecraft;
 
-use grant::Grant;
+pub use grant::Grant;
 
 mod grant;
 
+/// A proxy object to allow executing advancement-related commands
+/// pertaining to the selected target.
 #[derive(Debug)]
 pub struct Proxy<'client, T>
 where
@@ -24,7 +26,12 @@ where
         Proxy { client, target }
     }
 
-    async fn grant(&mut self, grant: Grant) -> std::io::Result<String>
+    /// Grant some advancement.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if granting the advancement fails.
+    pub async fn grant(&mut self, grant: Grant) -> std::io::Result<String>
     where
         T: Send,
     {
@@ -34,7 +41,12 @@ where
             .and_then(parse_response)
     }
 
-    async fn revoke(&mut self, grant: Grant) -> std::io::Result<String>
+    /// Revoke some advancement.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if revoking the advancement fails.
+    pub async fn revoke(&mut self, grant: Grant) -> std::io::Result<String>
     where
         T: Send,
     {

@@ -6,8 +6,14 @@ use std::future::Future;
 use crate::source::Source;
 use crate::RCon;
 
-use entity::Entity;
-use target_selector::TargetSelector;
+pub use advancement::Grant;
+pub use entity::Entity;
+pub use game_mode::GameMode;
+pub use negate::Negate;
+pub use range::Range;
+pub use resource_location::ResourceLocation;
+pub use target_selector::TargetSelector;
+pub use unsigned_float::UnsignedFloat;
 
 #[cfg(feature = "education")]
 mod abilities;
@@ -42,10 +48,6 @@ pub trait Minecraft: RCon + Source {
     ///
     /// Returns an [`abilities::Proxy`] which can be used to execute
     /// ability-related commands pertaining to the `target`.
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`std::io::Error`] if fetching the available commands fails.
     #[cfg(feature = "education")]
     fn ability(&mut self, target: TargetSelector) -> abilities::Proxy<'_, Self>
     where
@@ -60,10 +62,6 @@ pub trait Minecraft: RCon + Source {
     ///
     /// Returns an [`advancement::Proxy`] which can be used to execute
     /// advancement-related commands pertaining to the `target`.
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`std::io::Error`] if fetching the available commands fails.
     fn advancement(&mut self, target: Entity) -> advancement::Proxy<'_, Self>
     where
         Self: Sized + Send,
