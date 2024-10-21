@@ -20,7 +20,7 @@ where
 
 impl<'client, T> Proxy<'client, T>
 where
-    T: Minecraft,
+    T: Minecraft + Send,
 {
     pub(crate) fn new(client: &'client mut T, target: Entity) -> Self {
         Proxy { client, target }
@@ -31,10 +31,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if granting the advancement fails.
-    pub async fn grant(&mut self, grant: Grant) -> std::io::Result<String>
-    where
-        T: Send,
-    {
+    pub async fn grant(&mut self, grant: Grant) -> std::io::Result<String> {
         self.client
             .run_utf8(&["grant".into(), self.target.serialize(), grant.serialize()])
             .await
@@ -46,10 +43,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if revoking the advancement fails.
-    pub async fn revoke(&mut self, grant: Grant) -> std::io::Result<String>
-    where
-        T: Send,
-    {
+    pub async fn revoke(&mut self, grant: Grant) -> std::io::Result<String> {
         self.client
             .run_utf8(&["revoke".into(), self.target.serialize(), grant.serialize()])
             .await
