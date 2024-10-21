@@ -1,7 +1,8 @@
 use crate::minecraft::entity::Entity;
+use crate::minecraft::serialize::Serialize;
+use crate::minecraft::util::parse_response;
 use crate::Minecraft;
 
-use crate::minecraft::serialize::Serialize;
 use grant::Grant;
 
 mod grant;
@@ -30,12 +31,16 @@ where
         self.client
             .run_utf8(&["grant".into(), self.target.serialize(), grant.serialize()])
             .await
+            .and_then(parse_response)
     }
 
-    async fn revoke(&mut self, grant: Grant) -> std::io::Result<()>
+    async fn revoke(&mut self, grant: Grant) -> std::io::Result<String>
     where
         T: Send,
     {
-        todo!()
+        self.client
+            .run_utf8(&["revoke".into(), self.target.serialize(), grant.serialize()])
+            .await
+            .and_then(parse_response)
     }
 }

@@ -6,7 +6,7 @@ use std::future::Future;
 use crate::source::Source;
 use crate::RCon;
 
-use abilities::AbilitiesProxy;
+use entity::Entity;
 use target_selector::TargetSelector;
 
 #[cfg(feature = "education")]
@@ -36,17 +36,39 @@ pub trait Minecraft: RCon + Source {
         command: Option<Cow<'_, str>>,
     ) -> impl Future<Output = std::io::Result<String>> + Send;
 
-    /// Returns the target_selector's abilities.
+    /// Manage the target's abilities.
+    ///
+    /// # Returns
+    ///
+    /// Returns an [`abilities::Proxy`] which can be used to execute
+    /// ability-related commands pertaining to the `target`.
     ///
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
     #[cfg(feature = "education")]
-    fn abilities(&mut self, target: TargetSelector) -> AbilitiesProxy<'_, Self>
+    fn ability(&mut self, target: TargetSelector) -> abilities::Proxy<'_, Self>
     where
         Self: Sized + Send,
     {
-        AbilitiesProxy::new(self, target)
+        abilities::Proxy::new(self, target)
+    }
+
+    /// Manage the target's abilities.
+    ///
+    /// # Returns
+    ///
+    /// Returns an [`advancement::Proxy`] which can be used to execute
+    /// advancement-related commands pertaining to the `target`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if fetching the available commands fails.
+    fn advancement(&mut self, target: Entity) -> advancement::Proxy<'_, Self>
+    where
+        Self: Sized + Send,
+    {
+        advancement::Proxy::new(self, target)
     }
 }
 

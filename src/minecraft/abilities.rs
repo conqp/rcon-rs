@@ -5,7 +5,7 @@ use ability::Ability;
 
 mod ability;
 
-pub struct AbilitiesProxy<'client, T>
+pub struct Proxy<'client, T>
 where
     T: Minecraft,
 {
@@ -13,7 +13,7 @@ where
     target: TargetSelector,
 }
 
-impl<'client, T> AbilitiesProxy<'client, T>
+impl<'client, T> Proxy<'client, T>
 where
     T: Minecraft + Send,
 {
