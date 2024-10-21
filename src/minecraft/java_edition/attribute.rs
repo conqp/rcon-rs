@@ -27,6 +27,11 @@ where
         }
     }
 
+    /// Returns the target's attribute value.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if any I/O errors occurred.
     pub async fn get(&mut self, scale: Option<f64>) -> std::io::Result<String> {
         if let Some(scale) = scale {
             self.client
@@ -44,6 +49,36 @@ where
                     "attribute".into(),
                     self.target.serialize(),
                     self.attribute.serialize(),
+                    "get".into(),
+                ])
+                .await
+        }
+    }
+
+    /// Returns the target's base attribute value.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if any I/O errors occurred.
+    pub async fn base(&mut self, scale: Option<f64>) -> std::io::Result<String> {
+        if let Some(scale) = scale {
+            self.client
+                .run_utf8(&[
+                    "attribute".into(),
+                    self.target.serialize(),
+                    self.attribute.serialize(),
+                    "base".into(),
+                    "get".into(),
+                    scale.serialize(),
+                ])
+                .await
+        } else {
+            self.client
+                .run_utf8(&[
+                    "attribute".into(),
+                    self.target.serialize(),
+                    self.attribute.serialize(),
+                    "base".into(),
                     "get".into(),
                 ])
                 .await
