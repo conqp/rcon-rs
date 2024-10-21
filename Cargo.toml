@@ -24,11 +24,11 @@ env_logger = { version = "0.11" }
 rpassword = { version = "7.3" }
 
 [features]
-battleye = ["crc", "log", "tokio/rt", "tokio/time", "tokio/sync"]
-source = ["bitflags", "log", "num-derive", "num-traits", "rand", "tokio/io-util", "tokio/net"]
+battleye = ["dep:crc", "dep:log", "tokio/rt", "tokio/time", "tokio/sync"]
+source = ["dep:bitflags", "dep:log", "dep:num-derive", "dep:num-traits", "dep:rand", "tokio/io-util", "tokio/net"]
 cli = ["clap/derive", "tokio/rt-multi-thread", "tokio/macros"]
-dayz = ["battleye", "uuid"]
-minecraft = ["source"]
+dayz = ["battleye", "dep:uuid"]
+minecraft = ["source", "dep:uuid"]
 minecraft-java-edition = ["minecraft"]
 minecraft-bedrock-edition = ["minecraft"]
 minecraft-education-edition = ["minecraft-bedrock-edition"]
