@@ -122,4 +122,22 @@ where
             ])
             .await
     }
+
+    /// Removes the attribute modifier with the specified UUID.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if any I/O errors occurred.
+    pub async fn remove_modifier(self, uuid: Uuid) -> std::io::Result<String> {
+        self.client
+            .run_utf8(&[
+                "attribute".into(),
+                self.target.serialize(),
+                self.attribute.serialize(),
+                "modifier".into(),
+                "remove".into(),
+                uuid.serialize(),
+            ])
+            .await
+    }
 }
