@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 /// Sorting strategy.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Sort {
     /// Sort by increasing distance.
     Nearest,
