@@ -12,7 +12,7 @@ pub use game_mode::GameMode;
 pub use negate::Negate;
 pub use range::Range;
 pub use resource_location::ResourceLocation;
-pub use target_selector::TargetSelector;
+pub use target_selector::{Argument, Sort, TargetSelector};
 pub use unsigned_float::UnsignedFloat;
 
 #[cfg(feature = "minecraft-education-edition")]

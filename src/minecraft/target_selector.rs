@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use super::serialize::Serialize;
 
-pub use argument::Argument;
+pub use argument::{Argument, Sort};
 
 mod argument;
 
