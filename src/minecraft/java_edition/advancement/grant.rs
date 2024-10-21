@@ -15,7 +15,7 @@ pub enum Grant {
         /// Specifies a valid resource location of the advancement to target.
         advancement: ResourceLocation,
         /// Specifies a valid criterion of the advancement to manipulate.
-        criterion: Option<String>,
+        criterion: Option<Cow<'static, str>>,
     },
     /// Adds or removes an advancement and all its child advancements.
     From(ResourceLocation),

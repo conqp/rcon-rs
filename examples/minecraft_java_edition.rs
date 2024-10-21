@@ -77,7 +77,7 @@ async fn main() -> ExitCode {
             attribute,
             scale,
         } => client
-            .attribute(target.into(), attribute)
+            .attribute(target.into(), attribute.into())
             .get(scale)
             .await
             .and_then(|result| stdout().lock().write_all(result.as_bytes())),

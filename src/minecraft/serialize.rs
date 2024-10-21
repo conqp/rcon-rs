@@ -14,11 +14,7 @@ where
     T: Serialize,
 {
     fn serialize(self) -> Cow<'static, str> {
-        if let Some(value) = self {
-            value.serialize()
-        } else {
-            Cow::Borrowed("")
-        }
+        self.map_or(Cow::Borrowed(""), Serialize::serialize)
     }
 }
 
@@ -91,6 +87,12 @@ impl Serialize for String {
 impl Serialize for &'static str {
     fn serialize(self) -> Cow<'static, str> {
         Cow::Borrowed(self)
+    }
+}
+
+impl Serialize for Cow<'static, str> {
+    fn serialize(self) -> Cow<'static, str> {
+        self
     }
 }
 
