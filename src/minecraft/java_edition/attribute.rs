@@ -67,4 +67,22 @@ where
 
         self.client.run_utf8(args.as_slice()).await
     }
+
+    /// Sets the target's base attribute value.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if any I/O errors occurred.
+    pub async fn set_base(self, value: f64) -> std::io::Result<String> {
+        self.client
+            .run_utf8(&[
+                "attribute".into(),
+                self.target.serialize(),
+                self.attribute.serialize(),
+                "base".into(),
+                "set".into(),
+                value.serialize(),
+            ])
+            .await
+    }
 }
