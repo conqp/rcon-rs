@@ -64,3 +64,5 @@ pub trait Minecraft: RCon + Source {
         }
     }
 }
+
+impl<T> Minecraft for T where T: RCon + Source {}
