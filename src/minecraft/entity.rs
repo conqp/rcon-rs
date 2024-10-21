@@ -5,19 +5,31 @@ use crate::minecraft::serialize::Serialize;
 use uuid::Uuid;
 
 /// Identifies an entity.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Entity<T> {
     /// Identified by player name.
-    PlayerName(String),
+    PlayerName(Cow<'static, str>),
     /// Identified by target selector.
     Target(T),
     /// Identified by UUID.
     Uuid(Uuid),
 }
 
+impl<T> From<Cow<'static, str>> for Entity<T> {
+    fn from(cow: Cow<'static, str>) -> Self {
+        Self::PlayerName(cow)
+    }
+}
+
+impl<T> From<&'static str> for Entity<T> {
+    fn from(s: &'static str) -> Self {
+        Self::PlayerName(Cow::Borrowed(s))
+    }
+}
+
 impl<T> From<String> for Entity<T> {
-    fn from(s: String) -> Self {
-        Self::PlayerName(s)
+    fn from(string: String) -> Self {
+        Self::PlayerName(Cow::Owned(string))
     }
 }
 
@@ -33,7 +45,7 @@ where
 {
     fn serialize(self) -> Cow<'static, str> {
         match self {
-            Self::PlayerName(name) => name.serialize(),
+            Self::PlayerName(name) => name,
             Self::Target(target) => target.serialize(),
             Self::Uuid(uuid) => uuid.serialize(),
         }
