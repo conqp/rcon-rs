@@ -9,7 +9,7 @@ use uuid::Uuid;
 pub enum Entity<T> {
     /// Identified by player name.
     PlayerName(String),
-    /// Identified by target_selector selector.
+    /// Identified by target selector.
     Target(T),
     /// Identified by UUID.
     Uuid(Uuid),
