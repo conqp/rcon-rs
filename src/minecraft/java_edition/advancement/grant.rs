@@ -28,21 +28,18 @@ pub enum Grant {
 }
 
 impl Serialize for Grant {
-    fn serialize(&self) -> Cow<'_, str> {
+    fn serialize(self) -> Cow<'static, str> {
         match self {
             Self::Everything => Cow::Borrowed("everything"),
             Self::Only {
                 advancement,
                 criterion,
-            } => criterion
-                .as_ref()
-                .map_or_else(
-                    || format!("only {}", advancement.serialize()),
-                    |criterion| {
-                        format!("only {} {}", advancement.serialize(), criterion.serialize())
-                    },
-                )
-                .into(),
+            } => if let Some(criterion) = criterion {
+                format!("only {} {}", advancement.serialize(), criterion.serialize())
+            } else {
+                format!("only {}", advancement.serialize())
+            }
+            .into(),
             Self::From(advancement) => format!("from {}", advancement.serialize()).into(),
             Self::Through(advancement) => format!("through {}", advancement.serialize()).into(),
             Self::Until(advancement) => format!("until {}", advancement.serialize()).into(),

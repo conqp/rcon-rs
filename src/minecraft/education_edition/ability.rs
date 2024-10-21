@@ -29,7 +29,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
-    pub async fn list(&mut self) -> std::io::Result<Vec<String>> {
+    pub async fn list(self) -> std::io::Result<Vec<String>> {
         self.client
             .run_utf8(&["ability".into(), self.target.serialize()])
             .await
@@ -43,7 +43,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
-    pub async fn get(&mut self, _ability: Ability) -> std::io::Result<String> {
+    pub async fn get(self, _ability: Ability) -> std::io::Result<String> {
         self.client
             .run_utf8(&["ability".into(), self.target.serialize()])
             .await
@@ -55,7 +55,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
-    pub async fn enable(&mut self, ability: Ability) -> std::io::Result<String> {
+    pub async fn enable(self, ability: Ability) -> std::io::Result<String> {
         self.client
             .run_utf8(&[
                 "ability".into(),
@@ -72,7 +72,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
-    pub async fn disable(&mut self, ability: Ability) -> std::io::Result<String> {
+    pub async fn disable(self, ability: Ability) -> std::io::Result<String> {
         self.client
             .run_utf8(&[
                 "ability".into(),

@@ -15,7 +15,7 @@ pub enum Ability {
 }
 
 impl Serialize for Ability {
-    fn serialize(&self) -> Cow<'_, str> {
+    fn serialize(self) -> Cow<'static, str> {
         match self {
             Self::WorldBuilder => Cow::Borrowed("worldbuilder"),
             Self::MayFly => Cow::Borrowed("mayfly"),

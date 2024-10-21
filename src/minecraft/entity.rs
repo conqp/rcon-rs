@@ -31,7 +31,7 @@ impl<T> Serialize for Entity<T>
 where
     T: Serialize,
 {
-    fn serialize(&self) -> Cow<'_, str> {
+    fn serialize(self) -> Cow<'static, str> {
         match self {
             Self::PlayerName(name) => name.serialize(),
             Self::Target(target) => target.serialize(),

@@ -47,7 +47,7 @@ impl From<TargetSelector> for Entity<TargetSelector> {
 }
 
 impl Serialize for TargetSelector {
-    fn serialize(&self) -> Cow<'_, str> {
+    fn serialize(self) -> Cow<'static, str> {
         match self {
             Self::NearestPlayer(arguments) => format!("@p{}", arguments.serialize()).into(),
             Self::RandomPlayer(arguments) => format!("@r{}", arguments.serialize()).into(),

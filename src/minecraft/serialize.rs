@@ -6,32 +6,36 @@ use uuid::Uuid;
 /// Helper trait to serialize objects for minecraft command parameters.
 pub trait Serialize {
     /// Serialize the object as a command parameter.
-    fn serialize(&self) -> Cow<'_, str>;
+    fn serialize(self) -> Cow<'static, str>;
 }
 
 impl<T> Serialize for Option<T>
 where
     T: Serialize,
 {
-    fn serialize(&self) -> Cow<'_, str> {
-        self.as_ref()
-            .map_or(Cow::Borrowed(""), Serialize::serialize)
+    fn serialize(self) -> Cow<'static, str> {
+        if let Some(value) = self {
+            value.serialize()
+        } else {
+            Cow::Borrowed("")
+        }
     }
 }
 
-impl<T> Serialize for &[T]
+impl<T> Serialize for Vec<T>
 where
     T: Serialize,
 {
-    fn serialize(&self) -> Cow<'_, str> {
+    fn serialize(self) -> Cow<'static, str> {
         let mut buffer = String::new();
+        let len = self.len();
 
         buffer.push('[');
 
-        for (i, item) in self.iter().enumerate() {
+        for (i, item) in self.into_iter().enumerate() {
             buffer.push_str(item.serialize().as_ref());
 
-            if i < self.len().saturating_sub(1) {
+            if i < len.saturating_sub(1) {
                 buffer.push(',');
             }
         }
@@ -41,66 +45,57 @@ where
     }
 }
 
-impl<T> Serialize for Vec<T>
-where
-    T: Serialize,
-{
-    fn serialize(&self) -> Cow<'_, str> {
-        self.as_slice().serialize().into_owned().into()
-    }
-}
-
-impl<K, V> Serialize for HashMap<K, V>
+impl<K, V, S> Serialize for HashMap<K, V, S>
 where
     K: Serialize,
     V: Serialize,
 {
-    fn serialize(&self) -> Cow<'_, str> {
+    fn serialize(self) -> Cow<'static, str> {
         let mut buffer = String::new();
-
+        let len = self.len();
         buffer.push('{');
 
-        for (i, (key, value)) in self.iter().enumerate() {
+        for (i, (key, value)) in self.into_iter().enumerate() {
             buffer.push_str(key.serialize().as_ref());
             buffer.push('=');
             buffer.push_str(value.serialize().as_ref());
 
-            if i < self.len().saturating_sub(1) {
+            if i < len.saturating_sub(1) {
                 buffer.push(',');
             }
         }
 
         buffer.push('}');
-        buffer.into()
+        Cow::Owned(buffer)
     }
 }
 
 impl Serialize for u64 {
-    fn serialize(&self) -> Cow<'_, str> {
-        self.to_string().into()
+    fn serialize(self) -> Cow<'static, str> {
+        Cow::Owned(self.to_string())
     }
 }
 
 impl Serialize for f64 {
-    fn serialize(&self) -> Cow<'_, str> {
-        self.to_string().into()
+    fn serialize(self) -> Cow<'static, str> {
+        Cow::Owned(self.to_string())
     }
 }
 
 impl Serialize for String {
-    fn serialize(&self) -> Cow<'_, str> {
-        self.into()
+    fn serialize(self) -> Cow<'static, str> {
+        Cow::Owned(self)
     }
 }
 
-impl Serialize for &str {
-    fn serialize(&self) -> Cow<'_, str> {
+impl Serialize for &'static str {
+    fn serialize(self) -> Cow<'static, str> {
         Cow::Borrowed(self)
     }
 }
 
 impl Serialize for Uuid {
-    fn serialize(&self) -> Cow<'_, str> {
-        self.to_string().into()
+    fn serialize(self) -> Cow<'static, str> {
+        Cow::Owned(self.to_string())
     }
 }

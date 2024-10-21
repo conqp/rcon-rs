@@ -1,7 +1,6 @@
 //! TODO: implement education edition extensions.
 
 use crate::minecraft::BedrockEdition;
-use crate::Minecraft;
 use target_selector::TargetSelector;
 
 mod ability;

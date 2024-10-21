@@ -7,8 +7,8 @@ use crate::minecraft::serialize::Serialize;
 pub struct UnsignedFloat(f64);
 
 impl Serialize for UnsignedFloat {
-    fn serialize(&self) -> Cow<'_, str> {
-        self.0.to_string().into()
+    fn serialize(self) -> Cow<'static, str> {
+        Cow::Owned(self.0.to_string())
     }
 }
 

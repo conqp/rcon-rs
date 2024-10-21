@@ -29,7 +29,7 @@ pub enum Argument {
 }
 
 impl Serialize for Argument {
-    fn serialize(&self) -> Cow<'_, str> {
+    fn serialize(self) -> Cow<'static, str> {
         match self {
             Self::X(x) => format!("x={x}").into(),
             Self::Y(y) => format!("y={y}").into(),

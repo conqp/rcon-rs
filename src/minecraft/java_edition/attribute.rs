@@ -32,7 +32,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    pub async fn get(&mut self, scale: Option<f64>) -> std::io::Result<String> {
+    pub async fn get(self, scale: Option<f64>) -> std::io::Result<String> {
         let mut args = vec![
             "attribute".into(),
             self.target.serialize(),
@@ -52,7 +52,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    pub async fn base(&mut self, scale: Option<f64>) -> std::io::Result<String> {
+    pub async fn base(self, scale: Option<f64>) -> std::io::Result<String> {
         let mut args = vec![
             "attribute".into(),
             self.target.serialize(),
@@ -62,7 +62,7 @@ where
         ];
 
         if let Some(scale) = scale {
-            args.push(scale.serialize().to_string().into());
+            args.push(scale.serialize());
         }
 
         self.client.run_utf8(args.as_slice()).await

@@ -33,7 +33,7 @@ impl<T> Serialize for Negate<T>
 where
     T: Serialize,
 {
-    fn serialize(&self) -> Cow<'_, str> {
+    fn serialize(self) -> Cow<'static, str> {
         match self {
             Self::Include(value) => value.serialize(),
             Self::Exclude(value) => format!("!{}", value.serialize()).into(),

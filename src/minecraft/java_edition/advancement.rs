@@ -33,7 +33,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if granting the advancement fails.
-    pub async fn grant(&mut self, grant: Grant) -> std::io::Result<String> {
+    pub async fn grant(self, grant: Grant) -> std::io::Result<String> {
         self.client
             .run_utf8(&["grant".into(), self.target.serialize(), grant.serialize()])
             .await
@@ -45,7 +45,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if revoking the advancement fails.
-    pub async fn revoke(&mut self, grant: Grant) -> std::io::Result<String> {
+    pub async fn revoke(self, grant: Grant) -> std::io::Result<String> {
         self.client
             .run_utf8(&["revoke".into(), self.target.serialize(), grant.serialize()])
             .await
