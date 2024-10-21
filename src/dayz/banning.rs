@@ -92,10 +92,12 @@ impl FromStr for BanListEntry {
         let duration = fields.next().ok_or("Missing duration field")?;
         let duration = if duration == PERM_BAN {
             None
+        } else if duration == "-" {
+            Some(Duration::ZERO)
         } else {
             u64::from_str(duration)
                 .map(|minutes| Some(Duration::from_secs(minutes * SECS_PER_MINUTE)))
-                .map_err(|_| format!("Invalid duration: {duration}"))?
+                .map_err(|_| format!(r#"Invalid duration: "{duration}""#))?
         };
         let reason = fields.next().map(ToString::to_string);
 
