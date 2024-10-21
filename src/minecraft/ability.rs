@@ -23,7 +23,7 @@ where
         Self { client, target }
     }
 
-    /// List the target's abilities.
+    /// List the target's ability.
     ///
     /// # Errors
     ///

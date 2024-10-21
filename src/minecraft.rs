@@ -16,7 +16,7 @@ pub use target_selector::TargetSelector;
 pub use unsigned_float::UnsignedFloat;
 
 #[cfg(feature = "minecraft-education-edition")]
-mod abilities;
+mod ability;
 mod advancement;
 mod entity;
 mod game_mode;
@@ -42,21 +42,21 @@ pub trait Minecraft: RCon + Source {
         command: Option<Cow<'_, str>>,
     ) -> impl Future<Output = std::io::Result<String>> + Send;
 
-    /// Manage the target's abilities.
+    /// Manage the target's ability.
     ///
     /// # Returns
     ///
-    /// Returns an [`abilities::Proxy`] which can be used to execute
+    /// Returns an [`ability::Proxy`] which can be used to execute
     /// ability-related commands pertaining to the `target`.
     #[cfg(feature = "minecraft-education-edition")]
-    fn ability(&mut self, target: TargetSelector) -> abilities::Proxy<'_, Self>
+    fn ability(&mut self, target: TargetSelector) -> ability::Proxy<'_, Self>
     where
         Self: Sized + Send,
     {
-        abilities::Proxy::new(self, target)
+        ability::Proxy::new(self, target)
     }
 
-    /// Manage the target's abilities.
+    /// Manage the target's ability.
     ///
     /// # Returns
     ///
