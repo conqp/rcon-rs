@@ -36,6 +36,14 @@ name = "rconclt"
 required-features = ["battleye", "cli", "source"]
 
 [[example]]
+name = "rconclt_no_login"
+required-features = ["battleye", "cli", "source"]
+
+[[example]]
+name = "rconclt_timeout"
+required-features = ["battleye", "cli", "source"]
+
+[[example]]
 name = "dayz_rcon"
 required-features = ["cli", "dayz"]
 
