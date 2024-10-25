@@ -33,7 +33,7 @@ impl Args {
         )
     }
 
-    pub fn delay(&self) -> Duration {
+    pub const fn delay(&self) -> Duration {
         Duration::from_secs(self.delay)
     }
 
