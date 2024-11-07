@@ -140,4 +140,27 @@ where
             ])
             .await
     }
+
+    /// Returns the value of the modifier with the specified UUID.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if any I/O errors occurred.
+    pub async fn modifier_value(self, uuid: Uuid, scale: Option<f64>) -> std::io::Result<String> {
+        let mut args = vec![
+            "attribute".into(),
+            self.target.serialize(),
+            self.attribute.serialize(),
+            "modifier".into(),
+            "value".into(),
+            "get".into(),
+            uuid.serialize(),
+        ];
+
+        if let Some(scale) = scale {
+            args.push(scale.serialize());
+        }
+
+        self.client.run_utf8(&args).await
+    }
 }
