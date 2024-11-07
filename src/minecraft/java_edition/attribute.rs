@@ -1,3 +1,5 @@
+//! Queries, adds, removes or sets an entity attribute.
+
 use std::borrow::Cow;
 
 use uuid::Uuid;

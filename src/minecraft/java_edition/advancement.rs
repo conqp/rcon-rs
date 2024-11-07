@@ -1,3 +1,5 @@
+//! Gives, removes, or checks player advancements.
+
 use crate::minecraft::parse_response;
 use crate::minecraft::Entity;
 use crate::minecraft::Serialize;

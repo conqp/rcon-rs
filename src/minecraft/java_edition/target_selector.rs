@@ -1,3 +1,5 @@
+//! Target selector and associated types.
+
 use std::borrow::Cow;
 
 use crate::minecraft::{Entity, Serialize};
