@@ -83,7 +83,7 @@ pub trait JavaEdition: Minecraft {
         &mut self,
         target: ban_ip::Target,
         reason: Option<Cow<'_, str>>,
-    ) -> impl Future<Output = std::io::Result<String>> + Send
+    ) -> impl Future<Output = Result<(), ban_ip::Error>> + Send
     where
         Self: Send,
     {
@@ -93,7 +93,7 @@ pub trait JavaEdition: Minecraft {
             args.push(reason);
         }
 
-        async move { self.run_utf8(&args).await }
+        async move { ban_ip::parse_response(&self.run_utf8(&args).await?) }
     }
 
     /// Return the entries from the ban list.
