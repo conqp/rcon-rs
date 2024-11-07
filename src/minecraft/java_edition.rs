@@ -1,6 +1,9 @@
 //! `RCON` extensions interface for Minecraft: Java Edition servers.
 
-use crate::minecraft::{Entity, ResourceLocation};
+use std::borrow::Cow;
+use std::future::Future;
+
+use crate::minecraft::{Entity, ResourceLocation, Serialize};
 use crate::Minecraft;
 
 pub use advancement::Grant;
@@ -40,6 +43,29 @@ pub trait JavaEdition: Minecraft {
         Self: Sized + Send,
     {
         attribute::Proxy::new(self, target, attribute)
+    }
+
+    /// Adds player to banlist.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if any I/O errors occur
+    /// or if the returned bytes are not valid UTF-8.
+    fn ban(
+        &mut self,
+        target: Entity<TargetSelector>,
+        reason: Option<Cow<'_, str>>,
+    ) -> impl Future<Output = std::io::Result<String>> + Send
+    where
+        Self: Send,
+    {
+        let mut args = vec!["ban".into(), target.serialize()];
+
+        if let Some(reason) = reason {
+            args.push(reason);
+        }
+
+        async move { self.run_utf8(&args).await }
     }
 }
 
