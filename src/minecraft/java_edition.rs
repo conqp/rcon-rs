@@ -2,7 +2,6 @@
 
 use std::borrow::Cow;
 use std::future::Future;
-use std::io::ErrorKind;
 
 use crate::minecraft::{Entity, ResourceLocation, Serialize};
 use crate::Minecraft;
@@ -13,7 +12,7 @@ pub use target_selector::{Argument, Sort, TargetSelector};
 pub mod advancement;
 pub mod attribute;
 pub mod ban_ip;
-mod banlist;
+pub mod banlist;
 pub mod target_selector;
 
 /// Extension trait for `Source RCON` clients for Minecraft: Java Edition servers.
@@ -105,7 +104,7 @@ pub trait JavaEdition: Minecraft {
     fn banlist(
         &mut self,
         entry_type: Option<banlist::EntryType>,
-    ) -> impl Future<Output = std::io::Result<Vec<banlist::Entry>>> + Send
+    ) -> impl Future<Output = Result<Vec<banlist::Entry>, banlist::Error>> + Send
     where
         Self: Send,
     {
@@ -115,12 +114,7 @@ pub trait JavaEdition: Minecraft {
             args.push(entry_type.serialize());
         }
 
-        async move {
-            self.run_utf8(&args).await.and_then(|text| {
-                banlist::parse_entries(&text)
-                    .map_err(|()| std::io::Error::new(ErrorKind::InvalidData, text))
-            })
-        }
+        async move { banlist::parse_entries(&self.run_utf8(&args).await?) }
     }
 }
 
