@@ -16,10 +16,6 @@ pub struct Entry {
 }
 
 impl Entry {
-    pub(crate) const fn new(target: Entity<TargetSelector>, reason: String) -> Self {
-        Self { target, reason }
-    }
-
     /// The banned target.
     #[must_use]
     pub const fn target(&self) -> &Entity<TargetSelector> {
