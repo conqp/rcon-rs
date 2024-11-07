@@ -1,10 +1,10 @@
 //! `RCON` extensions interface for Minecraft: Java Edition servers.
 
-use std::borrow::Cow;
-use std::future::Future;
-
 use crate::minecraft::{Entity, ResourceLocation, Serialize};
 use crate::Minecraft;
+use std::borrow::Cow;
+use std::future::Future;
+use std::io::ErrorKind;
 
 pub use advancement::Grant;
 pub use target_selector::{Argument, Sort, TargetSelector};
@@ -12,6 +12,7 @@ pub use target_selector::{Argument, Sort, TargetSelector};
 pub mod advancement;
 pub mod attribute;
 pub mod ban_ip;
+mod banlist;
 pub mod target_selector;
 
 /// Extension trait for `Source RCON` clients for Minecraft: Java Edition servers.
@@ -93,6 +94,32 @@ pub trait JavaEdition: Minecraft {
         }
 
         async move { self.run_utf8(&args).await }
+    }
+
+    /// Return the entries from the ban list.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if any I/O errors occur or if the returned data is invalid.
+    fn banlist(
+        &mut self,
+        entry_type: Option<banlist::EntryType>,
+    ) -> impl Future<Output = std::io::Result<Vec<banlist::Entry>>> + Send
+    where
+        Self: Send,
+    {
+        let mut args = vec!["banlist".into()];
+
+        if let Some(entry_type) = entry_type {
+            args.push(entry_type.serialize());
+        }
+
+        async move {
+            self.run_utf8(&args).await.and_then(|text| {
+                banlist::parse_entries(&text)
+                    .map_err(|()| std::io::Error::new(ErrorKind::InvalidData, text))
+            })
+        }
     }
 }
 
