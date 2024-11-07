@@ -150,7 +150,7 @@ where
             text.lines()
                 .filter(|line| line.chars().next().map_or(false, char::is_numeric))
                 .filter_map(|line| {
-                    BanListEntry::from_str(line)
+                    line.parse()
                         .inspect_err(|error| warn!(r#"Invalid ban list entry "{line}": {error}"#))
                         .ok()
                 })
