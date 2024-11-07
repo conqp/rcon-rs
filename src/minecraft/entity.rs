@@ -1,4 +1,6 @@
 use std::borrow::Cow;
+use std::convert::Infallible;
+use std::str::FromStr;
 
 use crate::minecraft::serialize::Serialize;
 
@@ -36,6 +38,18 @@ impl<T> From<String> for Entity<T> {
 impl<T> From<Uuid> for Entity<T> {
     fn from(uuid: Uuid) -> Self {
         Self::Uuid(uuid)
+    }
+}
+
+impl<T> FromStr for Entity<T> {
+    type Err = Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(if let Ok(uuid) = Uuid::from_str(s) {
+            Self::Uuid(uuid)
+        } else {
+            Self::PlayerName(Cow::Owned(s.to_string()))
+        })
     }
 }
 
