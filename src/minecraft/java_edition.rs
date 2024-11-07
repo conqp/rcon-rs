@@ -11,6 +11,7 @@ pub use target_selector::{Argument, Sort, TargetSelector};
 
 pub mod advancement;
 pub mod attribute;
+pub mod ban;
 pub mod ban_ip;
 pub mod banlist;
 pub mod target_selector;
@@ -57,7 +58,7 @@ pub trait JavaEdition: Minecraft {
         &mut self,
         target: Entity<TargetSelector>,
         reason: Option<Cow<'_, str>>,
-    ) -> impl Future<Output = std::io::Result<String>> + Send
+    ) -> impl Future<Output = Result<Option<ban::Entry>, ban::Error>> + Send
     where
         Self: Send,
     {
@@ -67,7 +68,7 @@ pub trait JavaEdition: Minecraft {
             args.push(reason);
         }
 
-        async move { self.run_utf8(&args).await }
+        async move { ban::parse_response(&self.run_utf8(&args).await?) }
     }
 
     /// Adds IP address to banlist.
