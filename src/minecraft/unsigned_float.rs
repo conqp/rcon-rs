@@ -13,7 +13,7 @@ impl Serialize for UnsignedFloat {
 }
 
 impl From<UnsignedFloat> for f64 {
-    fn from(unsigned: UnsignedFloat) -> f64 {
+    fn from(unsigned: UnsignedFloat) -> Self {
         unsigned.0
     }
 }

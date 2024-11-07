@@ -2,7 +2,7 @@ use std::net::IpAddr;
 use std::str::FromStr;
 use uuid::Uuid;
 
-/// The target_selector of a ban.
+/// The target selector of a ban.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Target {
     /// Ban of an IP address.

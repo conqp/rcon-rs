@@ -18,10 +18,10 @@ pub enum GameMode {
 impl Serialize for GameMode {
     fn serialize(self) -> Cow<'static, str> {
         match self {
-            GameMode::Survival => Cow::Borrowed("survival"),
-            GameMode::Creative => Cow::Borrowed("creative"),
-            GameMode::Adventure => Cow::Borrowed("adventure"),
-            GameMode::Spectator => Cow::Borrowed("spectator"),
+            Self::Survival => Cow::Borrowed("survival"),
+            Self::Creative => Cow::Borrowed("creative"),
+            Self::Adventure => Cow::Borrowed("adventure"),
+            Self::Spectator => Cow::Borrowed("spectator"),
         }
     }
 }

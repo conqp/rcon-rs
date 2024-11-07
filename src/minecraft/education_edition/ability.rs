@@ -6,6 +6,7 @@ use super::EducationEdition;
 
 use ability::Ability;
 
+#[allow(clippy::module_inception)]
 mod ability;
 
 pub struct Proxy<'client, T>
