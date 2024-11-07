@@ -3,7 +3,9 @@ use std::fmt::Display;
 /// Errors that can occur when querying the banlist.
 #[derive(Debug)]
 pub enum Error {
+    /// An I/O error occurred.
     Io(std::io::Error),
+    /// An invalid ban list entry was encountered.
     InvalidEntry(String),
 }
 
