@@ -16,19 +16,33 @@ mod sort;
 /// See the [Minecraft wiki](https://minecraft.fandom.com/wiki/Target_selectors) for details.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Argument {
+    /// x-coordinate
     X(f64),
+    /// y-coordinate
     Y(f64),
+    /// z-coordinate
     Z(f64),
+    /// Distance
     Distance(Range<UnsignedFloat>),
+    /// X volume dimension
     Dx(f64),
+    /// Y volume dimension
     Dy(f64),
+    /// Z volume dimension
     Dz(f64),
+    /// Score filters
     Scores(HashMap<String, Range<u64>>),
+    /// Tag filters
     Tag(Negate<Option<String>>),
+    /// Team filters
     Team(Negate<Option<String>>),
+    /// Sorting
     Sort(Sort),
+    /// Limiting
     Limit(u64),
+    /// Level filter
     Level(Range<u64>),
+    /// Game mode filter
     GameMode(Negate<GameMode>),
     // TODO implement further selector attributes
     // <https://minecraft.fandom.com/wiki/Target_selectors>
