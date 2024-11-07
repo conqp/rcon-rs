@@ -1,10 +1,11 @@
 //! `RCON` extensions interface for Minecraft: Java Edition servers.
 
-use crate::minecraft::{Entity, ResourceLocation, Serialize};
-use crate::Minecraft;
 use std::borrow::Cow;
 use std::future::Future;
 use std::io::ErrorKind;
+
+use crate::minecraft::{Entity, ResourceLocation, Serialize};
+use crate::Minecraft;
 
 pub use advancement::Grant;
 pub use target_selector::{Argument, Sort, TargetSelector};
