@@ -36,6 +36,7 @@ impl Entry {
 impl FromStr for Entry {
     type Err = Error;
 
+    #[allow(clippy::unwrap_in_result)]
     fn from_str(text: &str) -> Result<Self, Self::Err> {
         let regex =
             Regex::new(REGEX).expect("The successful ban regex should be valid. This is a bug.");
