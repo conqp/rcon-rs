@@ -1,7 +1,9 @@
 //! Data structures related to IP banning.
 
 use std::borrow::Cow;
+use std::convert::Infallible;
 use std::net::IpAddr;
+use std::str::FromStr;
 
 use crate::minecraft::java_edition::TargetSelector;
 use crate::minecraft::{Entity, Serialize};
@@ -24,6 +26,18 @@ impl From<IpAddr> for Target {
 impl From<Entity<TargetSelector>> for Target {
     fn from(entity: Entity<TargetSelector>) -> Target {
         Self::Entity(entity)
+    }
+}
+
+impl FromStr for Target {
+    type Err = Infallible;
+
+    fn from_str(s: &str) -> Result<Target, Infallible> {
+        if let Ok(ip) = IpAddr::from_str(s) {
+            Ok(Self::Ip(ip))
+        } else {
+            Entity::from_str(s).map(Self::Entity)
+        }
     }
 }
 
