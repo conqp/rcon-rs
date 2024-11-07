@@ -115,7 +115,7 @@ pub trait JavaEdition: Minecraft {
             args.push(entry_type.serialize());
         }
 
-        async move { banlist::parse_entries(&self.run_utf8(&args).await?) }
+        async move { banlist::parse_response(&self.run_utf8(&args).await?) }
     }
 }
 
