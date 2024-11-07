@@ -45,11 +45,10 @@ impl<T> FromStr for Entity<T> {
     type Err = Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(if let Ok(uuid) = Uuid::from_str(s) {
-            Self::Uuid(uuid)
-        } else {
-            Self::PlayerName(Cow::Owned(s.to_string()))
-        })
+        Ok(Uuid::from_str(s).map_or_else(
+            |_| Self::PlayerName(Cow::Owned(s.to_string())),
+            |uuid| Self::Uuid(uuid),
+        ))
     }
 }
 

@@ -11,18 +11,20 @@ use crate::minecraft::{Entity, Serialize};
 /// Can either be an IP address or an entity.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Target {
+    /// Ban an IP address directly.
     Ip(IpAddr),
+    /// Ban the IP address of a current player.
     Entity(Entity<TargetSelector>),
 }
 
 impl From<IpAddr> for Target {
-    fn from(ip: IpAddr) -> Target {
+    fn from(ip: IpAddr) -> Self {
         Self::Ip(ip)
     }
 }
 
 impl From<Entity<TargetSelector>> for Target {
-    fn from(entity: Entity<TargetSelector>) -> Target {
+    fn from(entity: Entity<TargetSelector>) -> Self {
         Self::Entity(entity)
     }
 }
@@ -30,12 +32,11 @@ impl From<Entity<TargetSelector>> for Target {
 impl FromStr for Target {
     type Err = Infallible;
 
-    fn from_str(s: &str) -> Result<Target, Infallible> {
-        if let Ok(ip) = IpAddr::from_str(s) {
-            Ok(Self::Ip(ip))
-        } else {
-            Entity::from_str(s).map(Self::Entity)
-        }
+    fn from_str(s: &str) -> Result<Self, Infallible> {
+        IpAddr::from_str(s).map_or_else(
+            |_| Entity::from_str(s).map(Self::Entity),
+            |ip| Ok(Self::Ip(ip)),
+        )
     }
 }
 

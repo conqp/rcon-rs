@@ -5,9 +5,10 @@ use regex::Regex;
 use super::error::Error;
 use crate::minecraft::java_edition::ban_ip::Target;
 
-pub(crate) const NO_BANS: &str = "There are no bans";
+pub const NO_BANS: &str = "There are no bans";
 const REGEX: &str = r"(.+) was banned by (.+): (.+)";
 
+/// A ban list entry.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Entry {
     target: Target,
@@ -17,16 +18,19 @@ pub struct Entry {
 
 impl Entry {
     /// The ban target.
+    #[must_use]
     pub const fn target(&self) -> &Target {
         &self.target
     }
 
     /// The name of the moderator who issued the ban.
+    #[must_use]
     pub fn moderator(&self) -> &str {
         &self.moderator
     }
 
     /// The reason for the ban.
+    #[must_use]
     pub fn reason(&self) -> &str {
         &self.reason
     }

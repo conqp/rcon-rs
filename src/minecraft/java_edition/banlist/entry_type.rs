@@ -5,15 +5,17 @@ use crate::minecraft::Serialize;
 /// Entry type for filtering.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum EntryType {
+    /// Only list banned IP addresses.
     Ips,
+    /// Only list banned players.
     Players,
 }
 
 impl Serialize for EntryType {
     fn serialize(self) -> Cow<'static, str> {
         match self {
-            EntryType::Ips => Cow::Borrowed("ips"),
-            EntryType::Players => Cow::Borrowed("players"),
+            Self::Ips => Cow::Borrowed("ips"),
+            Self::Players => Cow::Borrowed("players"),
         }
     }
 }
