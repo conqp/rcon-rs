@@ -107,6 +107,24 @@ pub trait DayZ: RCon + BattlEye {
     ///
     /// Returns an [`std::io::Error`] if listing the players fails.
     fn players(&mut self) -> impl Future<Output = std::io::Result<Vec<Player>>> + Send;
+
+    /// Lock the server.
+    ///
+    /// This prevents any further clients from joining.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if listing the players fails.
+    fn lock(&mut self) -> impl Future<Output = std::io::Result<()>> + Send;
+
+    /// Unlock the server.
+    ///
+    /// This enables other clients to join again.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if listing the players fails.
+    fn unlock(&mut self) -> impl Future<Output = std::io::Result<()>> + Send;
 }
 
 impl<T> DayZ for T
@@ -224,5 +242,13 @@ where
             })
             .collect();
         Ok(players)
+    }
+
+    async fn lock(&mut self) -> std::io::Result<()> {
+        self.run(&["#lock".into()]).await.map(drop)
+    }
+
+    async fn unlock(&mut self) -> std::io::Result<()> {
+        self.run(&["#unlock".into()]).await.map(drop)
     }
 }
