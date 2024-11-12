@@ -132,6 +132,13 @@ pub trait DayZ: RCon + BattlEye {
     ///
     /// Returns an [`std::io::Error`] if any I/O error occurred.
     fn shutdown(&mut self) -> impl Future<Output = std::io::Result<()>> + Send;
+
+    /// Reload server config file loaded by -config option.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if any I/O error occurred.
+    fn reload(&mut self) -> impl Future<Output = std::io::Result<()>> + Send;
 }
 
 impl<T> DayZ for T
@@ -261,5 +268,9 @@ where
 
     async fn shutdown(&mut self) -> std::io::Result<()> {
         self.run(&["#shutdown".into()]).await.map(drop)
+    }
+
+    async fn reload(&mut self) -> std::io::Result<()> {
+        self.run(&["#init".into()]).await.map(drop)
     }
 }
