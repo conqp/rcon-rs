@@ -114,7 +114,7 @@ pub trait DayZ: RCon + BattlEye {
     ///
     /// # Errors
     ///
-    /// Returns an [`std::io::Error`] if listing the players fails.
+    /// Returns an [`std::io::Error`] if any I/O error occurred.
     fn lock(&mut self) -> impl Future<Output = std::io::Result<()>> + Send;
 
     /// Unlock the server.
@@ -123,7 +123,7 @@ pub trait DayZ: RCon + BattlEye {
     ///
     /// # Errors
     ///
-    /// Returns an [`std::io::Error`] if listing the players fails.
+    /// Returns an [`std::io::Error`] if any I/O error occurred.
     fn unlock(&mut self) -> impl Future<Output = std::io::Result<()>> + Send;
 }
 
