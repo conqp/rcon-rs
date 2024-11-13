@@ -158,23 +158,23 @@ where
     }
 
     async fn kick(&mut self, index: u64, reason: Option<Cow<'_, str>>) -> std::io::Result<()> {
+        let mut args = vec!["kick".into(), index.to_string().into()];
+
         if let Some(reason) = reason {
-            self.run(&["kick".into(), index.to_string().into(), reason])
-                .await
-        } else {
-            self.run(&["kick".into(), index.to_string().into()]).await
+            args.push(reason);
         }
-        .map(drop)
+
+        self.run(&args).await.map(drop)
     }
 
     async fn ban(&mut self, index: u64, reason: Option<Cow<'_, str>>) -> std::io::Result<()> {
+        let mut args = vec!["ban".into(), index.to_string().into()];
+
         if let Some(reason) = reason {
-            self.run(&["ban".into(), index.to_string().into(), reason])
-                .await
-        } else {
-            self.run(&["ban".into(), index.to_string().into()]).await
+            args.push(reason);
         }
-        .map(drop)
+
+        self.run(&args).await.map(drop)
     }
 
     async fn bans(&mut self) -> std::io::Result<impl Iterator<Item = BanListEntry>> {
