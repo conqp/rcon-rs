@@ -2,23 +2,23 @@
 
 use std::borrow::Cow;
 use std::future::Future;
-use std::io::{Error, ErrorKind};
 use std::net::SocketAddr;
+
+#[cfg(feature = "dayz")]
+pub use dayz::DayZ;
+pub use error::Error;
+#[cfg(feature = "minecraft")]
+pub use minecraft::Minecraft;
 
 #[cfg(feature = "battleye")]
 pub mod battleye;
 #[cfg(feature = "dayz")]
 pub mod dayz;
+mod error;
 #[cfg(feature = "minecraft")]
 pub mod minecraft;
 #[cfg(feature = "source")]
 pub mod source;
-
-#[cfg(feature = "dayz")]
-pub use crate::dayz::DayZ;
-
-#[cfg(feature = "minecraft")]
-pub use minecraft::Minecraft;
 
 /// Common API for `RCON` protocol clients
 pub trait RCon {
@@ -26,7 +26,7 @@ pub trait RCon {
     ///
     /// # Errors
     ///
-    /// Returns an [`Error`] if any I/O errors occurred.
+    /// Returns an [`std::io::Error`] if any I/O errors occurred.
     fn connect<T>(address: T) -> impl Future<Output = std::io::Result<Self>>
     where
         Self: Sized,
@@ -40,7 +40,7 @@ pub trait RCon {
     ///
     /// # Errors
     ///
-    /// Returns an [`Error`] if any I/O errors occurred.
+    /// Returns an [`std::io::Error`] if any I/O errors occurred.
     fn login(
         &mut self,
         password: Cow<'_, str>,
@@ -54,7 +54,7 @@ pub trait RCon {
     ///
     /// # Errors
     ///
-    /// Returns an [`Error`] if any I/O errors occurred.
+    /// Returns an [`std::io::Error`] if any I/O errors occurred.
     fn run(
         &mut self,
         args: &[Cow<'_, str>],
@@ -72,15 +72,11 @@ pub trait RCon {
     fn run_utf8(
         &mut self,
         args: &[Cow<'_, str>],
-    ) -> impl Future<Output = std::io::Result<String>> + Send
+    ) -> impl Future<Output = Result<String, Error>> + Send
     where
         Self: Send,
     {
-        async {
-            self.run(args).await.and_then(|bytes| {
-                String::from_utf8(bytes).map_err(|error| Error::new(ErrorKind::InvalidData, error))
-            })
-        }
+        async { Ok(String::from_utf8(self.run(args).await?)?) }
     }
 
     /// Run a command.
@@ -96,7 +92,7 @@ pub trait RCon {
     ///
     /// # Errors
     ///
-    /// Returns an [`Error`] if any I/O errors occurred.
+    /// Returns an [`std::io::Error`] if any I/O errors occurred.
     fn run_utf8_lossy(
         &mut self,
         args: &[Cow<'_, str>],

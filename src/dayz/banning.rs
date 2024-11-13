@@ -3,8 +3,10 @@ use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use std::time::Duration;
 
+pub use error::Error;
 pub use target::Target;
 
+mod error;
 mod target;
 
 pub const PERM_BAN: &str = "perm";
