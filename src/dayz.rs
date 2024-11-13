@@ -236,10 +236,7 @@ where
     }
 
     async fn players(&mut self) -> std::io::Result<Vec<Player>> {
-        let result = self.run(&["players".into()]).await?;
-        let text = String::from_utf8(result).map_err(|_| {
-            std::io::Error::new(ErrorKind::InvalidData, "Response is not valid UTF-8")
-        })?;
+        let text = self.run_utf8(&["players".into()]).await?;
 
         let players: Vec<Player> = text
             .lines()
