@@ -4,6 +4,10 @@ use std::borrow::Cow;
 use std::future::Future;
 use std::net::SocketAddr;
 
+#[cfg(feature = "dayz")]
+pub use dayz::DayZ;
+pub use error::Error;
+
 #[cfg(feature = "battleye")]
 pub mod battleye;
 #[cfg(feature = "dayz")]
@@ -11,10 +15,6 @@ pub mod dayz;
 mod error;
 #[cfg(feature = "source")]
 pub mod source;
-
-#[cfg(feature = "dayz")]
-pub use crate::dayz::DayZ;
-pub use error::Error;
 
 /// Common API for `RCON` protocol clients
 pub trait RCon {
