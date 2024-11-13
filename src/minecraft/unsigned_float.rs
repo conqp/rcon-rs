@@ -6,6 +6,14 @@ use crate::minecraft::serialize::Serialize;
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct UnsignedFloat(f64);
 
+impl UnsignedFloat {
+    /// Return the inner `f64` value.
+    #[must_use]
+    pub const fn into_inner(self) -> f64 {
+        self.0
+    }
+}
+
 impl Serialize for UnsignedFloat {
     fn serialize(self) -> Cow<'static, str> {
         Cow::Owned(self.0.to_string())
