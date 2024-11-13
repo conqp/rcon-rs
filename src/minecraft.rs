@@ -4,9 +4,10 @@ use std::borrow::Cow;
 use std::future::Future;
 
 use crate::source::Source;
-use crate::{Error, RCon};
+use crate::RCon;
 
 pub use entity::Entity;
+pub use error::Error;
 pub use game_mode::GameMode;
 pub use negate::Negate;
 pub use range::Range;
@@ -29,6 +30,7 @@ pub mod bedrock_edition;
 #[cfg(feature = "minecraft-education-edition")]
 pub mod education_edition;
 mod entity;
+mod error;
 mod game_mode;
 #[cfg(feature = "minecraft-java-edition")]
 pub mod java_edition;
@@ -51,7 +53,7 @@ pub trait Minecraft: RCon + Source {
     fn help(
         &mut self,
         command: Option<Cow<'_, str>>,
-    ) -> impl Future<Output = Result<String, Error>> + Send
+    ) -> impl Future<Output = Result<String, crate::Error>> + Send
     where
         Self: Send,
     {
