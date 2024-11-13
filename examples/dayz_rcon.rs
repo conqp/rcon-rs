@@ -168,7 +168,7 @@ async fn main() -> ExitCode {
         Command::Bans => client
             .bans()
             .await
-            .map(|bans| bans.for_each(|ban| println!("{ban}")))
+            .map(|bans| bans.iter().for_each(|ban| println!("{ban}")))
             .map_err(|error| error.to_string()),
         Command::AddBan {
             target,

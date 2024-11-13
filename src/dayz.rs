@@ -74,9 +74,7 @@ pub trait DayZ: RCon + BattlEye {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if querying the ban list fails.
-    fn bans(
-        &mut self,
-    ) -> impl Future<Output = std::io::Result<impl Iterator<Item = BanListEntry>>> + Send;
+    fn bans(&mut self) -> impl Future<Output = Result<Vec<BanListEntry>, crate::Error>> + Send;
 
     /// Add an entry to the ban list.
     ///
@@ -177,8 +175,8 @@ where
         self.run(&args).await.map(drop)
     }
 
-    async fn bans(&mut self) -> std::io::Result<impl Iterator<Item = BanListEntry>> {
-        self.run_utf8_lossy(&["bans".into()]).await.map(|text| {
+    async fn bans(&mut self) -> Result<Vec<BanListEntry>, crate::Error> {
+        self.run_utf8(&["bans".into()]).await.map(|text| {
             text.lines()
                 .filter(|line| line.chars().next().map_or(false, char::is_numeric))
                 .filter_map(|line| {
@@ -186,8 +184,7 @@ where
                         .inspect_err(|error| warn!(r#"Invalid ban list entry "{line}": {error}"#))
                         .ok()
                 })
-                .collect::<Vec<_>>()
-                .into_iter()
+                .collect()
         })
     }
 
