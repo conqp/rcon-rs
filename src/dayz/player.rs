@@ -43,8 +43,8 @@ impl Player {
 
     /// The player's name.
     #[must_use]
-    pub fn name(&self) -> Cow<'_, str> {
-        Cow::Borrowed(&self.name)
+    pub fn name(&self) -> &str {
+        &self.name
     }
 }
 
