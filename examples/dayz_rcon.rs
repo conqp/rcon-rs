@@ -147,33 +147,50 @@ async fn main() -> ExitCode {
         Command::Players => client
             .players()
             .await
-            .map(|players| players.iter().for_each(|player| println!("{player}"))),
-        Command::Say { player, message } => client.say(player, message).await,
-        Command::Broadcast { message } => client.broadcast(message).await,
-        Command::Kick { player, reason } => client.kick(player, reason).await,
-        Command::Ban { player, reason } => client.ban(player, reason).await,
+            .map(|players| players.iter().for_each(|player| println!("{player}")))
+            .map_err(|error| error.to_string()),
+        Command::Say { player, message } => client
+            .say(player, message)
+            .await
+            .map_err(|error| error.to_string()),
+        Command::Broadcast { message } => client
+            .broadcast(message)
+            .await
+            .map_err(|error| error.to_string()),
+        Command::Kick { player, reason } => client
+            .kick(player, reason)
+            .await
+            .map_err(|error| error.to_string()),
+        Command::Ban { player, reason } => client
+            .ban(player, reason)
+            .await
+            .map_err(|error| error.to_string()),
         Command::Bans => client
             .bans()
             .await
-            .map(|bans| bans.for_each(|ban| println!("{ban}"))),
+            .map(|bans| bans.for_each(|ban| println!("{ban}")))
+            .map_err(|error| error.to_string()),
         Command::AddBan {
             target,
             duration,
             reason,
-        } => {
-            client
-                .add_ban(
-                    target.into(),
-                    duration.map(|minutes| Duration::from_secs(minutes * SECS_PER_MINUTE)),
-                    reason,
-                )
-                .await
-        }
-        Command::RemoveBan { id } => client.remove_ban(id).await,
+        } => client
+            .add_ban(
+                target.into(),
+                duration.map(|minutes| Duration::from_secs(minutes * SECS_PER_MINUTE)),
+                reason,
+            )
+            .await
+            .map_err(|error| error.to_string()),
+        Command::RemoveBan { id } => client
+            .remove_ban(id)
+            .await
+            .map_err(|error| error.to_string()),
         Command::Exec { command } => client
             .run(command.as_ref())
             .await
-            .and_then(|result| stdout().lock().write_all(&result)),
+            .and_then(|result| stdout().lock().write_all(&result))
+            .map_err(|error| error.to_string()),
     } {
         error!("{error}");
         return ExitCode::from(5);

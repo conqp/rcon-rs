@@ -2,7 +2,6 @@
 
 use std::borrow::Cow;
 use std::future::Future;
-use std::io::ErrorKind;
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -11,6 +10,7 @@ use log::warn;
 use crate::battleye::BattlEye;
 use crate::RCon;
 
+pub use banning::Error;
 pub use banning::{BanListEntry, Target, SECS_PER_MINUTE};
 pub use player::Player;
 
@@ -92,7 +92,7 @@ pub trait DayZ: RCon + BattlEye {
         target: Target,
         duration: Option<Duration>,
         reason: Option<Cow<'_, str>>,
-    ) -> impl Future<Output = std::io::Result<()>> + Send;
+    ) -> impl Future<Output = Result<(), Error>> + Send;
 
     /// Remove a player ban entry from the server's ban list.
     ///
@@ -106,7 +106,7 @@ pub trait DayZ: RCon + BattlEye {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if listing the players fails.
-    fn players(&mut self) -> impl Future<Output = std::io::Result<Vec<Player>>> + Send;
+    fn players(&mut self) -> impl Future<Output = Result<Vec<Player>, crate::Error>> + Send;
 
     /// Lock the server.
     ///
@@ -196,7 +196,7 @@ where
         target: Target,
         duration: Option<Duration>,
         reason: Option<Cow<'_, str>>,
-    ) -> std::io::Result<()> {
+    ) -> Result<(), Error> {
         let mut args: Vec<Cow<'_, str>> = vec!["addBan".into()];
 
         match target {
@@ -217,16 +217,13 @@ where
             args.push(reason);
         }
 
-        self.run(&args).await.and_then(|response| {
-            if response == INVALID_BAN_FORMAT_MESSAGE.as_bytes() {
-                Err(std::io::Error::new(
-                    ErrorKind::InvalidData,
-                    INVALID_BAN_FORMAT_MESSAGE,
-                ))
-            } else {
-                Ok(())
-            }
-        })
+        let response = self.run(&args).await?;
+
+        if response == INVALID_BAN_FORMAT_MESSAGE.as_bytes() {
+            Err(Error::InvalidBanFormat)
+        } else {
+            Ok(())
+        }
     }
 
     async fn remove_ban(&mut self, id: u64) -> std::io::Result<()> {
@@ -235,7 +232,7 @@ where
             .map(drop)
     }
 
-    async fn players(&mut self) -> std::io::Result<Vec<Player>> {
+    async fn players(&mut self) -> Result<Vec<Player>, crate::Error> {
         self.run_utf8(&["players".into()]).await.map(|text| {
             text.lines()
                 // Discard header.
