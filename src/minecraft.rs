@@ -4,7 +4,7 @@ use std::borrow::Cow;
 use std::future::Future;
 
 use crate::source::Source;
-use crate::RCon;
+use crate::{Error, RCon};
 
 pub use entity::Entity;
 pub use game_mode::GameMode;
@@ -51,17 +51,17 @@ pub trait Minecraft: RCon + Source {
     fn help(
         &mut self,
         command: Option<Cow<'_, str>>,
-    ) -> impl Future<Output = std::io::Result<String>> + Send
+    ) -> impl Future<Output = Result<String, Error>> + Send
     where
         Self: Send,
     {
-        async {
-            if let Some(command) = command {
-                self.run_utf8(&["help".into(), command]).await
-            } else {
-                self.run_utf8(&["help".into()]).await
-            }
+        let mut args = vec!["help".into()];
+
+        if let Some(command) = command {
+            args.push(command);
         }
+
+        async move { self.run_utf8(&args).await }
     }
 }
 
