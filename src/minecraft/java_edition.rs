@@ -52,8 +52,7 @@ pub trait JavaEdition: Minecraft {
     ///
     /// # Errors
     ///
-    /// Returns an [`std::io::Error`] if any I/O errors occur
-    /// or if the returned bytes are not valid UTF-8.
+    /// Returns an [`ban::Error`] on errors.
     fn ban(
         &mut self,
         target: Entity<TargetSelector>,
@@ -78,8 +77,7 @@ pub trait JavaEdition: Minecraft {
     ///
     /// # Errors
     ///
-    /// Returns an [`std::io::Error`] if any I/O errors occur
-    /// or if the returned bytes are not valid UTF-8.
+    /// Returns an [`ban_ip::Error`] on errors.
     fn ban_ip(
         &mut self,
         target: ban_ip::Target,
@@ -101,7 +99,7 @@ pub trait JavaEdition: Minecraft {
     ///
     /// # Errors
     ///
-    /// Returns an [`std::io::Error`] if any I/O errors occur or if the returned data is invalid.
+    /// Returns an [`banlist::Error`] on errors.
     fn banlist(
         &mut self,
         entry_type: Option<banlist::EntryType>,
