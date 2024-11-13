@@ -1,5 +1,5 @@
-use crate::minecraft::parse_response;
 use crate::minecraft::Serialize;
+use crate::minecraft::{parse_response, Error};
 
 use super::target_selector::TargetSelector;
 use super::EducationEdition;
@@ -30,10 +30,11 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
-    pub async fn list(self) -> std::io::Result<Vec<String>> {
+    pub async fn list(self) -> Result<Vec<String>, Error> {
         self.client
             .run_utf8(&["ability".into(), self.target.serialize()])
             .await
+            .map_err(Into::into)
             .and_then(parse_response)
             // TODO: How to parse this?
             .map(|text| text.lines().map(ToString::to_string).collect())
@@ -44,10 +45,11 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
-    pub async fn get(self, _ability: Ability) -> std::io::Result<String> {
+    pub async fn get(self, _ability: Ability) -> Result<String, Error> {
         self.client
             .run_utf8(&["ability".into(), self.target.serialize()])
             .await
+            .map_err(Into::into)
             .and_then(parse_response)
     }
 
@@ -56,7 +58,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
-    pub async fn enable(self, ability: Ability) -> std::io::Result<String> {
+    pub async fn enable(self, ability: Ability) -> Result<String, Error> {
         self.client
             .run_utf8(&[
                 "ability".into(),
@@ -65,6 +67,7 @@ where
                 true.to_string().into(),
             ])
             .await
+            .map_err(Into::into)
             .and_then(parse_response)
     }
 
@@ -73,7 +76,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
-    pub async fn disable(self, ability: Ability) -> std::io::Result<String> {
+    pub async fn disable(self, ability: Ability) -> Result<String, Error> {
         self.client
             .run_utf8(&[
                 "ability".into(),
@@ -82,6 +85,7 @@ where
                 false.to_string().into(),
             ])
             .await
+            .map_err(Into::into)
             .and_then(parse_response)
     }
 }
