@@ -19,11 +19,11 @@ impl From<UnsignedFloat> for f64 {
 }
 
 impl TryFrom<f64> for UnsignedFloat {
-    type Error = ();
+    type Error = f64;
 
     fn try_from(value: f64) -> Result<Self, Self::Error> {
         if value.is_sign_negative() {
-            Err(())
+            Err(value)
         } else {
             Ok(Self(value))
         }
