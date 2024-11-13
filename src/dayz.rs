@@ -236,23 +236,21 @@ where
     }
 
     async fn players(&mut self) -> std::io::Result<Vec<Player>> {
-        let text = self.run_utf8(&["players".into()]).await?;
-
-        let players: Vec<Player> = text
-            .lines()
-            // Discard header.
-            .skip_while(|line| !line.starts_with('-'))
-            .skip(1)
-            // Take until footer.
-            .take_while(|line| !line.starts_with('('))
-            .map(Player::from_str)
-            .filter_map(|result| {
-                result
-                    .inspect_err(|error| warn!("Failed to parse player data: {error}"))
-                    .ok()
-            })
-            .collect();
-        Ok(players)
+        self.run_utf8(&["players".into()]).await.map(|text| {
+            text.lines()
+                // Discard header.
+                .skip_while(|line| !line.starts_with('-'))
+                .skip(1)
+                // Take until footer.
+                .take_while(|line| !line.starts_with('('))
+                .map(Player::from_str)
+                .filter_map(|result| {
+                    result
+                        .inspect_err(|error| warn!("Failed to parse player data: {error}"))
+                        .ok()
+                })
+                .collect()
+        })
     }
 
     async fn lock(&mut self) -> std::io::Result<()> {
