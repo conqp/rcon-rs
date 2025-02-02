@@ -8,6 +8,7 @@ use crate::minecraft::{
     java_edition::TargetSelector, Entity, JavaEdition, ResourceLocation, Serialize,
 };
 
+use crate::Error;
 pub use modifier::Modifier;
 
 mod modifier;
@@ -43,7 +44,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    pub async fn get(self, scale: Option<f64>) -> std::io::Result<String> {
+    pub async fn get(self, scale: Option<f64>) -> Result<String, Error> {
         let mut args = vec![
             "attribute".into(),
             self.target.serialize(),
@@ -63,7 +64,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    pub async fn base(self, scale: Option<f64>) -> std::io::Result<String> {
+    pub async fn base(self, scale: Option<f64>) -> Result<String, Error> {
         let mut args = vec![
             "attribute".into(),
             self.target.serialize(),
@@ -84,7 +85,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    pub async fn set_base(self, value: f64) -> std::io::Result<String> {
+    pub async fn set_base(self, value: f64) -> Result<String, Error> {
         self.client
             .run_utf8(&[
                 "attribute".into(),
@@ -109,7 +110,7 @@ where
         name: Cow<'_, str>,
         value: f64,
         modifier: Modifier,
-    ) -> std::io::Result<String> {
+    ) -> Result<String, Error> {
         self.client
             .run_utf8(&[
                 "attribute".into(),
@@ -130,7 +131,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    pub async fn remove_modifier(self, uuid: Uuid) -> std::io::Result<String> {
+    pub async fn remove_modifier(self, uuid: Uuid) -> Result<String, Error> {
         self.client
             .run_utf8(&[
                 "attribute".into(),
@@ -148,7 +149,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    pub async fn modifier_value(self, uuid: Uuid, scale: Option<f64>) -> std::io::Result<String> {
+    pub async fn modifier_value(self, uuid: Uuid, scale: Option<f64>) -> Result<String, Error> {
         let mut args = vec![
             "attribute".into(),
             self.target.serialize(),

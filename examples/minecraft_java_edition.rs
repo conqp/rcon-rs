@@ -80,7 +80,12 @@ async fn main() -> ExitCode {
             .attribute(target.into(), attribute.into())
             .get(scale)
             .await
-            .and_then(|result| stdout().lock().write_all(result.as_bytes())),
+            .and_then(|result| {
+                stdout()
+                    .lock()
+                    .write_all(result.as_bytes())
+                    .map_err(Into::into)
+            }),
     } {
         error!("{error}");
         return ExitCode::from(5);

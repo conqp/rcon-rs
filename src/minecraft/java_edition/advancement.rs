@@ -3,7 +3,7 @@
 use crate::minecraft::parse_response;
 use crate::minecraft::Entity;
 use crate::minecraft::Serialize;
-use crate::Minecraft;
+use crate::{minecraft, Minecraft};
 
 use super::TargetSelector;
 
@@ -35,11 +35,12 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if granting the advancement fails.
-    pub async fn grant(self, grant: Grant) -> std::io::Result<String> {
-        self.client
-            .run_utf8(&["grant".into(), self.target.serialize(), grant.serialize()])
-            .await
-            .and_then(parse_response)
+    pub async fn grant(self, grant: Grant) -> Result<String, minecraft::Error> {
+        parse_response(
+            self.client
+                .run_utf8(&["grant".into(), self.target.serialize(), grant.serialize()])
+                .await?,
+        )
     }
 
     /// Revoke some advancement.
@@ -47,10 +48,11 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if revoking the advancement fails.
-    pub async fn revoke(self, grant: Grant) -> std::io::Result<String> {
-        self.client
-            .run_utf8(&["revoke".into(), self.target.serialize(), grant.serialize()])
-            .await
-            .and_then(parse_response)
+    pub async fn revoke(self, grant: Grant) -> Result<String, minecraft::Error> {
+        parse_response(
+            self.client
+                .run_utf8(&["revoke".into(), self.target.serialize(), grant.serialize()])
+                .await?,
+        )
     }
 }
