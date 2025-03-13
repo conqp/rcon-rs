@@ -1,6 +1,5 @@
 //! A common interface for different `RCON` protocols.
 
-use std::borrow::Cow;
 use std::future::Future;
 use std::net::SocketAddr;
 
@@ -37,10 +36,7 @@ pub trait RCon {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    fn login(
-        &mut self,
-        password: Cow<'_, str>,
-    ) -> impl Future<Output = std::io::Result<bool>> + Send;
+    fn login(&mut self, password: &str) -> impl Future<Output = std::io::Result<bool>> + Send;
 
     /// Run a command.
     ///
@@ -51,10 +47,9 @@ pub trait RCon {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    fn run(
-        &mut self,
-        args: &[Cow<'_, str>],
-    ) -> impl Future<Output = std::io::Result<Vec<u8>>> + Send;
+    fn run<T>(&mut self, args: &[T]) -> impl Future<Output = std::io::Result<Vec<u8>>> + Send
+    where
+        T: AsRef<str> + Send + Sync;
 
     /// Run a command.
     ///
@@ -65,12 +60,10 @@ pub trait RCon {
     /// # Errors
     ///
     /// Returns an [`Error`] if any I/O errors occurred or if the returned bytes are not valid UTF-8.
-    fn run_utf8(
-        &mut self,
-        args: &[Cow<'_, str>],
-    ) -> impl Future<Output = Result<String, Error>> + Send
+    fn run_utf8<T>(&mut self, args: &[T]) -> impl Future<Output = Result<String, Error>> + Send
     where
         Self: Send,
+        T: AsRef<str> + Send + Sync,
     {
         async { Ok(String::from_utf8(self.run(args).await?)?) }
     }
@@ -89,12 +82,13 @@ pub trait RCon {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    fn run_utf8_lossy(
+    fn run_utf8_lossy<T>(
         &mut self,
-        args: &[Cow<'_, str>],
+        args: &[T],
     ) -> impl Future<Output = std::io::Result<String>> + Send
     where
         Self: Send,
+        T: AsRef<str> + Send + Sync,
     {
         async {
             self.run(args)

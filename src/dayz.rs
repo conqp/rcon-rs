@@ -176,7 +176,7 @@ where
     }
 
     async fn bans(&mut self) -> Result<Vec<BanListEntry>, crate::Error> {
-        self.run_utf8(&["bans".into()]).await.map(|text| {
+        self.run_utf8(&["bans"]).await.map(|text| {
             text.lines()
                 .filter(|line| line.chars().next().map_or(false, char::is_numeric))
                 .filter_map(|line| {
@@ -224,13 +224,11 @@ where
     }
 
     async fn remove_ban(&mut self, id: u64) -> std::io::Result<()> {
-        self.run(&["removeBan".into(), id.to_string().into()])
-            .await
-            .map(drop)
+        self.run(&["removeBan", &id.to_string()]).await.map(drop)
     }
 
     async fn players(&mut self) -> Result<Vec<Player>, crate::Error> {
-        self.run_utf8(&["players".into()]).await.map(|text| {
+        self.run_utf8(&["players"]).await.map(|text| {
             text.lines()
                 // Discard header.
                 .skip_while(|line| !line.starts_with('-'))
@@ -248,18 +246,18 @@ where
     }
 
     async fn lock(&mut self) -> std::io::Result<()> {
-        self.run(&["#lock".into()]).await.map(drop)
+        self.run(&["#lock"]).await.map(drop)
     }
 
     async fn unlock(&mut self) -> std::io::Result<()> {
-        self.run(&["#unlock".into()]).await.map(drop)
+        self.run(&["#unlock"]).await.map(drop)
     }
 
     async fn shutdown(&mut self) -> std::io::Result<()> {
-        self.run(&["#shutdown".into()]).await.map(drop)
+        self.run(&["#shutdown"]).await.map(drop)
     }
 
     async fn reload(&mut self) -> std::io::Result<()> {
-        self.run(&["#init".into()]).await.map(drop)
+        self.run(&["#init"]).await.map(drop)
     }
 }

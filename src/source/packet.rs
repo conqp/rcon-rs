@@ -1,9 +1,9 @@
-use std::borrow::Cow;
-use std::num::TryFromIntError;
-
+use itertools::Itertools;
 use log::{debug, trace, warn};
 use num_traits::FromPrimitive;
 use rand::{thread_rng, Rng};
+use std::borrow::Cow;
+use std::num::TryFromIntError;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
 
@@ -44,8 +44,11 @@ impl Packet {
         )
     }
 
-    pub fn command(args: &[Cow<'_, str>]) -> Self {
-        Self::command_raw(args.join(" ").as_bytes())
+    pub fn command<T>(args: &[T]) -> Self
+    where
+        T: AsRef<str> + Send + Sync,
+    {
+        Self::command_raw(args.iter().map(AsRef::as_ref).join(" ").as_bytes())
     }
 
     pub fn command_raw(command: &[u8]) -> Self {

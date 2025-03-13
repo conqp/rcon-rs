@@ -13,6 +13,7 @@ edition = "2021"
 [dependencies]
 bitflags = { version = "2.6", optional = true }
 crc = { version = "3.2", optional = true }
+itertools = { version = "0.14", optional = true }
 log = { version = "0.4", optional = true }
 num-derive = { version = "0.4", optional = true }
 num-traits = { version = "0.2", optional = true }
@@ -26,8 +27,8 @@ env_logger = { version = "0.11" }
 rpassword = { version = "7.3" }
 
 [features]
-battleye = ["crc", "log", "tokio/rt", "tokio/time", "tokio/sync"]
-source = ["bitflags", "log", "num-derive", "num-traits", "rand", "tokio/io-util", "tokio/net"]
+battleye = ["crc", "itertools", "log", "tokio/rt", "tokio/time", "tokio/sync"]
+source = ["bitflags", "itertools", "log", "num-derive", "num-traits", "rand", "tokio/io-util", "tokio/net"]
 cli = ["clap/derive", "tokio/rt-multi-thread", "tokio/macros"]
 dayz = ["battleye", "uuid"]
 

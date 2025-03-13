@@ -1,12 +1,11 @@
-use std::borrow::Cow;
+use itertools::Itertools;
+use log::{debug, trace};
 use std::io::{Error, ErrorKind};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::SeqCst;
 use std::sync::Arc;
 use std::time::Duration;
-
-use log::{debug, trace};
 use tokio::spawn;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tokio::task::JoinHandle;
@@ -127,7 +126,7 @@ impl RCon for Client {
         Ok(Self::new::<DEFAULT_BUF_SIZE>(socket, DEFAULT_CHANNEL_SIZE))
     }
 
-    async fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool> {
+    async fn login(&mut self, password: &str) -> std::io::Result<bool> {
         match self
             .communicate(Request::Login(login::Request::from(password)))
             .await?
@@ -140,8 +139,11 @@ impl RCon for Client {
         }
     }
 
-    async fn run(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<Vec<u8>> {
-        let command = args.join(" ");
+    async fn run<T>(&mut self, args: &[T]) -> std::io::Result<Vec<u8>>
+    where
+        T: AsRef<str> + Send + Sync,
+    {
+        let command = args.iter().map(AsRef::as_ref).join(" ");
 
         match self
             .communicate(Request::Command(command::Request::from(command.as_str())))

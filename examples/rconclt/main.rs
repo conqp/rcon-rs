@@ -71,7 +71,7 @@ where
     T: RCon + Send,
 {
     if !client
-        .login(password.into())
+        .login(&password)
         .await
         .map_err(io_error_to_exit_code)?
     {
