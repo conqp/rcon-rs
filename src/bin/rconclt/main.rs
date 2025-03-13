@@ -52,7 +52,7 @@ async fn run_impl<T>(
 where
     T: RCon + Send,
 {
-    if !client.login(password.into()).await? {
+    if !client.login(&password).await? {
         error!("Login failed.");
         exit(4);
     }

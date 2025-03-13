@@ -54,7 +54,7 @@ impl FromStr for Player {
 
 impl crate::Player for Player {
     fn id(&self) -> Cow<'_, str> {
-        self.id.to_string().into()
+        Cow::Owned(self.id.to_string())
     }
 
     fn numeric_id(&self) -> Option<u64> {

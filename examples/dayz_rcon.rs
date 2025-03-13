@@ -134,7 +134,7 @@ async fn main() {
             exit(2);
         });
 
-    let logged_in = client.login(password.into()).await.unwrap_or_else(|error| {
+    let logged_in = client.login(&password).await.unwrap_or_else(|error| {
         error!("{error}");
         exit(3);
     });
@@ -149,10 +149,10 @@ async fn main() {
             .players()
             .await
             .map(|players| players.iter().for_each(|player| println!("{player:?}"))),
-        Command::SayToAll { message } => match client.players_mut().await {
+        Command::SayToAll { ref message } => match client.players_mut().await {
             Ok(mut players) => {
                 while let Some(mut player) = players.next() {
-                    player.say(message.clone()).await.unwrap_or_else(|error| {
+                    player.say(message).await.unwrap_or_else(|error| {
                         error!(
                             "Could not notify player #{} ({}): {error}",
                             player.id(),
@@ -165,10 +165,13 @@ async fn main() {
             }
             Err(error) => Err(error),
         },
-        Command::Say { player, message } => client.say(player, message).await,
-        Command::Broadcast { message } => client.broadcast(message).await,
-        Command::Kick { player, reason } => client.kick(player, reason).await,
-        Command::Ban { player, reason } => client.ban(player, reason).await,
+        Command::Say {
+            ref player,
+            ref message,
+        } => client.say(player, message).await,
+        Command::Broadcast { ref message } => client.broadcast(message).await,
+        Command::Kick { ref player, reason } => client.kick(player, reason.as_deref()).await,
+        Command::Ban { ref player, reason } => client.ban(player, reason.as_deref()).await,
         Command::Bans => client
             .bans()
             .await
@@ -179,7 +182,11 @@ async fn main() {
             reason,
         } => {
             client
-                .add_ban(target.into(), duration.map(Duration::from_secs), reason)
+                .add_ban(
+                    target.into(),
+                    duration.map(Duration::from_secs),
+                    reason.as_deref(),
+                )
                 .await
         }
         Command::RemoveBan { id } => client.remove_ban(id).await,

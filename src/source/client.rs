@@ -1,10 +1,11 @@
+use std::net::SocketAddr;
+
 use super::packet::Packet;
 use super::quirks::Quirks;
 use super::server_data::ServerData;
 use super::util::invalid_data;
+
 use crate::RCon;
-use std::borrow::Cow;
-use std::net::SocketAddr;
 
 use log::{debug, error, trace};
 use tokio::io::AsyncWriteExt;
@@ -107,7 +108,7 @@ impl RCon for Client {
         TcpStream::connect(address.into()).await.map(Self::from)
     }
 
-    async fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool> {
+    async fn login(&mut self, password: &str) -> std::io::Result<bool> {
         self.send(Packet::login(password)).await?;
         let mut packet;
 
@@ -122,7 +123,10 @@ impl RCon for Client {
         Ok(packet.id >= 0)
     }
 
-    async fn run(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<Vec<u8>> {
+    async fn run<T>(&mut self, args: &[T]) -> std::io::Result<Vec<u8>>
+    where
+        T: AsRef<str> + Send + Sync,
+    {
         let command = Packet::command(args);
         let command_id = command.id;
         let sentinel = Packet::sentinel(command.id);

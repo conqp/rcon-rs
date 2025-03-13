@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::io::{Error, ErrorKind};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket};
 use std::sync::atomic::AtomicBool;
@@ -129,7 +128,7 @@ impl RCon for Client {
         Ok(Self::new::<DEFAULT_BUF_SIZE>(socket, DEFAULT_CHANNEL_SIZE))
     }
 
-    async fn login(&mut self, password: Cow<'_, str>) -> std::io::Result<bool> {
+    async fn login(&mut self, password: &str) -> std::io::Result<bool> {
         match self
             .communicate(Request::Login(login::Request::from(password)))
             .await?
@@ -142,11 +141,14 @@ impl RCon for Client {
         }
     }
 
-    async fn run(&mut self, args: &[Cow<'_, str>]) -> std::io::Result<Vec<u8>> {
-        let command = args.join(" ");
+    async fn run<T>(&mut self, args: &[T]) -> std::io::Result<Vec<u8>>
+    where
+        T: AsRef<str> + Send + Sync,
+    {
+        let command: String = args.iter().map(AsRef::as_ref).collect();
 
         match self
-            .communicate(Request::Command(command::Request::from(command.as_str())))
+            .communicate(Request::Command(command::Request::from(command)))
             .await?
         {
             CommunicationResult::Command(bytes) => Ok(bytes),

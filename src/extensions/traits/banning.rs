@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::future::Future;
 use std::time::Duration;
 
@@ -15,8 +14,8 @@ pub trait Kick {
     /// Returns an [`std::io::Error`] if kicking the player fails.
     fn kick(
         &mut self,
-        player: Cow<'_, str>,
-        reason: Option<Cow<'_, str>>,
+        player: &str,
+        reason: Option<&str>,
     ) -> impl Future<Output = std::io::Result<()>> + Send;
 }
 
@@ -31,8 +30,8 @@ pub trait Ban {
     /// Returns an [`std::io::Error`] if banning  the player fails.
     fn ban(
         &mut self,
-        player: Cow<'_, str>,
-        reason: Option<Cow<'_, str>>,
+        player: &str,
+        reason: Option<&str>,
     ) -> impl Future<Output = std::io::Result<()>> + Send;
 }
 
@@ -83,7 +82,7 @@ pub trait AddBan {
         &mut self,
         target: Target,
         duration: Option<Duration>,
-        reason: Option<Cow<'_, str>>,
+        reason: Option<&str>,
     ) -> impl Future<Output = std::io::Result<()>> + Send;
 }
 

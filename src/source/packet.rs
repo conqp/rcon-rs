@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::num::TryFromIntError;
 
 use log::{debug, trace, warn};
@@ -32,20 +31,25 @@ impl Packet {
         }
     }
 
-    pub fn login<'a, T>(password: T) -> Self
-    where
-        T: Into<Cow<'a, str>>,
-    {
+    pub fn login(password: &str) -> Self {
         Self::new(
             random_id(thread_rng()),
             ServerData::Auth,
-            password.into().bytes().collect(),
+            password.bytes().collect(),
             TERMINATOR,
         )
     }
 
-    pub fn command(args: &[Cow<'_, str>]) -> Self {
-        Self::command_raw(args.join(" ").as_bytes())
+    pub fn command<T>(args: &[T]) -> Self
+    where
+        T: AsRef<str> + Send + Sync,
+    {
+        Self::command_raw(
+            args.iter()
+                .map(AsRef::as_ref)
+                .collect::<String>()
+                .as_bytes(),
+        )
     }
 
     pub fn command_raw(command: &[u8]) -> Self {
