@@ -1,8 +1,8 @@
-use std::num::TryFromIntError;
-
+use itertools::Itertools;
 use log::{debug, trace, warn};
 use num_traits::FromPrimitive;
 use rand::{thread_rng, Rng};
+use std::num::TryFromIntError;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
 
@@ -44,12 +44,7 @@ impl Packet {
     where
         T: AsRef<str> + Send + Sync,
     {
-        Self::command_raw(
-            args.iter()
-                .map(AsRef::as_ref)
-                .collect::<String>()
-                .as_bytes(),
-        )
+        Self::command_raw(args.iter().map(AsRef::as_ref).join(" ").as_bytes())
     }
 
     pub fn command_raw(command: &[u8]) -> Self {

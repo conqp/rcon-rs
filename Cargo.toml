@@ -15,6 +15,7 @@ bitflags = { version = "2.6", optional = true }
 clap = { version = "4.5", optional = true }
 crc = { version = "3.2", optional = true }
 env_logger = { version = "0.11", optional = true }
+itertools = { version = "0.14", optional = true }
 log = "0.4"
 num-derive = { version = "0.4.2", optional = true }
 num-traits = { version = "0.2.19", optional = true }
@@ -25,11 +26,12 @@ udp-stream = { version = "0.0.12", optional = true }
 uuid = { version = "1.11.0", features = ["v4"] }
 
 [features]
-battleye = ["crc", "udp-stream", "tokio/time"]
-source = ["bitflags", "num-derive", "num-traits", "rand", "tokio/net"]
+battleye = ["crc", "itertools", "udp-stream", "tokio/time"]
+source = ["bitflags", "itertools", "num-derive", "num-traits", "rand", "tokio/net"]
 cli = ["clap/derive", "env_logger", "rpassword", "tokio/rt", "tokio/rt-multi-thread", "tokio/macros"]
 dayz = ["battleye"]
 udp-stream = ["dep:udp-stream"]
+itertools = ["dep:itertools"]
 
 [[bin]]
 name = "rconclt"
