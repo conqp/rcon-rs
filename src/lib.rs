@@ -6,12 +6,16 @@ use std::net::SocketAddr;
 #[cfg(feature = "dayz")]
 pub use dayz::DayZ;
 pub use error::Error;
+#[cfg(feature = "minecraft")]
+pub use minecraft::Minecraft;
 
 #[cfg(feature = "battleye")]
 pub mod battleye;
 #[cfg(feature = "dayz")]
 pub mod dayz;
 mod error;
+#[cfg(feature = "minecraft")]
+pub mod minecraft;
 #[cfg(feature = "source")]
 pub mod source;
 
