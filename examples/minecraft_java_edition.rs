@@ -58,7 +58,7 @@ async fn main() -> ExitCode {
         }
     };
 
-    match client.login(password.into()).await {
+    match client.login(&password).await {
         Ok(logged_in) => {
             if !logged_in {
                 error!("Login failed.");
