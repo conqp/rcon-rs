@@ -1,6 +1,5 @@
 //! `BattlEye RCon` extensions for `DayZ` servers.
 
-use std::borrow::Cow;
 use std::future::Future;
 use std::str::FromStr;
 use std::time::Duration;
@@ -30,7 +29,7 @@ pub trait DayZ: RCon + BattlEye {
     fn say(
         &mut self,
         index: u64,
-        message: Cow<'_, str>,
+        message: &str,
     ) -> impl Future<Output = std::io::Result<()>> + Send;
 
     /// Broadcast a message to all players on the server.
@@ -38,10 +37,7 @@ pub trait DayZ: RCon + BattlEye {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if sending the message fails.
-    fn broadcast(
-        &mut self,
-        message: Cow<'_, str>,
-    ) -> impl Future<Output = std::io::Result<()>> + Send;
+    fn broadcast(&mut self, message: &str) -> impl Future<Output = std::io::Result<()>> + Send;
 
     /// Kick a player from the server.
     ///
@@ -53,7 +49,7 @@ pub trait DayZ: RCon + BattlEye {
     fn kick(
         &mut self,
         index: u64,
-        reason: Option<Cow<'_, str>>,
+        reason: Option<&str>,
     ) -> impl Future<Output = std::io::Result<()>> + Send;
 
     /// Ban a player from the server.
@@ -66,7 +62,7 @@ pub trait DayZ: RCon + BattlEye {
     fn ban(
         &mut self,
         index: u64,
-        reason: Option<Cow<'_, str>>,
+        reason: Option<&str>,
     ) -> impl Future<Output = std::io::Result<()>> + Send;
 
     /// Returns an iterator over the server's current ban list.
@@ -89,7 +85,7 @@ pub trait DayZ: RCon + BattlEye {
         &mut self,
         target: Target,
         duration: Option<Duration>,
-        reason: Option<Cow<'_, str>>,
+        reason: Option<&str>,
     ) -> impl Future<Output = Result<(), Error>> + Send;
 
     /// Remove a player ban entry from the server's ban list.
@@ -143,20 +139,21 @@ impl<T> DayZ for T
 where
     T: RCon + BattlEye + Send,
 {
-    async fn say(&mut self, index: u64, message: Cow<'_, str>) -> std::io::Result<()> {
-        self.run(&["say".into(), index.to_string().into(), message])
+    async fn say(&mut self, index: u64, message: &str) -> std::io::Result<()> {
+        self.run(&["say", &index.to_string(), message])
             .await
             .map(drop)
     }
 
-    async fn broadcast(&mut self, message: Cow<'_, str>) -> std::io::Result<()> {
-        self.run(&["say".into(), BROADCAST_TARGET.to_string().into(), message])
+    async fn broadcast(&mut self, message: &str) -> std::io::Result<()> {
+        self.run(&["say", &BROADCAST_TARGET.to_string(), message])
             .await
             .map(drop)
     }
 
-    async fn kick(&mut self, index: u64, reason: Option<Cow<'_, str>>) -> std::io::Result<()> {
-        let mut args = vec!["kick".into(), index.to_string().into()];
+    async fn kick(&mut self, index: u64, reason: Option<&str>) -> std::io::Result<()> {
+        let index = index.to_string();
+        let mut args = vec!["kick", &index];
 
         if let Some(reason) = reason {
             args.push(reason);
@@ -165,8 +162,9 @@ where
         self.run(&args).await.map(drop)
     }
 
-    async fn ban(&mut self, index: u64, reason: Option<Cow<'_, str>>) -> std::io::Result<()> {
-        let mut args = vec!["ban".into(), index.to_string().into()];
+    async fn ban(&mut self, index: u64, reason: Option<&str>) -> std::io::Result<()> {
+        let index = index.to_string();
+        let mut args = vec!["ban", &index];
 
         if let Some(reason) = reason {
             args.push(reason);
@@ -178,7 +176,7 @@ where
     async fn bans(&mut self) -> Result<Vec<BanListEntry>, crate::Error> {
         self.run_utf8(&["bans"]).await.map(|text| {
             text.lines()
-                .filter(|line| line.chars().next().map_or(false, char::is_numeric))
+                .filter(|line| line.chars().next().is_some_and(char::is_numeric))
                 .filter_map(|line| {
                     line.parse()
                         .inspect_err(|error| warn!(r#"Invalid ban list entry "{line}": {error}"#))
@@ -192,21 +190,19 @@ where
         &mut self,
         target: Target,
         duration: Option<Duration>,
-        reason: Option<Cow<'_, str>>,
+        reason: Option<&str>,
     ) -> Result<(), Error> {
-        let mut args: Vec<Cow<'_, str>> = vec!["addBan".into()];
+        let mut args = vec!["addBan"];
+        let target = match target {
+            Target::Ip(ip) => ip.to_string(),
+            Target::Uuid(uuid) => uuid.to_string().replace('-', ""),
+        };
 
-        match target {
-            Target::Ip(ip) => args.push(ip.to_string().into()),
-            Target::Uuid(uuid) => args.push(uuid.to_string().replace('-', "").into()),
-        }
-
-        args.push(
-            duration
-                .map_or(0, |duration| duration.as_secs() / SECS_PER_MINUTE)
-                .to_string()
-                .into(),
-        );
+        args.push(&target);
+        let duration = duration
+            .map_or(0, |duration| duration.as_secs() / SECS_PER_MINUTE)
+            .to_string();
+        args.push(&duration);
 
         // FIXME: The appended reason currently does not appear in the ban list.
         // TODO: Investigate this.

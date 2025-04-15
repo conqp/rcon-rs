@@ -2,7 +2,6 @@ use itertools::Itertools;
 use log::{debug, trace, warn};
 use num_traits::FromPrimitive;
 use rand::{thread_rng, Rng};
-use std::borrow::Cow;
 use std::num::TryFromIntError;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
@@ -32,14 +31,11 @@ impl Packet {
         }
     }
 
-    pub fn login<'a, T>(password: T) -> Self
-    where
-        T: Into<Cow<'a, str>>,
-    {
+    pub fn login(password: &str) -> Self {
         Self::new(
             random_id(thread_rng()),
             ServerData::Auth,
-            password.into().bytes().collect(),
+            password.bytes().collect(),
             TERMINATOR,
         )
     }
