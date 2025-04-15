@@ -1,6 +1,5 @@
 //! An example `RCON` client supporting both `Source RCON` and `BattlEye Rcon`.
 
-use std::borrow::Cow;
 use std::io::{stdout, Error, Write};
 use std::process::ExitCode;
 
@@ -65,7 +64,7 @@ async fn run(args: &Args) -> Result<Vec<u8>, ExitCode> {
 async fn run_impl<T>(
     mut client: T,
     password: String,
-    command: &[Cow<'static, str>],
+    command: &[String],
 ) -> Result<Vec<u8>, ExitCode>
 where
     T: RCon + Send,
