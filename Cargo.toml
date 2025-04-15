@@ -34,8 +34,6 @@ minecraft = ["source", "dep:uuid"]
 minecraft-java-edition = ["minecraft", "dep:regex"]
 minecraft-bedrock-edition = ["minecraft"]
 minecraft-education-edition = ["minecraft-bedrock-edition"]
-regex = ["dep:regex"]
-itertools = ["dep:itertools"]
 
 [[example]]
 name = "rconclt"
