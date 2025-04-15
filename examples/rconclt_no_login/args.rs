@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::net::SocketAddr;
 
 use clap::Parser;
@@ -29,13 +28,13 @@ pub enum Protocol {
     #[command(about = "Use the Source RCON protocol", name = "source")]
     Source {
         #[arg(help = "The command to execute")]
-        command: Vec<Cow<'static, str>>,
+        command: Vec<String>,
         #[arg(short, long, help = "Enable quirks")]
         quirks: Vec<source::Quirks>,
     },
     #[command(about = "Use the BattlEys Rcon protocol", name = "battleye")]
     BattlEye {
         #[arg(help = "The command to execute")]
-        command: Vec<Cow<'static, str>>,
+        command: Vec<String>,
     },
 }

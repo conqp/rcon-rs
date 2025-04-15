@@ -1,6 +1,5 @@
 //! An example `RCON` client supporting both `Source RCON` and `BattlEye Rcon`.
 
-use std::borrow::Cow;
 use std::io::{stdout, Write};
 use std::net::{IpAddr, SocketAddr};
 use std::process::ExitCode;
@@ -38,26 +37,26 @@ enum Command {
         #[arg(help = "The player to send the message to")]
         player: u64,
         #[arg(help = "The message")]
-        message: Cow<'static, str>,
+        message: String,
     },
     #[command(about = "Send a broadcast message to all players", name = "broadcast")]
     Broadcast {
         #[arg(help = "The message")]
-        message: Cow<'static, str>,
+        message: String,
     },
     #[command(about = "Kick a player from the server", name = "kick")]
     Kick {
         #[arg(help = "The player to kick")]
         player: u64,
         #[arg(short, long, help = "An optional reason for the kick")]
-        reason: Option<Cow<'static, str>>,
+        reason: Option<String>,
     },
     #[command(about = "Ban a player from the server", name = "ban")]
     Ban {
         #[arg(help = "The player to ban")]
         player: u64,
         #[arg(short, long, help = "An optional reason for the ban")]
-        reason: Option<Cow<'static, str>>,
+        reason: Option<String>,
     },
     #[command(about = "Show the ban list", name = "bans")]
     Bans,
@@ -68,7 +67,7 @@ enum Command {
         #[arg(short, long, help = "The duration of the ban in minutes")]
         duration: Option<u64>,
         #[arg(short, long, help = "The reason for the ban")]
-        reason: Option<Cow<'static, str>>,
+        reason: Option<String>,
     },
     #[command(about = "Remove an entry from the ban list", name = "remove-ban")]
     RemoveBan {
@@ -78,7 +77,7 @@ enum Command {
     #[command(about = "Execute a raw command", name = "exec")]
     Exec {
         #[arg(help = "The command to execute")]
-        command: Vec<Cow<'static, str>>,
+        command: Vec<String>,
     },
 }
 
@@ -150,19 +149,19 @@ async fn main() -> ExitCode {
             .map(|players| players.iter().for_each(|player| println!("{player}")))
             .map_err(|error| error.to_string()),
         Command::Say { player, message } => client
-            .say(player, message)
+            .say(player, &message)
             .await
             .map_err(|error| error.to_string()),
         Command::Broadcast { message } => client
-            .broadcast(message)
+            .broadcast(&message)
             .await
             .map_err(|error| error.to_string()),
         Command::Kick { player, reason } => client
-            .kick(player, reason)
+            .kick(player, reason.as_deref())
             .await
             .map_err(|error| error.to_string()),
         Command::Ban { player, reason } => client
-            .ban(player, reason)
+            .ban(player, reason.as_deref())
             .await
             .map_err(|error| error.to_string()),
         Command::Bans => client
@@ -178,7 +177,7 @@ async fn main() -> ExitCode {
             .add_ban(
                 target.into(),
                 duration.map(|minutes| Duration::from_secs(minutes * SECS_PER_MINUTE)),
-                reason,
+                reason.as_deref(),
             )
             .await
             .map_err(|error| error.to_string()),
