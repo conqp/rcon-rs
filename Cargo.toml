@@ -8,15 +8,15 @@ keywords = ["rcon", "client"]
 version = "0.2.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 bitflags = { version = "2.6", optional = true }
 crc = { version = "3.2", optional = true }
+itertools = { version = "0.14.0", optional = true }
 log = { version = "0.4", optional = true }
 num-derive = { version = "0.4", optional = true }
 num-traits = { version = "0.2", optional = true }
 rand = { version = "0.9.0-alpha.2", optional = true }
+regex = { version = "1.11", optional = true }
 tokio = { version = "1.40", optional = true }
 uuid = { version = "1.11", optional = true }
 
@@ -26,10 +26,16 @@ env_logger = { version = "0.11" }
 rpassword = { version = "7.3" }
 
 [features]
-battleye = ["crc", "log", "tokio/rt", "tokio/time", "tokio/sync"]
-source = ["bitflags", "log", "num-derive", "num-traits", "rand", "tokio/io-util", "tokio/net"]
+battleye = ["dep:crc", "dep:itertools", "dep:log", "tokio/rt", "tokio/time", "tokio/sync"]
+source = ["dep:bitflags", "dep:itertools", "dep:log", "dep:num-derive", "dep:num-traits", "dep:rand", "tokio/io-util", "tokio/net"]
 cli = ["clap/derive", "tokio/rt-multi-thread", "tokio/macros"]
-dayz = ["battleye", "uuid"]
+dayz = ["battleye", "dep:uuid"]
+minecraft = ["source", "dep:uuid"]
+minecraft-java-edition = ["minecraft", "dep:regex"]
+minecraft-bedrock-edition = ["minecraft"]
+minecraft-education-edition = ["minecraft-bedrock-edition"]
+regex = ["dep:regex"]
+itertools = ["dep:itertools"]
 
 [[example]]
 name = "rconclt"
@@ -46,6 +52,10 @@ required-features = ["battleye", "cli", "source"]
 [[example]]
 name = "dayz_rcon"
 required-features = ["cli", "dayz"]
+
+[[example]]
+name = "minecraft_java_edition"
+required-features = ["cli", "minecraft-java-edition"]
 
 [profile.release]
 strip = true
