@@ -127,7 +127,7 @@ impl RCon for Client {
 
     async fn run<T>(&mut self, args: T) -> std::io::Result<Vec<u8>>
     where
-        T: AsRef<[u8]> + Send + Sync,
+        T: AsRef<[u8]> + Send,
     {
         let command = Packet::command(args.as_ref());
         let command_id = command.id;

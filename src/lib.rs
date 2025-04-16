@@ -55,7 +55,7 @@ pub trait RCon {
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
     fn run<T>(&mut self, command: T) -> impl Future<Output = std::io::Result<Vec<u8>>> + Send
     where
-        T: AsRef<[u8]> + Send + Sync;
+        T: AsRef<[u8]> + Send;
 
     /// Run a command.
     ///
@@ -69,7 +69,7 @@ pub trait RCon {
     fn run_utf8<T>(&mut self, command: T) -> impl Future<Output = Result<String, Error>> + Send
     where
         Self: Send,
-        T: AsRef<[u8]> + Send + Sync,
+        T: AsRef<[u8]> + Send,
     {
         async move { Ok(String::from_utf8(self.run(command).await?)?) }
     }
@@ -94,7 +94,7 @@ pub trait RCon {
     ) -> impl Future<Output = std::io::Result<String>> + Send
     where
         Self: Send,
-        T: AsRef<[u8]> + Send + Sync,
+        T: AsRef<[u8]> + Send,
     {
         async move {
             self.run(command)

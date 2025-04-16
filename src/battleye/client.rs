@@ -144,7 +144,7 @@ impl RCon for Client {
 
     async fn run<T>(&mut self, command: T) -> std::io::Result<Vec<u8>>
     where
-        T: AsRef<[u8]> + Send + Sync,
+        T: AsRef<[u8]> + Send,
     {
         match self
             .communicate(Request::Command(command::Request::from(command.as_ref())))
