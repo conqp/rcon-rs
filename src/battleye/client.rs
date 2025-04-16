@@ -1,11 +1,11 @@
-use itertools::Itertools;
-use log::{debug, trace};
 use std::io::{Error, ErrorKind};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::SeqCst;
 use std::sync::Arc;
 use std::time::Duration;
+
+use log::{debug, trace};
 use tokio::spawn;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tokio::task::JoinHandle;
