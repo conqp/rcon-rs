@@ -128,7 +128,7 @@ impl RCon for Client {
 
     async fn login<T>(&mut self, password: T) -> std::io::Result<bool>
     where
-        T: AsRef<str> + Send,
+        T: AsRef<[u8]> + Send,
     {
         match self
             .communicate(Request::Login(login::Request::from(password.as_ref())))

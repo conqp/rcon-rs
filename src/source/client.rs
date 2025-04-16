@@ -109,7 +109,7 @@ impl RCon for Client {
 
     async fn login<T>(&mut self, password: T) -> std::io::Result<bool>
     where
-        T: AsRef<str> + Send,
+        T: AsRef<[u8]> + Send,
     {
         self.send(Packet::login(password.as_ref())).await?;
         let mut packet;

@@ -30,11 +30,11 @@ impl Packet {
         }
     }
 
-    pub fn login(password: &str) -> Self {
+    pub fn login(password: &[u8]) -> Self {
         Self::new(
             random_id(rng()),
             ServerData::Auth,
-            password.bytes().collect(),
+            password.to_vec(),
             TERMINATOR,
         )
     }
