@@ -35,7 +35,10 @@ async fn run(args: &Args) -> Result<Vec<u8>, ExitCode> {
             let mut client = battleye::Client::connect(args.server())
                 .await
                 .map_err(io_error_to_exit_code)?;
-            client.run(command).await.map_err(io_error_to_exit_code)
+            client
+                .run(command.join(" "))
+                .await
+                .map_err(io_error_to_exit_code)
         }
         Protocol::Source { command, quirks } => {
             let mut client = source::Client::connect(args.server())
@@ -46,7 +49,10 @@ async fn run(args: &Args) -> Result<Vec<u8>, ExitCode> {
                 client.enable_quirk(quirks);
             }
 
-            client.run(command).await.map_err(io_error_to_exit_code)
+            client
+                .run(command.join(" "))
+                .await
+                .map_err(io_error_to_exit_code)
         }
     }
 }

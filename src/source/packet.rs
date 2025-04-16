@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use log::{debug, trace, warn};
 use num_traits::FromPrimitive;
 use rand::{thread_rng, Rng};
@@ -40,14 +39,7 @@ impl Packet {
         )
     }
 
-    pub fn command<T>(args: &[T]) -> Self
-    where
-        T: AsRef<str> + Send + Sync,
-    {
-        Self::command_raw(args.iter().map(AsRef::as_ref).join(" ").as_bytes())
-    }
-
-    pub fn command_raw(command: &[u8]) -> Self {
+    pub fn command(command: &[u8]) -> Self {
         Self::new(
             random_id(thread_rng()),
             ServerData::ExecCommandOrAuthResponse,

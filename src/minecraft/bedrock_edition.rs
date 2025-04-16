@@ -19,14 +19,14 @@ where
     T: Minecraft + Send,
 {
     async fn day_lock(&mut self, lock: bool) -> Result<String, Error> {
-        self.run_utf8(&["daylock", &lock.to_string()])
+        self.run_utf8(format!("daylock {lock}"))
             .await
             .map_err(Into::into)
             .and_then(parse_response)
     }
 
     async fn always_day(&mut self, lock: bool) -> Result<String, Error> {
-        self.run_utf8(&["alwaysday", &lock.to_string()])
+        self.run_utf8(format!("alwaysday {lock}"))
             .await
             .map_err(Into::into)
             .and_then(parse_response)

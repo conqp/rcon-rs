@@ -86,9 +86,15 @@ where
         return Err(ExitCode::from(4));
     }
 
-    let result1 = client.run(command).await.map_err(io_error_to_exit_code)?;
+    let result1 = client
+        .run(command.join(" "))
+        .await
+        .map_err(io_error_to_exit_code)?;
     sleep(delay).await;
-    let result2 = client.run(command).await.map_err(io_error_to_exit_code)?;
+    let result2 = client
+        .run(command.join(" "))
+        .await
+        .map_err(io_error_to_exit_code)?;
     Ok([result1, result2])
 }
 

@@ -38,7 +38,11 @@ where
     pub async fn grant(self, grant: Grant) -> Result<String, minecraft::Error> {
         parse_response(
             self.client
-                .run_utf8(&["grant".into(), self.target.serialize(), grant.serialize()])
+                .run_utf8(format!(
+                    "grant {} {}",
+                    self.target.serialize(),
+                    grant.serialize()
+                ))
                 .await?,
         )
     }
@@ -51,7 +55,11 @@ where
     pub async fn revoke(self, grant: Grant) -> Result<String, minecraft::Error> {
         parse_response(
             self.client
-                .run_utf8(&["revoke".into(), self.target.serialize(), grant.serialize()])
+                .run_utf8(format!(
+                    "revoke {} {}",
+                    self.target.serialize(),
+                    grant.serialize()
+                ))
                 .await?,
         )
     }

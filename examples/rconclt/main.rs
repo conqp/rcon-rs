@@ -78,7 +78,10 @@ where
         return Err(ExitCode::from(4));
     }
 
-    client.run(command).await.map_err(io_error_to_exit_code)
+    client
+        .run(command.join(" "))
+        .await
+        .map_err(io_error_to_exit_code)
 }
 
 #[allow(clippy::needless_pass_by_value)]

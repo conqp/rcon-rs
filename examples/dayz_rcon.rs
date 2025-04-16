@@ -186,7 +186,7 @@ async fn main() -> ExitCode {
             .await
             .map_err(|error| error.to_string()),
         Command::Exec { command } => client
-            .run(command.as_ref())
+            .run(command.join(" "))
             .await
             .and_then(|result| stdout().lock().write_all(&result))
             .map_err(|error| error.to_string()),

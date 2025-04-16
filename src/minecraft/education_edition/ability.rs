@@ -32,7 +32,7 @@ where
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
     pub async fn list(self) -> Result<Vec<String>, Error> {
         self.client
-            .run_utf8(&["ability".into(), self.target.serialize()])
+            .run_utf8(format!("ability {}", self.target.serialize()))
             .await
             .map_err(Into::into)
             .and_then(parse_response)
@@ -45,9 +45,13 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
-    pub async fn get(self, _ability: Ability) -> Result<String, Error> {
+    pub async fn get(self, ability: Ability) -> Result<String, Error> {
         self.client
-            .run_utf8(&["ability".into(), self.target.serialize()])
+            .run_utf8(format!(
+                "ability {} {}",
+                self.target.serialize(),
+                ability.serialize()
+            ))
             .await
             .map_err(Into::into)
             .and_then(parse_response)
@@ -60,12 +64,12 @@ where
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
     pub async fn enable(self, ability: Ability) -> Result<String, Error> {
         self.client
-            .run_utf8(&[
-                "ability".into(),
+            .run_utf8(format!(
+                "ability {} {} {}",
                 self.target.serialize(),
                 ability.serialize(),
-                true.to_string().into(),
-            ])
+                true,
+            ))
             .await
             .map_err(Into::into)
             .and_then(parse_response)
@@ -78,12 +82,12 @@ where
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
     pub async fn disable(self, ability: Ability) -> Result<String, Error> {
         self.client
-            .run_utf8(&[
-                "ability".into(),
+            .run_utf8(format!(
+                "ability {} {} {}",
                 self.target.serialize(),
                 ability.serialize(),
-                false.to_string().into(),
-            ])
+                false,
+            ))
             .await
             .map_err(Into::into)
             .and_then(parse_response)

@@ -210,6 +210,6 @@ impl<const BUFFER_SIZE: usize> Handler<BUFFER_SIZE> {
     }
 
     fn keepalive_packet() -> Request {
-        Request::Command(command::Request::from(""))
+        Request::Command(command::Request::keepalive())
     }
 }

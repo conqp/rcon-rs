@@ -55,7 +55,7 @@ where
             args.push(scale.serialize().to_string().into());
         }
 
-        self.client.run_utf8(args.as_slice()).await
+        self.client.run_utf8(args.join(" ")).await
     }
 
     /// Returns the base value of the specified attribute.
@@ -76,7 +76,7 @@ where
             args.push(scale.serialize());
         }
 
-        self.client.run_utf8(args.as_slice()).await
+        self.client.run_utf8(args.join(" ")).await
     }
 
     /// Overwrites the base value of the specified attribute with the given value.
@@ -86,14 +86,12 @@ where
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
     pub async fn set_base(self, value: f64) -> Result<String, Error> {
         self.client
-            .run_utf8(&[
-                "attribute".into(),
+            .run_utf8(format!(
+                "attribute {} {} base set {}",
                 self.target.serialize(),
                 self.attribute.serialize(),
-                "base".into(),
-                "set".into(),
                 value.serialize(),
-            ])
+            ))
             .await
     }
 
@@ -114,17 +112,15 @@ where
         U: Into<Cow<'static, str>>,
     {
         self.client
-            .run_utf8(&[
-                "attribute".into(),
+            .run_utf8(format!(
+                "attribute {} {} modifier add {} {} {} {}",
                 self.target.serialize(),
                 self.attribute.serialize(),
-                "modifier".into(),
-                "add".into(),
                 uuid.serialize(),
                 name.into(),
                 value.serialize(),
                 modifier.serialize(),
-            ])
+            ))
             .await
     }
 
@@ -135,14 +131,12 @@ where
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
     pub async fn remove_modifier(self, uuid: Uuid) -> Result<String, Error> {
         self.client
-            .run_utf8(&[
-                "attribute".into(),
+            .run_utf8(format!(
+                "attribute {} {} modifier remove {}",
                 self.target.serialize(),
                 self.attribute.serialize(),
-                "modifier".into(),
-                "remove".into(),
                 uuid.serialize(),
-            ])
+            ))
             .await
     }
 
@@ -166,6 +160,6 @@ where
             args.push(scale.serialize());
         }
 
-        self.client.run_utf8(&args).await
+        self.client.run_utf8(args.join(" ")).await
     }
 }

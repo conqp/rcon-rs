@@ -154,7 +154,7 @@ where
     where
         U: AsRef<str> + Send,
     {
-        self.run(&["say", &index.to_string(), message.as_ref()])
+        self.run(format!("say {index} {}", message.as_ref()))
             .await
             .map(drop)
     }
@@ -163,7 +163,7 @@ where
     where
         U: AsRef<str> + Send,
     {
-        self.run(&["say", &BROADCAST_TARGET.to_string(), message.as_ref()])
+        self.run(format!("say {BROADCAST_TARGET} {}", message.as_ref()))
             .await
             .map(drop)
     }
@@ -179,7 +179,7 @@ where
             args.push(reason.into());
         }
 
-        self.run(&args).await.map(drop)
+        self.run(args.join(" ")).await.map(drop)
     }
 
     async fn ban<U>(&mut self, index: u64, reason: Option<U>) -> std::io::Result<()>
@@ -192,11 +192,11 @@ where
             args.push(reason.into());
         }
 
-        self.run(&args).await.map(drop)
+        self.run(args.join(" ")).await.map(drop)
     }
 
     async fn bans(&mut self) -> Result<Vec<BanListEntry>, crate::Error> {
-        self.run_utf8(&["bans"]).await.map(|text| {
+        self.run_utf8("bans").await.map(|text| {
             text.lines()
                 .filter(|line| line.chars().next().is_some_and(char::is_numeric))
                 .filter_map(|line| {
@@ -235,7 +235,7 @@ where
             args.push(reason.into());
         }
 
-        let response = self.run(&args).await?;
+        let response = self.run(args.join(" ")).await?;
 
         if response == INVALID_BAN_FORMAT_MESSAGE.as_bytes() {
             Err(Error::InvalidBanFormat)
@@ -245,11 +245,11 @@ where
     }
 
     async fn remove_ban(&mut self, id: u64) -> std::io::Result<()> {
-        self.run(&["removeBan", &id.to_string()]).await.map(drop)
+        self.run(format!("removeBan {id}")).await.map(drop)
     }
 
     async fn players(&mut self) -> Result<Vec<Player>, crate::Error> {
-        self.run_utf8(&["players"]).await.map(|text| {
+        self.run_utf8("players").await.map(|text| {
             text.lines()
                 // Discard header.
                 .skip_while(|line| !line.starts_with('-'))
@@ -267,18 +267,18 @@ where
     }
 
     async fn lock(&mut self) -> std::io::Result<()> {
-        self.run(&["#lock"]).await.map(drop)
+        self.run("#lock").await.map(drop)
     }
 
     async fn unlock(&mut self) -> std::io::Result<()> {
-        self.run(&["#unlock"]).await.map(drop)
+        self.run("#unlock").await.map(drop)
     }
 
     async fn shutdown(&mut self) -> std::io::Result<()> {
-        self.run(&["#shutdown"]).await.map(drop)
+        self.run("#shutdown").await.map(drop)
     }
 
     async fn reload(&mut self) -> std::io::Result<()> {
-        self.run(&["#init"]).await.map(drop)
+        self.run("#init").await.map(drop)
     }
 }

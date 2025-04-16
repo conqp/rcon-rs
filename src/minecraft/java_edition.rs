@@ -67,7 +67,7 @@ pub trait JavaEdition: Minecraft {
             args.push(Cow::Borrowed(reason));
         }
 
-        async move { ban::parse_response(&self.run_utf8(&args).await?) }
+        async move { ban::parse_response(&self.run_utf8(args.join(" ")).await?) }
     }
 
     /// Adds IP address to banlist.
@@ -93,7 +93,7 @@ pub trait JavaEdition: Minecraft {
             args.push(reason.into());
         }
 
-        async move { ban_ip::parse_response(&self.run_utf8(&args).await?) }
+        async move { ban_ip::parse_response(&self.run_utf8(args.join(" ")).await?) }
     }
 
     /// Return the entries from the ban list.
@@ -114,7 +114,7 @@ pub trait JavaEdition: Minecraft {
             args.push(entry_type.serialize());
         }
 
-        async move { banlist::parse_response(&self.run_utf8(&args).await?) }
+        async move { banlist::parse_response(&self.run_utf8(args.join(" ")).await?) }
     }
 }
 
