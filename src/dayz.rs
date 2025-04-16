@@ -1,5 +1,6 @@
 //! `BattlEye RCon` extensions for `DayZ` servers.
 
+use std::borrow::Cow;
 use std::future::Future;
 use std::str::FromStr;
 use std::time::Duration;
@@ -26,18 +27,22 @@ pub trait DayZ: RCon + BattlEye {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if sending the message fails.
-    fn say(
+    fn say<T>(
         &mut self,
         index: u64,
-        message: &str,
-    ) -> impl Future<Output = std::io::Result<()>> + Send;
+        message: T,
+    ) -> impl Future<Output = std::io::Result<()>> + Send
+    where
+        T: AsRef<str> + Send;
 
     /// Broadcast a message to all players on the server.
     ///
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if sending the message fails.
-    fn broadcast(&mut self, message: &str) -> impl Future<Output = std::io::Result<()>> + Send;
+    fn broadcast<T>(&mut self, message: T) -> impl Future<Output = std::io::Result<()>> + Send
+    where
+        T: AsRef<str> + Send;
 
     /// Kick a player from the server.
     ///
@@ -46,11 +51,13 @@ pub trait DayZ: RCon + BattlEye {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if kicking the player fails.
-    fn kick(
+    fn kick<T>(
         &mut self,
         index: u64,
-        reason: Option<&str>,
-    ) -> impl Future<Output = std::io::Result<()>> + Send;
+        reason: Option<T>,
+    ) -> impl Future<Output = std::io::Result<()>> + Send
+    where
+        T: Into<Cow<'static, str>> + Send;
 
     /// Ban a player from the server.
     ///
@@ -59,11 +66,13 @@ pub trait DayZ: RCon + BattlEye {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if banning  the player fails.
-    fn ban(
+    fn ban<T>(
         &mut self,
         index: u64,
-        reason: Option<&str>,
-    ) -> impl Future<Output = std::io::Result<()>> + Send;
+        reason: Option<T>,
+    ) -> impl Future<Output = std::io::Result<()>> + Send
+    where
+        T: Into<Cow<'static, str>> + Send;
 
     /// Returns an iterator over the server's current ban list.
     ///
@@ -81,12 +90,14 @@ pub trait DayZ: RCon + BattlEye {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if banning  the player fails.
-    fn add_ban(
+    fn add_ban<T>(
         &mut self,
         target: Target,
         duration: Option<Duration>,
-        reason: Option<&str>,
-    ) -> impl Future<Output = Result<(), Error>> + Send;
+        reason: Option<T>,
+    ) -> impl Future<Output = Result<(), Error>> + Send
+    where
+        T: Into<Cow<'static, str>> + Send;
 
     /// Remove a player ban entry from the server's ban list.
     ///
@@ -139,35 +150,46 @@ impl<T> DayZ for T
 where
     T: RCon + BattlEye + Send,
 {
-    async fn say(&mut self, index: u64, message: &str) -> std::io::Result<()> {
-        self.run(&["say", &index.to_string(), message])
+    async fn say<U>(&mut self, index: u64, message: U) -> std::io::Result<()>
+    where
+        U: AsRef<str> + Send,
+    {
+        self.run(&["say", &index.to_string(), message.as_ref()])
             .await
             .map(drop)
     }
 
-    async fn broadcast(&mut self, message: &str) -> std::io::Result<()> {
-        self.run(&["say", &BROADCAST_TARGET.to_string(), message])
+    async fn broadcast<U>(&mut self, message: U) -> std::io::Result<()>
+    where
+        U: AsRef<str> + Send,
+    {
+        self.run(&["say", &BROADCAST_TARGET.to_string(), message.as_ref()])
             .await
             .map(drop)
     }
 
-    async fn kick(&mut self, index: u64, reason: Option<&str>) -> std::io::Result<()> {
+    async fn kick<U>(&mut self, index: u64, reason: Option<U>) -> std::io::Result<()>
+    where
+        U: Into<Cow<'static, str>> + Send,
+    {
         let index = index.to_string();
-        let mut args = vec!["kick", &index];
+        let mut args = vec![Cow::Borrowed("kick"), Cow::Owned(index)];
 
         if let Some(reason) = reason {
-            args.push(reason);
+            args.push(reason.into());
         }
 
         self.run(&args).await.map(drop)
     }
 
-    async fn ban(&mut self, index: u64, reason: Option<&str>) -> std::io::Result<()> {
-        let index = index.to_string();
-        let mut args = vec!["ban", &index];
+    async fn ban<U>(&mut self, index: u64, reason: Option<U>) -> std::io::Result<()>
+    where
+        U: Into<Cow<'static, str>> + Send,
+    {
+        let mut args = vec![Cow::Borrowed("ban"), Cow::Owned(index.to_string())];
 
         if let Some(reason) = reason {
-            args.push(reason);
+            args.push(reason.into());
         }
 
         self.run(&args).await.map(drop)
@@ -186,28 +208,31 @@ where
         })
     }
 
-    async fn add_ban(
+    async fn add_ban<U>(
         &mut self,
         target: Target,
         duration: Option<Duration>,
-        reason: Option<&str>,
-    ) -> Result<(), Error> {
-        let mut args = vec!["addBan"];
+        reason: Option<U>,
+    ) -> Result<(), Error>
+    where
+        U: Into<Cow<'static, str>> + Send,
+    {
+        let mut args = vec![Cow::Borrowed("addBan")];
         let target = match target {
             Target::Ip(ip) => ip.to_string(),
             Target::Uuid(uuid) => uuid.to_string().replace('-', ""),
         };
 
-        args.push(&target);
+        args.push(Cow::Owned(target));
         let duration = duration
             .map_or(0, |duration| duration.as_secs() / SECS_PER_MINUTE)
             .to_string();
-        args.push(&duration);
+        args.push(Cow::Owned(duration));
 
         // FIXME: The appended reason currently does not appear in the ban list.
         // TODO: Investigate this.
         if let Some(reason) = reason {
-            args.push(reason);
+            args.push(reason.into());
         }
 
         let response = self.run(&args).await?;

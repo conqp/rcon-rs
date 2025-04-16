@@ -126,9 +126,12 @@ impl RCon for Client {
         Ok(Self::new::<DEFAULT_BUF_SIZE>(socket, DEFAULT_CHANNEL_SIZE))
     }
 
-    async fn login(&mut self, password: &str) -> std::io::Result<bool> {
+    async fn login<T>(&mut self, password: T) -> std::io::Result<bool>
+    where
+        T: AsRef<str> + Send,
+    {
         match self
-            .communicate(Request::Login(login::Request::from(password)))
+            .communicate(Request::Login(login::Request::from(password.as_ref())))
             .await?
         {
             CommunicationResult::Login(response) => Ok(response.success()),

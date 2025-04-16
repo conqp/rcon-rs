@@ -107,8 +107,11 @@ impl RCon for Client {
         TcpStream::connect(address.into()).await.map(Self::from)
     }
 
-    async fn login(&mut self, password: &str) -> std::io::Result<bool> {
-        self.send(Packet::login(password)).await?;
+    async fn login<T>(&mut self, password: T) -> std::io::Result<bool>
+    where
+        T: AsRef<str> + Send,
+    {
+        self.send(Packet::login(password.as_ref())).await?;
         let mut packet;
 
         loop {
@@ -126,7 +129,7 @@ impl RCon for Client {
     where
         T: AsRef<str> + Send + Sync,
     {
-        let command = Packet::command(args);
+        let command = Packet::command(args.as_ref());
         let command_id = command.id;
         let sentinel = Packet::sentinel(command.id);
         let sentinel_id = sentinel.id;

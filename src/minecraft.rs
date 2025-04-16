@@ -1,6 +1,5 @@
 //! `Source RCON` client extensions for Minecraft servers.
 
-use std::borrow::Cow;
 use std::future::Future;
 
 use crate::source::Source;
@@ -52,12 +51,12 @@ pub trait Minecraft: RCon + Source {
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
     fn help(
         &mut self,
-        command: Option<Cow<'_, str>>,
+        command: Option<&str>,
     ) -> impl Future<Output = Result<String, crate::Error>> + Send
     where
         Self: Send,
     {
-        let mut args = vec!["help".into()];
+        let mut args = vec!["help"];
 
         if let Some(command) = command {
             args.push(command);

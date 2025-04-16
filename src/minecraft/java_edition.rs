@@ -56,15 +56,15 @@ pub trait JavaEdition: Minecraft {
     fn ban(
         &mut self,
         target: Entity<TargetSelector>,
-        reason: Option<Cow<'_, str>>,
+        reason: Option<&str>,
     ) -> impl Future<Output = Result<Option<ban::Entry>, ban::Error>> + Send
     where
         Self: Send,
     {
-        let mut args = vec!["ban".into(), target.serialize()];
+        let mut args = vec![Cow::Borrowed("ban"), target.serialize()];
 
         if let Some(reason) = reason {
-            args.push(reason);
+            args.push(Cow::Borrowed(reason));
         }
 
         async move { ban::parse_response(&self.run_utf8(&args).await?) }
@@ -78,18 +78,19 @@ pub trait JavaEdition: Minecraft {
     /// # Errors
     ///
     /// Returns an [`ban_ip::Error`] on errors.
-    fn ban_ip(
+    fn ban_ip<T>(
         &mut self,
         target: ban_ip::Target,
-        reason: Option<Cow<'_, str>>,
+        reason: Option<T>,
     ) -> impl Future<Output = Result<(), ban_ip::Error>> + Send
     where
         Self: Send,
+        T: Into<Cow<'static, str>>,
     {
         let mut args = vec!["ban_ip".into(), target.serialize()];
 
         if let Some(reason) = reason {
-            args.push(reason);
+            args.push(reason.into());
         }
 
         async move { ban_ip::parse_response(&self.run_utf8(&args).await?) }

@@ -157,11 +157,11 @@ async fn main() -> ExitCode {
             .await
             .map_err(|error| error.to_string()),
         Command::Kick { player, reason } => client
-            .kick(player, reason.as_deref())
+            .kick(player, reason)
             .await
             .map_err(|error| error.to_string()),
         Command::Ban { player, reason } => client
-            .ban(player, reason.as_deref())
+            .ban(player, reason)
             .await
             .map_err(|error| error.to_string()),
         Command::Bans => client
@@ -177,7 +177,7 @@ async fn main() -> ExitCode {
             .add_ban(
                 target.into(),
                 duration.map(|minutes| Duration::from_secs(minutes * SECS_PER_MINUTE)),
-                reason.as_deref(),
+                reason,
             )
             .await
             .map_err(|error| error.to_string()),

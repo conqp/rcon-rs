@@ -1,7 +1,6 @@
 //! Queries, adds, removes or sets an entity attribute.
 
 use std::borrow::Cow;
-
 use uuid::Uuid;
 
 use crate::minecraft::{
@@ -104,13 +103,16 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    pub async fn add_modifier(
+    pub async fn add_modifier<U>(
         self,
         uuid: Uuid,
-        name: Cow<'_, str>,
+        name: U,
         value: f64,
         modifier: Modifier,
-    ) -> Result<String, Error> {
+    ) -> Result<String, Error>
+    where
+        U: Into<Cow<'static, str>>,
+    {
         self.client
             .run_utf8(&[
                 "attribute".into(),
@@ -119,7 +121,7 @@ where
                 "modifier".into(),
                 "add".into(),
                 uuid.serialize(),
-                name,
+                name.into(),
                 value.serialize(),
                 modifier.serialize(),
             ])

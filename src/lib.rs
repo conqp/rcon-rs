@@ -40,7 +40,9 @@ pub trait RCon {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    fn login(&mut self, password: &str) -> impl Future<Output = std::io::Result<bool>> + Send;
+    fn login<T>(&mut self, password: T) -> impl Future<Output = std::io::Result<bool>> + Send
+    where
+        T: AsRef<str> + Send;
 
     /// Run a command.
     ///
