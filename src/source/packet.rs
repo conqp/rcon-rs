@@ -1,6 +1,6 @@
 use log::{debug, trace, warn};
 use num_traits::FromPrimitive;
-use rand::{thread_rng, Rng};
+use rand::{rng, Rng};
 use std::num::TryFromIntError;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
@@ -32,7 +32,7 @@ impl Packet {
 
     pub fn login(password: &str) -> Self {
         Self::new(
-            random_id(thread_rng()),
+            random_id(rng()),
             ServerData::Auth,
             password.bytes().collect(),
             TERMINATOR,
@@ -41,7 +41,7 @@ impl Packet {
 
     pub fn command(command: &[u8]) -> Self {
         Self::new(
-            random_id(thread_rng()),
+            random_id(rng()),
             ServerData::ExecCommandOrAuthResponse,
             command.to_vec(),
             TERMINATOR,
@@ -137,5 +137,5 @@ fn random_id<T>(mut rng: T) -> i32
 where
     T: Rng,
 {
-    rng.gen_range(0..=i32::MAX)
+    rng.random_range(0..=i32::MAX)
 }
