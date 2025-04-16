@@ -35,7 +35,7 @@ impl Client {
     #[must_use]
     pub fn new<const BUFFER_SIZE: usize>(udp_socket: UdpSocket, channel_size: usize) -> Self {
         let running = Arc::new(AtomicBool::new(true));
-        let (requests_tx, requests_rx) = channel::<Request>(channel_size);
+        let (requests_tx, requests_rx) = channel(channel_size);
         let (response_tx, response_rx) = channel(channel_size);
         let handler =
             Handler::<BUFFER_SIZE>::new(udp_socket, running.clone(), requests_rx, response_tx);
