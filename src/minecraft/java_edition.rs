@@ -87,7 +87,7 @@ pub trait JavaEdition: Minecraft {
         Self: Send,
         T: Into<Cow<'static, str>>,
     {
-        let mut args = vec!["ban_ip".into(), target.serialize()];
+        let mut args = vec![Cow::Borrowed("ban_ip"), target.serialize()];
 
         if let Some(reason) = reason {
             args.push(reason.into());
@@ -108,7 +108,7 @@ pub trait JavaEdition: Minecraft {
     where
         Self: Send,
     {
-        let mut args = vec!["banlist".into()];
+        let mut args = vec![Cow::Borrowed("banlist")];
 
         if let Some(entry_type) = entry_type {
             args.push(entry_type.serialize());
