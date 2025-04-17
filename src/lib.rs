@@ -99,7 +99,7 @@ pub trait RCon {
         async move {
             self.run(command)
                 .await
-                .map(|bytes| String::from_utf8_lossy(&bytes).to_string())
+                .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
         }
     }
 }
