@@ -45,14 +45,14 @@ where
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
     pub async fn get(self, scale: Option<f64>) -> Result<String, Error> {
         let mut args = vec![
-            "attribute".into(),
+            Cow::Borrowed("attribute"),
             self.target.serialize(),
             self.attribute.serialize(),
-            "get".into(),
+            Cow::Borrowed("get"),
         ];
 
         if let Some(scale) = scale {
-            args.push(scale.serialize().to_string().into());
+            args.push(Cow::Owned(scale.serialize().to_string()));
         }
 
         self.client.run_utf8(args.join(" ")).await
@@ -65,11 +65,11 @@ where
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
     pub async fn base(self, scale: Option<f64>) -> Result<String, Error> {
         let mut args = vec![
-            "attribute".into(),
+            Cow::Borrowed("attribute"),
             self.target.serialize(),
             self.attribute.serialize(),
-            "base".into(),
-            "get".into(),
+            Cow::Borrowed("base"),
+            Cow::Borrowed("get"),
         ];
 
         if let Some(scale) = scale {
@@ -147,12 +147,12 @@ where
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
     pub async fn modifier_value(self, uuid: Uuid, scale: Option<f64>) -> Result<String, Error> {
         let mut args = vec![
-            "attribute".into(),
+            Cow::Borrowed("attribute"),
             self.target.serialize(),
             self.attribute.serialize(),
-            "modifier".into(),
-            "value".into(),
-            "get".into(),
+            Cow::Borrowed("modifier"),
+            Cow::Borrowed("value"),
+            Cow::Borrowed("get"),
             uuid.serialize(),
         ];
 
