@@ -9,6 +9,8 @@ use ability::Ability;
 #[allow(clippy::module_inception)]
 mod ability;
 
+/// A proxy object to handle ability-related commands.
+#[derive(Debug)]
 pub struct Proxy<'client, T> {
     client: &'client mut T,
     target: TargetSelector,

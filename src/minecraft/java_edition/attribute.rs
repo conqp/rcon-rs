@@ -13,6 +13,7 @@ pub use modifier::Modifier;
 mod modifier;
 
 /// A proxy object to handle attribute-related commands.
+#[derive(Debug)]
 pub struct Proxy<'client, T> {
     client: &'client mut T,
     target: Entity<TargetSelector>,

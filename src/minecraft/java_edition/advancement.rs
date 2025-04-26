@@ -11,8 +11,7 @@ pub use grant::Grant;
 
 mod grant;
 
-/// A proxy object to allow executing advancement-related commands
-/// pertaining to the selected target.
+/// A proxy object to allow executing advancement-related commands.
 #[derive(Debug)]
 pub struct Proxy<'client, T> {
     client: &'client mut T,
