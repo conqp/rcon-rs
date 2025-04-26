@@ -1,7 +1,7 @@
 use std::fmt::{self, Display};
 
 /// Target types retrievable from the bossbar.
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum GetTarget {
     /// The bossbar's maximum value.
     Max,
