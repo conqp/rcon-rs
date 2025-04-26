@@ -14,7 +14,6 @@ pub trait EducationEdition: BedrockEdition {
     ///
     /// Returns an [`ability::Proxy`] which can be used to execute
     /// ability-related commands pertaining to the `target`.
-    #[cfg(feature = "minecraft-education-edition")]
     fn ability(&mut self, target: TargetSelector) -> ability::Proxy<'_, Self>
     where
         Self: Sized + Send,
