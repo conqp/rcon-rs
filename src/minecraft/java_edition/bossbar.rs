@@ -22,7 +22,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns an [`std::io::Error`] if any I/O errors occurred.
+    /// Returns an [`Error`] if any errors occurred.
     pub async fn add(&mut self, id: ResourceLocation, name: String) -> Result<String, Error> {
         self.client
             .run_utf8(format!("bossbar add {id} {name}"))
