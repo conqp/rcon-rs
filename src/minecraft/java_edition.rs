@@ -14,6 +14,7 @@ pub mod attribute;
 pub mod ban;
 pub mod ban_ip;
 pub mod banlist;
+pub mod bossbar;
 pub mod target_selector;
 
 /// Extension trait for `Source RCON` clients for Minecraft: Java Edition servers.
@@ -115,6 +116,14 @@ pub trait JavaEdition: Minecraft {
         }
 
         async move { banlist::parse_response(&self.run_utf8(args.join(" ")).await?) }
+    }
+
+    /// Creates, modifies and lists bossbars.
+    fn bossbar(&mut self) -> bossbar::Proxy<'_, Self>
+    where
+        Self: Sized + Send,
+    {
+        bossbar::Proxy::new(self)
     }
 }
 
