@@ -43,4 +43,14 @@ where
             .run_utf8(format!("bossbar get {id} {target}"))
             .await
     }
+
+    /// Display a list of existing bossbars.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`Error`] if any errors occurred.
+    pub async fn list(&mut self) -> Result<String, Error> {
+        // TODO: Parse output into bossbar list object.
+        self.client.run_utf8("bossbar list").await
+    }
 }
