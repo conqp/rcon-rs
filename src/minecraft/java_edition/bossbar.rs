@@ -53,4 +53,13 @@ where
         // TODO: Parse output into bossbar list object.
         self.client.run_utf8("bossbar list").await
     }
+
+    /// Remove an existing bossbar.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`Error`] if any errors occurred.
+    pub async fn remove(&mut self, id: ResourceLocation) -> Result<String, Error> {
+        self.client.run_utf8(format!("bossbar remove {id}")).await
+    }
 }
