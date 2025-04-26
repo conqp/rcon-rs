@@ -13,10 +13,7 @@ pub use modifier::Modifier;
 mod modifier;
 
 /// A proxy object to handle attribute-related commands.
-pub struct Proxy<'client, T>
-where
-    T: JavaEdition,
-{
+pub struct Proxy<'client, T> {
     client: &'client mut T,
     target: Entity<TargetSelector>,
     attribute: ResourceLocation,

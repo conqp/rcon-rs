@@ -14,10 +14,7 @@ mod grant;
 /// A proxy object to allow executing advancement-related commands
 /// pertaining to the selected target.
 #[derive(Debug)]
-pub struct Proxy<'client, T>
-where
-    T: Minecraft,
-{
+pub struct Proxy<'client, T> {
     client: &'client mut T,
     target: Entity<TargetSelector>,
 }

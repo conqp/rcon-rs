@@ -9,10 +9,7 @@ use ability::Ability;
 #[allow(clippy::module_inception)]
 mod ability;
 
-pub struct Proxy<'client, T>
-where
-    T: EducationEdition,
-{
+pub struct Proxy<'client, T> {
     client: &'client mut T,
     target: TargetSelector,
 }
