@@ -1,11 +1,13 @@
 //! Creates, modifies and lists bossbars.
 
-use crate::minecraft::{JavaEdition, ResourceLocation};
+use crate::minecraft::{JavaEdition, ResourceLocation, Serialize};
 use crate::Error;
 
 pub use get_target::GetTarget;
+pub use set_target::{Color, SetTarget, Style};
 
 mod get_target;
+mod set_target;
 
 /// A proxy object to handle bossbar-related commands.
 #[derive(Debug)]
@@ -61,5 +63,16 @@ where
     /// Returns an [`Error`] if any errors occurred.
     pub async fn remove(&mut self, id: ResourceLocation) -> Result<String, Error> {
         self.client.run_utf8(format!("bossbar remove {id}")).await
+    }
+
+    /// Set the respective value of the bossbar.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`Error`] if any errors occurred.
+    pub async fn set(&mut self, id: ResourceLocation, target: SetTarget) -> Result<String, Error> {
+        self.client
+            .run_utf8(format!("bossbar set {id} {}", target.serialize()))
+            .await
     }
 }
