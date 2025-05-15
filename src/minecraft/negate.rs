@@ -36,7 +36,7 @@ where
     fn serialize(self) -> Cow<'static, str> {
         match self {
             Self::Include(value) => value.serialize(),
-            Self::Exclude(value) => format!("!{}", value.serialize()).into(),
+            Self::Exclude(value) => Cow::Owned(format!("!{}", value.serialize())),
         }
     }
 }
