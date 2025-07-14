@@ -6,8 +6,9 @@ mod header;
 mod into_bytes;
 mod packet;
 
-use crate::RCon;
 pub use client::Client;
+
+use crate::RCon;
 
 /// Trait to identify `BattlEye RCon` clients.
 pub trait BattlEye: RCon {}

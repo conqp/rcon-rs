@@ -5,14 +5,12 @@ use std::future::Future;
 use std::str::FromStr;
 use std::time::Duration;
 
+pub use banning::{BanListEntry, Error, Target, SECS_PER_MINUTE};
 use log::warn;
+pub use player::Player;
 
 use crate::battleye::BattlEye;
 use crate::RCon;
-
-pub use banning::Error;
-pub use banning::{BanListEntry, Target, SECS_PER_MINUTE};
-pub use player::Player;
 
 mod banning;
 mod player;

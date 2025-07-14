@@ -1,10 +1,8 @@
-use crate::minecraft::Serialize;
-use crate::minecraft::{parse_response, Error};
+use ability::Ability;
 
 use super::target_selector::TargetSelector;
 use super::EducationEdition;
-
-use ability::Ability;
+use crate::minecraft::{parse_response, Error, Serialize};
 
 #[allow(clippy::module_inception)]
 mod ability;

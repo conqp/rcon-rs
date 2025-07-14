@@ -1,10 +1,10 @@
 //! Creates, modifies and lists bossbars.
 
-use crate::minecraft::{JavaEdition, ResourceLocation, Serialize};
-use crate::Error;
-
 pub use get_target::GetTarget;
 pub use set_target::{Color, SetTarget, Style};
+
+use crate::minecraft::{JavaEdition, ResourceLocation, Serialize};
+use crate::Error;
 
 mod get_target;
 mod set_target;

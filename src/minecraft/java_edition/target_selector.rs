@@ -2,9 +2,9 @@
 
 use std::borrow::Cow;
 
-use crate::minecraft::{Entity, Serialize};
-
 pub use argument::{Argument, Sort};
+
+use crate::minecraft::{Entity, Serialize};
 
 mod argument;
 

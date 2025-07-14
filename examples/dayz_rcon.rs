@@ -7,8 +7,9 @@ use std::time::Duration;
 
 use clap::{Parser, Subcommand};
 use log::error;
+use rcon::battleye::Client;
 use rcon::dayz::{Target, SECS_PER_MINUTE};
-use rcon::{battleye::Client, DayZ, RCon};
+use rcon::{DayZ, RCon};
 use rpassword::prompt_password;
 use uuid::Uuid;
 

@@ -2,9 +2,9 @@ use std::borrow::Cow;
 use std::convert::Infallible;
 use std::str::FromStr;
 
-use crate::minecraft::serialize::Serialize;
-
 use uuid::Uuid;
+
+use crate::minecraft::serialize::Serialize;
 
 /// Identifies an entity.
 #[derive(Clone, Debug, Eq, PartialEq)]

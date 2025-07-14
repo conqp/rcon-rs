@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
-use crate::minecraft::{Entity, Serialize};
-
 pub use argument::Argument;
+
+use crate::minecraft::{Entity, Serialize};
 
 mod argument;
 

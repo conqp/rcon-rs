@@ -6,9 +6,10 @@ mod quirks;
 mod server_data;
 mod util;
 
-use crate::RCon;
 pub use client::Client;
 pub use quirks::Quirks;
+
+use crate::RCon;
 
 /// Trait to identify `Source RCON` clients.
 #[allow(private_bounds)]

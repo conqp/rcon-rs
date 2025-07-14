@@ -1,14 +1,13 @@
 //! Queries, adds, removes or sets an entity attribute.
 
 use std::borrow::Cow;
+
+pub use modifier::Modifier;
 use uuid::Uuid;
 
-use crate::minecraft::{
-    java_edition::TargetSelector, Entity, JavaEdition, ResourceLocation, Serialize,
-};
-
+use crate::minecraft::java_edition::TargetSelector;
+use crate::minecraft::{Entity, JavaEdition, ResourceLocation, Serialize};
 use crate::Error;
-pub use modifier::Modifier;
 
 mod modifier;
 

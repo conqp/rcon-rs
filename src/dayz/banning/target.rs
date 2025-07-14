@@ -1,5 +1,6 @@
 use std::net::IpAddr;
 use std::str::FromStr;
+
 use uuid::Uuid;
 
 /// The target selector of a ban.

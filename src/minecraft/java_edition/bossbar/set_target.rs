@@ -1,11 +1,11 @@
 use std::borrow::Cow;
 use std::num::NonZero;
 
-use crate::minecraft::java_edition::TargetSelector;
-use crate::minecraft::{Entity, Serialize};
-
 pub use color::Color;
 pub use style::Style;
+
+use crate::minecraft::java_edition::TargetSelector;
+use crate::minecraft::{Entity, Serialize};
 
 mod color;
 mod style;

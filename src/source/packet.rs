@@ -1,7 +1,8 @@
+use std::num::TryFromIntError;
+
 use log::{debug, trace, warn};
 use num_traits::FromPrimitive;
 use rand::{rng, Rng};
-use std::num::TryFromIntError;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
 

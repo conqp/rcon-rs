@@ -3,12 +3,15 @@
 use std::borrow::Cow;
 use std::future::Future;
 
-use crate::source::Source;
-use crate::RCon;
-
+#[cfg(feature = "minecraft-bedrock-edition")]
+pub use bedrock_edition::BedrockEdition;
+#[cfg(feature = "minecraft-education-edition")]
+pub use education_edition::EducationEdition;
 pub use entity::Entity;
 pub use error::Error;
 pub use game_mode::GameMode;
+#[cfg(feature = "minecraft-java-edition")]
+pub use java_edition::JavaEdition;
 pub use negate::Negate;
 pub use range::Range;
 pub use resource_location::ResourceLocation;
@@ -16,14 +19,8 @@ pub use serialize::Serialize;
 pub use unsigned_float::UnsignedFloat;
 use util::parse_response;
 
-#[cfg(feature = "minecraft-bedrock-edition")]
-pub use bedrock_edition::BedrockEdition;
-
-#[cfg(feature = "minecraft-education-edition")]
-pub use education_edition::EducationEdition;
-
-#[cfg(feature = "minecraft-java-edition")]
-pub use java_edition::JavaEdition;
+use crate::source::Source;
+use crate::RCon;
 
 #[cfg(feature = "minecraft-bedrock-edition")]
 pub mod bedrock_edition;

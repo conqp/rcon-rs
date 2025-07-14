@@ -3,12 +3,10 @@
 use std::io::{stdout, Error, Write};
 use std::process::ExitCode;
 
-use args::Args;
+use args::{Args, Protocol};
 use clap::Parser;
 use log::error;
 use rcon::{battleye, source, RCon};
-
-use args::Protocol;
 
 mod args;
 

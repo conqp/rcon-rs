@@ -3,11 +3,11 @@
 use std::borrow::Cow;
 use std::future::Future;
 
-use crate::minecraft::{Entity, ResourceLocation, Serialize};
-use crate::Minecraft;
-
 pub use advancement::Grant;
 pub use target_selector::{Argument, Sort, TargetSelector};
+
+use crate::minecraft::{Entity, ResourceLocation, Serialize};
+use crate::Minecraft;
 
 pub mod advancement;
 pub mod attribute;

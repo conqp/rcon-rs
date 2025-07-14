@@ -6,7 +6,9 @@ use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
 use log::error;
-use rcon::{minecraft::JavaEdition, source::Client, RCon};
+use rcon::minecraft::JavaEdition;
+use rcon::source::Client;
+use rcon::RCon;
 use rpassword::prompt_password;
 
 #[derive(Debug, Parser)]

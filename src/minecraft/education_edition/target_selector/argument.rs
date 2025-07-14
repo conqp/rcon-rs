@@ -1,10 +1,7 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 
-use crate::minecraft::GameMode;
-use crate::minecraft::Negate;
-use crate::minecraft::Range;
-use crate::minecraft::Serialize;
+use crate::minecraft::{GameMode, Negate, Range, Serialize};
 
 /// A target selector argument.
 ///

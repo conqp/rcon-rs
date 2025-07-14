@@ -1,13 +1,10 @@
 //! Gives, removes, or checks player advancements.
 
-use crate::minecraft::parse_response;
-use crate::minecraft::Entity;
-use crate::minecraft::Serialize;
-use crate::{minecraft, Minecraft};
+pub use grant::Grant;
 
 use super::TargetSelector;
-
-pub use grant::Grant;
+use crate::minecraft::{parse_response, Entity, Serialize};
+use crate::{minecraft, Minecraft};
 
 mod grant;
 
