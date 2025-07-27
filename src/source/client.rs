@@ -38,7 +38,7 @@ impl Client {
 
     /// Enable a quirk on the client.
     pub fn enable_quirk(&mut self, quirk: Quirks) {
-        self.quirks |= quirk;
+        self.quirks.insert(quirk);
     }
 
     /// Enable a quirk and return the client.
