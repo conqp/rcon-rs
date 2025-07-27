@@ -22,10 +22,10 @@ pub struct Client {
 impl Client {
     /// Creates a new client instance.
     #[must_use]
-    pub fn new(tcp_stream: TcpStream) -> Self {
+    pub const fn new(tcp_stream: TcpStream) -> Self {
         Self {
             tcp_stream,
-            quirks: Quirks::default(),
+            quirks: Quirks::NONE,
             buffer: Vec::new(),
         }
     }
