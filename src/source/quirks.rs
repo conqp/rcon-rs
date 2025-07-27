@@ -8,6 +8,8 @@ pub struct Quirks(u8);
 
 bitflags! {
     impl Quirks: u8 {
+        /// No quirks.
+        const NONE = 0b0000_0000;
         /// Quirk for Palworld servers.
         const PALWORLD = 0b0000_0001;
     }
