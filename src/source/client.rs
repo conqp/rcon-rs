@@ -54,11 +54,7 @@ impl Client {
         self.tcp_stream.write_all(bytes.as_slice()).await
     }
 
-    async fn read_responses(
-        &mut self,
-        command_id: i32,
-        sentinel_id: i32,
-    ) -> std::io::Result<Vec<u8>> {
+    async fn read_responses(&mut self, id: i32) -> std::io::Result<Vec<u8>> {
         loop {
             let packet = Packet::read_from(&mut self.tcp_stream).await?;
 
@@ -66,12 +62,13 @@ impl Client {
                 ServerData::ExecCommandOrAuthResponse => return Ok(packet.payload),
                 ServerData::ResponseValue => {
                     if packet.typ == ServerData::ResponseValue {
-                        if packet.id == sentinel_id {
+                        // Check for sentinel ID, which is one ahead of the command ID.
+                        if packet.id == id.wrapping_add(1) {
                             debug!("Received sentinel packet");
                             return Ok(self.collect_buffer());
                         }
 
-                        packet.validate(command_id, self.quirks)?;
+                        packet.validate(id, self.quirks)?;
                         debug!("Received data packet");
                         self.buffer.push(packet);
                     }
@@ -133,10 +130,9 @@ impl RCon for Client {
     {
         let command = Packet::command(random(), args.as_ref());
         let command_id = command.id;
-        let sentinel = Packet::sentinel(command.id);
-        let sentinel_id = sentinel.id;
+        let sentinel = command.sentinel();
         self.send(command).await?;
         self.send(sentinel).await?;
-        self.read_responses(command_id, sentinel_id).await
+        self.read_responses(command_id).await
     }
 }

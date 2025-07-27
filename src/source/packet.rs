@@ -43,9 +43,9 @@ impl Packet {
         )
     }
 
-    pub const fn sentinel(id: i32) -> Self {
+    pub const fn sentinel(&self) -> Self {
         Self::new(
-            id.wrapping_add(1),
+            self.id.wrapping_add(1),
             ServerData::ResponseValue,
             Vec::new(),
             TERMINATOR,
