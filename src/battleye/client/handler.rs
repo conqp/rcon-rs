@@ -160,7 +160,7 @@ impl<const BUFFER_SIZE: usize> Handler<BUFFER_SIZE> {
             other => {
                 error!("Received packet of invalid type: {other:#04X}");
             }
-        };
+        }
 
         Ok(None)
     }

@@ -101,7 +101,7 @@ impl Packet {
         Ok(Self::new(id, typ, payload, terminator))
     }
 
-    pub fn size(&self) -> usize {
+    pub const fn size(&self) -> usize {
         self.payload.len() + OFFSET
     }
 
