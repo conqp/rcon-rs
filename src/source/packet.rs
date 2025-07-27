@@ -2,7 +2,6 @@ use std::num::TryFromIntError;
 
 use log::{debug, trace, warn};
 use num_traits::FromPrimitive;
-use rand::{rng, Rng};
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
 
@@ -31,18 +30,13 @@ impl Packet {
         }
     }
 
-    pub fn login(password: &[u8]) -> Self {
-        Self::new(
-            random_id(rng()),
-            ServerData::Auth,
-            password.to_vec(),
-            TERMINATOR,
-        )
+    pub fn login(id: i32, password: &[u8]) -> Self {
+        Self::new(id, ServerData::Auth, password.to_vec(), TERMINATOR)
     }
 
-    pub fn command(command: &[u8]) -> Self {
+    pub fn command(id: i32, command: &[u8]) -> Self {
         Self::new(
-            random_id(rng()),
+            id,
             ServerData::ExecCommandOrAuthResponse,
             command.to_vec(),
             TERMINATOR,
@@ -132,11 +126,4 @@ impl TryFrom<Packet> for Vec<u8> {
         bytes.extend_from_slice(&packet.terminator);
         Ok(bytes)
     }
-}
-
-fn random_id<T>(mut rng: T) -> i32
-where
-    T: Rng,
-{
-    rng.random_range(0..=i32::MAX)
 }

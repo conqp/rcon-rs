@@ -1,6 +1,7 @@
 use std::net::SocketAddr;
 
 use log::{debug, error, trace};
+use rand::random;
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 
@@ -111,7 +112,8 @@ impl RCon for Client {
     where
         T: AsRef<[u8]> + Send,
     {
-        self.send(Packet::login(password.as_ref())).await?;
+        self.send(Packet::login(random(), password.as_ref()))
+            .await?;
         let mut packet;
 
         loop {
@@ -129,7 +131,7 @@ impl RCon for Client {
     where
         T: AsRef<[u8]> + Send,
     {
-        let command = Packet::command(args.as_ref());
+        let command = Packet::command(random(), args.as_ref());
         let command_id = command.id;
         let sentinel = Packet::sentinel(command.id);
         let sentinel_id = sentinel.id;
