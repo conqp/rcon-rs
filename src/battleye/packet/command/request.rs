@@ -2,8 +2,6 @@ use super::TYPE;
 use crate::battleye::header::Header;
 use crate::battleye::into_bytes::IntoBytes;
 
-const SEQ: u8 = 0x00;
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Request {
     header: Header,
@@ -22,25 +20,24 @@ impl Request {
     }
 
     #[must_use]
-    pub fn keepalive() -> Self {
-        Self::new(Header::create(TYPE, &SEQ.to_le_bytes()), SEQ, Vec::new())
-    }
-}
-
-impl From<&[u8]> for Request {
-    fn from(command: &[u8]) -> Self {
+    pub fn command(seq: u8, command: &[u8]) -> Self {
         Self::new(
             Header::create(
                 TYPE,
-                SEQ.to_le_bytes()
+                seq.to_le_bytes()
                     .into_iter()
                     .chain(command.iter().copied())
                     .collect::<Vec<_>>()
                     .as_slice(),
             ),
-            SEQ,
+            seq,
             command.to_vec(),
         )
+    }
+
+    #[must_use]
+    pub fn keepalive(seq: u8) -> Self {
+        Self::new(Header::create(TYPE, &[seq]), seq, Vec::new())
     }
 }
 

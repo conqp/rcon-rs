@@ -1,7 +1,7 @@
 use std::io::{Error, ErrorKind};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket};
-use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::SeqCst;
+use std::sync::atomic::{AtomicBool, AtomicU8};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -28,6 +28,7 @@ pub struct Client {
     responses: Receiver<std::io::Result<Response>>,
     handler: Option<JoinHandle<()>>,
     buffer: Vec<command::Response>,
+    seq: Arc<AtomicU8>,
 }
 
 impl Client {
@@ -37,8 +38,14 @@ impl Client {
         let running = Arc::new(AtomicBool::new(true));
         let (requests_tx, requests_rx) = channel(channel_size);
         let (response_tx, response_rx) = channel(channel_size);
-        let handler =
-            Handler::<BUFFER_SIZE>::new(udp_socket, running.clone(), requests_rx, response_tx);
+        let seq = Arc::new(AtomicU8::new(0));
+        let handler = Handler::<BUFFER_SIZE>::new(
+            udp_socket,
+            seq.clone(),
+            running.clone(),
+            requests_rx,
+            response_tx,
+        );
         let join_handle = spawn(handler.run());
         Self {
             running,
@@ -46,6 +53,7 @@ impl Client {
             responses: response_rx,
             handler: Some(join_handle),
             buffer: Vec::new(),
+            seq,
         }
     }
 
@@ -147,7 +155,10 @@ impl RCon for Client {
         T: AsRef<[u8]> + Send,
     {
         match self
-            .communicate(Request::Command(command::Request::from(command.as_ref())))
+            .communicate(Request::Command(command::Request::command(
+                self.seq.fetch_add(1, SeqCst),
+                command.as_ref(),
+            )))
             .await?
         {
             CommunicationResult::Command(bytes) => Ok(bytes),

@@ -1,8 +1,8 @@
 use std::error::Error;
 use std::io::ErrorKind;
 use std::net::UdpSocket;
-use std::sync::atomic::AtomicBool;
-use std::sync::atomic::Ordering::Relaxed;
+use std::sync::atomic::Ordering::{Relaxed, SeqCst};
+use std::sync::atomic::{AtomicBool, AtomicU8};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
@@ -22,6 +22,7 @@ const IDLE_TIMEOUT: Duration = Duration::from_secs(45);
 #[derive(Debug)]
 pub struct Handler<const BUFFER_SIZE: usize> {
     udp_socket: UdpSocket,
+    seq: Arc<AtomicU8>,
     running: Arc<AtomicBool>,
     requests: Receiver<Request>,
     responses: Sender<std::io::Result<Response>>,
@@ -33,12 +34,14 @@ impl<const BUFFER_SIZE: usize> Handler<BUFFER_SIZE> {
     #[must_use]
     pub const fn new(
         udp_socket: UdpSocket,
+        seq: Arc<AtomicU8>,
         running: Arc<AtomicBool>,
         requests: Receiver<Request>,
         responses: Sender<std::io::Result<Response>>,
     ) -> Self {
         Self {
             udp_socket,
+            seq,
             running,
             requests,
             responses,
@@ -189,7 +192,7 @@ impl<const BUFFER_SIZE: usize> Handler<BUFFER_SIZE> {
         if self.needs_keepalive() {
             debug!("Need to send a keepalive message");
 
-            if let Err(error) = self.send(Self::keepalive_packet()) {
+            if let Err(error) = self.send(self.keepalive_packet()) {
                 error!("Error sending keepalive packet: {error}");
             }
         } else {
@@ -209,7 +212,7 @@ impl<const BUFFER_SIZE: usize> Handler<BUFFER_SIZE> {
             .unwrap_or_default()
     }
 
-    fn keepalive_packet() -> Request {
-        Request::Command(command::Request::keepalive())
+    fn keepalive_packet(&self) -> Request {
+        Request::Command(command::Request::keepalive(self.seq.fetch_add(1, SeqCst)))
     }
 }
