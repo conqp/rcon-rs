@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::io::ErrorKind;
 use std::net::UdpSocket;
-use std::sync::atomic::Ordering::{Relaxed, SeqCst};
+use std::sync::atomic::Ordering::SeqCst;
 use std::sync::atomic::{AtomicBool, AtomicU8};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -51,7 +51,7 @@ impl<const BUFFER_SIZE: usize> Handler<BUFFER_SIZE> {
     }
 
     pub async fn run(mut self) {
-        while self.running.load(Relaxed) {
+        while self.running.load(SeqCst) {
             trace!("Receiving request");
             match self.requests.try_recv() {
                 Ok(request) => {
