@@ -99,7 +99,6 @@ impl From<TcpStream> for Client {
 impl RCon for Client {
     async fn connect<T>(address: T) -> std::io::Result<Self>
     where
-        Self: Sized,
         T: Into<SocketAddr> + Send,
     {
         TcpStream::connect(address.into()).await.map(Self::from)
