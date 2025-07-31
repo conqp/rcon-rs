@@ -18,10 +18,10 @@ impl GetTarget {
     #[must_use]
     pub const fn as_str(&self) -> &'static str {
         match self {
-            GetTarget::Max => "max",
-            GetTarget::Players => "players",
-            GetTarget::Value => "value",
-            GetTarget::Visible => "visible",
+            Self::Max => "max",
+            Self::Players => "players",
+            Self::Value => "value",
+            Self::Visible => "visible",
         }
     }
 }

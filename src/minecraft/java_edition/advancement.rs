@@ -19,7 +19,7 @@ impl<'client, T> Proxy<'client, T>
 where
     T: Minecraft + Send,
 {
-    pub(crate) fn new(client: &'client mut T, target: Entity<TargetSelector>) -> Self {
+    pub(crate) const fn new(client: &'client mut T, target: Entity<TargetSelector>) -> Self {
         Proxy { client, target }
     }
 

@@ -23,7 +23,7 @@ impl<'client, T> Proxy<'client, T>
 where
     T: JavaEdition + Send,
 {
-    pub(crate) fn new(
+    pub(crate) const fn new(
         client: &'client mut T,
         target: Entity<TargetSelector>,
         attribute: ResourceLocation,

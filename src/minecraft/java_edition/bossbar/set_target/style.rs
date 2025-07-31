@@ -20,11 +20,11 @@ impl Style {
     #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
-            Style::Notched6 => "notched_6",
-            Style::Notched10 => "notched_10",
-            Style::Notched12 => "notched_12",
-            Style::Notched20 => "notched_20",
-            Style::Progress => "progress",
+            Self::Notched6 => "notched_6",
+            Self::Notched10 => "notched_10",
+            Self::Notched12 => "notched_12",
+            Self::Notched20 => "notched_20",
+            Self::Progress => "progress",
         }
     }
 }

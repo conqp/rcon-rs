@@ -48,13 +48,13 @@ pub enum SetTarget {
 impl Serialize for SetTarget {
     fn serialize(self) -> Cow<'static, str> {
         Cow::Owned(match self {
-            SetTarget::Color(color) => format!("color {color}"),
-            SetTarget::Max(max) => format!("max {max}"),
-            SetTarget::Name(name) => format!("name {name}"),
-            SetTarget::Players(players) => format!("players {}", players.serialize()),
-            SetTarget::Style(style) => format!("style {style}"),
-            SetTarget::Value(value) => format!("value {value}"),
-            SetTarget::Visible(visible) => format!("visible {visible}"),
+            Self::Color(color) => format!("color {color}"),
+            Self::Max(max) => format!("max {max}"),
+            Self::Name(name) => format!("name {name}"),
+            Self::Players(players) => format!("players {}", players.serialize()),
+            Self::Style(style) => format!("style {style}"),
+            Self::Value(value) => format!("value {value}"),
+            Self::Visible(visible) => format!("visible {visible}"),
         })
     }
 }

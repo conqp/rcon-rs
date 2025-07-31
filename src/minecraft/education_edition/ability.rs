@@ -18,7 +18,7 @@ impl<'client, T> Proxy<'client, T>
 where
     T: EducationEdition + Send,
 {
-    pub(crate) fn new(client: &'client mut T, target: TargetSelector) -> Self {
+    pub(crate) const fn new(client: &'client mut T, target: TargetSelector) -> Self {
         Self { client, target }
     }
 

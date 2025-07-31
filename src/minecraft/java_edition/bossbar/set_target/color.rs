@@ -18,13 +18,13 @@ impl Color {
     #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
-            Color::Blue => "blue",
-            Color::Green => "green",
-            Color::Pink => "pink",
-            Color::Purple => "purple",
-            Color::Red => "red",
-            Color::White => "white",
-            Color::Yellow => "yellow",
+            Self::Blue => "blue",
+            Self::Green => "green",
+            Self::Pink => "pink",
+            Self::Purple => "purple",
+            Self::Red => "red",
+            Self::White => "white",
+            Self::Yellow => "yellow",
         }
     }
 }

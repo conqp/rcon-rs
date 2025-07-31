@@ -58,7 +58,7 @@ impl Client {
     }
 
     async fn communicate(&mut self, request: Request) -> std::io::Result<CommunicationResult> {
-        trace!("Sending request {:?}", request);
+        trace!("Sending request {request:?}");
         self.requests
             .send(request)
             .await
@@ -73,20 +73,20 @@ impl Client {
                 Some(response) => match response? {
                     Response::Command(response) => {
                         debug!("Received command response");
-                        trace!("Received response {:?}", response);
+                        trace!("Received response {response:?}");
                         let seq = response.seq() as usize;
                         self.buffer.push(response);
 
                         if self.buffer.len() >= seq {
                             debug!("Buffer size exceeds sequence number. Returning.");
                             trace!("Buffer size: {}", self.buffer.len());
-                            trace!("Sequence number: {}", seq);
+                            trace!("Sequence number: {seq}");
                             return Ok(CommunicationResult::Command(self.collect_responses()));
                         }
                     }
                     Response::Login(response) => {
                         debug!("Received login response. Returning.");
-                        trace!("Login response {:?}", response);
+                        trace!("Login response {response:?}");
                         return Ok(CommunicationResult::Login(response));
                     }
                 },
