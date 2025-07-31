@@ -8,10 +8,7 @@ use crate::minecraft::serialize::Serialize;
 /// See the [Minecraft wiki](https://minecraft.fandom.com/wiki/Argument_types#minecraft:float_range)
 /// for details.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Range<T>
-where
-    T: Copy,
-{
+pub enum Range<T> {
     /// An exact value of `T`.
     Exact(T),
     /// A range starting at some value without upper bound.
@@ -24,54 +21,40 @@ where
 
 impl<T> Serialize for Range<T>
 where
-    T: Copy + Serialize,
+    T: Serialize,
 {
     fn serialize(self) -> Cow<'static, str> {
         match self {
             Self::Exact(value) => value.serialize(),
             Self::From(range) => format!("{}..", range.start.serialize()).into(),
             Self::ToInclusive(range) => format!("..{}", range.end.serialize()).into(),
-            Self::Inclusive(range) => format!(
-                "{}..{}",
-                (*range.start()).serialize(),
-                (*range.end()).serialize()
-            )
-            .into(),
+            Self::Inclusive(range) => {
+                let (start, end) = range.into_inner();
+                format!("{}..{}", start.serialize(), end.serialize()).into()
+            }
         }
     }
 }
 
-impl<T> From<T> for Range<T>
-where
-    T: Copy,
-{
+impl<T> From<T> for Range<T> {
     fn from(value: T) -> Self {
         Self::Exact(value)
     }
 }
 
-impl<T> From<RangeFrom<T>> for Range<T>
-where
-    T: Copy,
-{
+impl<T> From<RangeFrom<T>> for Range<T> {
     fn from(value: RangeFrom<T>) -> Self {
         Self::From(value)
     }
 }
 
-impl<T> From<RangeToInclusive<T>> for Range<T>
-where
-    T: Copy,
-{
+impl<T> From<RangeToInclusive<T>> for Range<T> {
     fn from(value: RangeToInclusive<T>) -> Self {
         Self::ToInclusive(value)
     }
 }
 
-impl<T> From<RangeInclusive<T>> for Range<T>
-where
-    T: Copy,
-{
+impl<T> From<RangeInclusive<T>> for Range<T> {
     fn from(value: RangeInclusive<T>) -> Self {
         Self::Inclusive(value)
     }
