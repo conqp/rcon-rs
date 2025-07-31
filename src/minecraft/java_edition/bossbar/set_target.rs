@@ -19,7 +19,7 @@ pub enum SetTarget {
     /// Set the bossbar's maximum value. Defaults to 100 upon creation.
     ///
     /// Must be a 32-bit integer number. And it must be between `1` and `2147483647` (inclusive).
-    Max(NonZero<u32>),
+    Max(NonZero<i32>),
     /// Set the bossbar's name.
     // TODO: This is actually a raw JSON object called "component".
     Name(String),
@@ -40,7 +40,7 @@ pub enum SetTarget {
     /// Set the bossbar's current value. Defaults to 0 upon creation.
     ///
     /// Must be a 32-bit integer number. And it must be between `0` and `2147483647` (inclusive).
-    Value(u32),
+    Value(i32),
     /// Set the bossbar's visibility. Defaults to true upon creation.
     Visible(bool),
 }
