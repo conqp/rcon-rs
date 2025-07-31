@@ -79,14 +79,14 @@ pub trait JavaEdition: Minecraft {
     /// # Errors
     ///
     /// Returns an [`ban_ip::Error`] on errors.
-    fn ban_ip<T>(
+    fn ban_ip<'reason, T>(
         &mut self,
         target: ban_ip::Target,
         reason: Option<T>,
     ) -> impl Future<Output = Result<(), ban_ip::Error>> + Send
     where
         Self: Send,
-        T: Into<Cow<'static, str>>,
+        T: Into<Cow<'reason, str>>,
     {
         let mut args = vec![Cow::Borrowed("ban_ip"), target.serialize()];
 

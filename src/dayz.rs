@@ -49,13 +49,13 @@ pub trait DayZ: RCon + BattlEye {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if kicking the player fails.
-    fn kick<T>(
+    fn kick<'reason, T>(
         &mut self,
         index: u64,
         reason: Option<T>,
     ) -> impl Future<Output = std::io::Result<()>> + Send
     where
-        T: Into<Cow<'static, str>> + Send;
+        T: Into<Cow<'reason, str>> + Send;
 
     /// Ban a player from the server.
     ///
@@ -64,13 +64,13 @@ pub trait DayZ: RCon + BattlEye {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if banning  the player fails.
-    fn ban<T>(
+    fn ban<'reason, T>(
         &mut self,
         index: u64,
         reason: Option<T>,
     ) -> impl Future<Output = std::io::Result<()>> + Send
     where
-        T: Into<Cow<'static, str>> + Send;
+        T: Into<Cow<'reason, str>> + Send;
 
     /// Returns an iterator over the server's current ban list.
     ///
@@ -88,14 +88,14 @@ pub trait DayZ: RCon + BattlEye {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if banning  the player fails.
-    fn add_ban<T>(
+    fn add_ban<'reason, T>(
         &mut self,
         target: Target,
         duration: Option<Duration>,
         reason: Option<T>,
     ) -> impl Future<Output = Result<(), Error>> + Send
     where
-        T: Into<Cow<'static, str>> + Send;
+        T: Into<Cow<'reason, str>> + Send;
 
     /// Remove a player ban entry from the server's ban list.
     ///
@@ -166,9 +166,9 @@ where
             .map(drop)
     }
 
-    async fn kick<U>(&mut self, index: u64, reason: Option<U>) -> std::io::Result<()>
+    async fn kick<'reason, U>(&mut self, index: u64, reason: Option<U>) -> std::io::Result<()>
     where
-        U: Into<Cow<'static, str>> + Send,
+        U: Into<Cow<'reason, str>> + Send,
     {
         let index = index.to_string();
         let mut args = vec![Cow::Borrowed("kick"), Cow::Owned(index)];
@@ -180,9 +180,9 @@ where
         self.run(args.join(" ")).await.map(drop)
     }
 
-    async fn ban<U>(&mut self, index: u64, reason: Option<U>) -> std::io::Result<()>
+    async fn ban<'reason, U>(&mut self, index: u64, reason: Option<U>) -> std::io::Result<()>
     where
-        U: Into<Cow<'static, str>> + Send,
+        U: Into<Cow<'reason, str>> + Send,
     {
         let mut args = vec![Cow::Borrowed("ban"), Cow::Owned(index.to_string())];
 
@@ -206,14 +206,14 @@ where
         })
     }
 
-    async fn add_ban<U>(
+    async fn add_ban<'reason, U>(
         &mut self,
         target: Target,
         duration: Option<Duration>,
         reason: Option<U>,
     ) -> Result<(), Error>
     where
-        U: Into<Cow<'static, str>> + Send,
+        U: Into<Cow<'reason, str>> + Send,
     {
         let mut args = vec![Cow::Borrowed("addBan")];
         let target = match target {

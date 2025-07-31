@@ -47,13 +47,13 @@ pub trait Minecraft: RCon + Source {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
-    fn help<T>(
+    fn help<'cmd, T>(
         &mut self,
         command: Option<T>,
     ) -> impl Future<Output = Result<String, crate::Error>> + Send
     where
         Self: Send,
-        T: Into<Cow<'static, str>> + Send,
+        T: Into<Cow<'cmd, str>> + Send,
     {
         let mut args = vec![Cow::Borrowed("help")];
 
