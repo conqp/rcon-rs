@@ -3,8 +3,8 @@
 pub use get_target::GetTarget;
 pub use set_target::{Color, SetTarget, Style};
 
-use crate::minecraft::{JavaEdition, ResourceLocation, Serialize};
-use crate::Error;
+use crate::minecraft::{ResourceLocation, Serialize};
+use crate::{Error, RCon};
 
 mod get_target;
 mod set_target;
@@ -15,15 +15,17 @@ pub struct Proxy<'client, T> {
     client: &'client mut T,
 }
 
-impl<'client, T> Proxy<'client, T>
-where
-    T: JavaEdition + Send,
-{
+impl<'client, T> Proxy<'client, T> {
     #[must_use]
     pub(crate) const fn new(client: &'client mut T) -> Self {
         Self { client }
     }
+}
 
+impl<T> Proxy<'_, T>
+where
+    T: RCon + Send,
+{
     /// Create a new bossbar.
     ///
     /// # Errors

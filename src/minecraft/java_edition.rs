@@ -18,7 +18,7 @@ pub mod bossbar;
 pub mod target_selector;
 
 /// Extension trait for `Source RCON` clients for Minecraft: Java Edition servers.
-pub trait JavaEdition: Minecraft {
+pub trait JavaEdition {
     /// Manage the target's ability.
     ///
     /// # Returns
@@ -27,7 +27,7 @@ pub trait JavaEdition: Minecraft {
     /// advancement-related commands pertaining to the `target`.
     fn advancement(&mut self, target: Entity<TargetSelector>) -> advancement::Proxy<'_, Self>
     where
-        Self: Sized + Send,
+        Self: Sized,
     {
         advancement::Proxy::new(self, target)
     }
@@ -44,7 +44,7 @@ pub trait JavaEdition: Minecraft {
         attribute: ResourceLocation,
     ) -> attribute::Proxy<'_, Self>
     where
-        Self: Sized + Send,
+        Self: Sized,
     {
         attribute::Proxy::new(self, target, attribute)
     }
@@ -58,18 +58,7 @@ pub trait JavaEdition: Minecraft {
         &mut self,
         target: Entity<TargetSelector>,
         reason: Option<&str>,
-    ) -> impl Future<Output = Result<Option<ban::Entry>, ban::Error>> + Send
-    where
-        Self: Send,
-    {
-        let mut args = vec![Cow::Borrowed("ban"), target.serialize()];
-
-        if let Some(reason) = reason {
-            args.push(Cow::Borrowed(reason));
-        }
-
-        async move { ban::parse_response(&self.run_utf8(args.join(" ")).await?) }
-    }
+    ) -> impl Future<Output = Result<Option<ban::Entry>, ban::Error>> + Send;
 
     /// Adds IP address to banlist.
     ///
@@ -85,19 +74,7 @@ pub trait JavaEdition: Minecraft {
         reason: Option<T>,
     ) -> impl Future<Output = Result<(), ban_ip::Error>> + Send
     where
-        Self: Send,
-        T: AsRef<str> + Send,
-    {
-        async move {
-            let mut args = vec![Cow::Borrowed("ban_ip"), target.serialize()];
-
-            if let Some(reason) = &reason {
-                args.push(Cow::Borrowed(reason.as_ref()));
-            }
-
-            ban_ip::parse_response(&self.run_utf8(args.join(" ")).await?)
-        }
-    }
+        T: AsRef<str> + Send;
 
     /// Return the entries from the ban list.
     ///
@@ -107,26 +84,80 @@ pub trait JavaEdition: Minecraft {
     fn banlist(
         &mut self,
         entry_type: Option<banlist::EntryType>,
-    ) -> impl Future<Output = Result<Vec<banlist::Entry>, banlist::Error>> + Send
+    ) -> impl Future<Output = Result<Vec<banlist::Entry>, banlist::Error>> + Send;
+
+    /// Creates, modifies and lists bossbars.
+    fn bossbar(&mut self) -> bossbar::Proxy<'_, Self>
     where
-        Self: Send,
+        Self: Sized,
     {
+        bossbar::Proxy::new(self)
+    }
+}
+
+impl<T> JavaEdition for T
+where
+    T: Minecraft + Send,
+{
+    /// Adds player to banlist.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`ban::Error`] on errors.
+    async fn ban(
+        &mut self,
+        target: Entity<TargetSelector>,
+        reason: Option<&str>,
+    ) -> Result<Option<ban::Entry>, ban::Error> {
+        let mut args = vec![Cow::Borrowed("ban"), target.serialize()];
+
+        if let Some(reason) = reason {
+            args.push(Cow::Borrowed(reason));
+        }
+
+        ban::parse_response(&self.run_utf8(args.join(" ")).await?)
+    }
+
+    /// Adds IP address to banlist.
+    ///
+    /// Specifies the IP address to be added to the blacklist.
+    /// Can also be a name of an online player, which represents the IP of that player.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`ban_ip::Error`] on errors.
+    async fn ban_ip<S>(
+        &mut self,
+        target: ban_ip::Target,
+        reason: Option<S>,
+    ) -> Result<(), ban_ip::Error>
+    where
+        S: AsRef<str> + Send,
+    {
+        let mut args = vec![Cow::Borrowed("ban_ip"), target.serialize()];
+
+        if let Some(reason) = &reason {
+            args.push(Cow::Borrowed(reason.as_ref()));
+        }
+
+        ban_ip::parse_response(&self.run_utf8(args.join(" ")).await?)
+    }
+
+    /// Return the entries from the ban list.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`banlist::Error`] on errors.
+    async fn banlist(
+        &mut self,
+        entry_type: Option<banlist::EntryType>,
+    ) -> Result<Vec<banlist::Entry>, banlist::Error> {
         let mut args = vec![Cow::Borrowed("banlist")];
 
         if let Some(entry_type) = entry_type {
             args.push(entry_type.serialize());
         }
 
-        async move { banlist::parse_response(&self.run_utf8(args.join(" ")).await?) }
-    }
-
-    /// Creates, modifies and lists bossbars.
-    fn bossbar(&mut self) -> bossbar::Proxy<'_, Self>
-    where
-        Self: Sized + Send,
-    {
-        bossbar::Proxy::new(self)
+        banlist::parse_response(&self.run_utf8(args.join(" ")).await?)
     }
 }
-
-impl<T> JavaEdition for T where T: Minecraft {}

@@ -6,8 +6,8 @@ pub use modifier::Modifier;
 use uuid::Uuid;
 
 use crate::minecraft::java_edition::TargetSelector;
-use crate::minecraft::{Entity, JavaEdition, ResourceLocation, Serialize};
-use crate::Error;
+use crate::minecraft::{Entity, ResourceLocation, Serialize};
+use crate::{Error, RCon};
 
 mod modifier;
 
@@ -19,10 +19,7 @@ pub struct Proxy<'client, T> {
     attribute: ResourceLocation,
 }
 
-impl<'client, T> Proxy<'client, T>
-where
-    T: JavaEdition + Send,
-{
+impl<'client, T> Proxy<'client, T> {
     pub(crate) const fn new(
         client: &'client mut T,
         target: Entity<TargetSelector>,
@@ -34,7 +31,12 @@ where
             attribute,
         }
     }
+}
 
+impl<T> Proxy<'_, T>
+where
+    T: RCon + Send,
+{
     /// Returns the total value of the specified attribute.
     ///
     /// # Errors

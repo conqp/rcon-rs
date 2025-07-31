@@ -14,14 +14,16 @@ pub struct Proxy<'client, T> {
     target: TargetSelector,
 }
 
-impl<'client, T> Proxy<'client, T>
-where
-    T: EducationEdition + Send,
-{
+impl<'client, T> Proxy<'client, T> {
     pub(crate) const fn new(client: &'client mut T, target: TargetSelector) -> Self {
         Self { client, target }
     }
+}
 
+impl<T> Proxy<'_, T>
+where
+    T: EducationEdition + Send,
+{
     /// List the target's ability.
     ///
     /// # Errors

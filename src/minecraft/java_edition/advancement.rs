@@ -4,7 +4,7 @@ pub use grant::Grant;
 
 use super::TargetSelector;
 use crate::minecraft::{parse_response, Entity, Serialize};
-use crate::{minecraft, Minecraft};
+use crate::{minecraft, RCon};
 
 mod grant;
 
@@ -15,14 +15,16 @@ pub struct Proxy<'client, T> {
     target: Entity<TargetSelector>,
 }
 
-impl<'client, T> Proxy<'client, T>
-where
-    T: Minecraft + Send,
-{
+impl<'client, T> Proxy<'client, T> {
     pub(crate) const fn new(client: &'client mut T, target: Entity<TargetSelector>) -> Self {
         Proxy { client, target }
     }
+}
 
+impl<T> Proxy<'_, T>
+where
+    T: RCon + Send,
+{
     /// Grant some advancement.
     ///
     /// # Errors
