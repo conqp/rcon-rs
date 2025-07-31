@@ -1,5 +1,5 @@
 use std::borrow::Cow;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use crate::minecraft::{GameMode, Negate, Range, Serialize};
 
@@ -16,7 +16,7 @@ pub enum Argument {
     Dx(f64),
     Dy(f64),
     Dz(f64),
-    Scores(HashMap<String, Negate<Range<u64>>>),
+    Scores(BTreeMap<String, Negate<Range<u64>>>),
     Tag(Negate<Option<String>>),
     Limit(i64),
     Level(Range<u64>),

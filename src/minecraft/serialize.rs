@@ -1,5 +1,5 @@
 use std::borrow::Cow;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use uuid::Uuid;
 
@@ -41,7 +41,7 @@ where
     }
 }
 
-impl<K, V, S> Serialize for HashMap<K, V, S>
+impl<K, V> Serialize for BTreeMap<K, V>
 where
     K: Serialize,
     V: Serialize,

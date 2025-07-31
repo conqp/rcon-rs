@@ -1,7 +1,6 @@
-use std::borrow::Cow;
-use std::collections::HashMap;
-
 pub use sort::Sort;
+use std::borrow::Cow;
+use std::collections::BTreeMap;
 
 use crate::minecraft::{GameMode, Negate, Range, Serialize, UnsignedFloat};
 
@@ -27,7 +26,7 @@ pub enum Argument {
     /// Z volume dimension
     Dz(f64),
     /// Score filters
-    Scores(HashMap<String, Range<u64>>),
+    Scores(BTreeMap<String, Range<u64>>),
     /// Tag filters
     Tag(Negate<Option<String>>),
     /// Team filters
