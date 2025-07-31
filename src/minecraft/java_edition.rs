@@ -79,22 +79,24 @@ pub trait JavaEdition: Minecraft {
     /// # Errors
     ///
     /// Returns an [`ban_ip::Error`] on errors.
-    fn ban_ip<'reason, T>(
+    fn ban_ip<T>(
         &mut self,
         target: ban_ip::Target,
         reason: Option<T>,
     ) -> impl Future<Output = Result<(), ban_ip::Error>> + Send
     where
         Self: Send,
-        T: Into<Cow<'reason, str>>,
+        T: AsRef<str> + Send,
     {
-        let mut args = vec![Cow::Borrowed("ban_ip"), target.serialize()];
+        async move {
+            let mut args = vec![Cow::Borrowed("ban_ip"), target.serialize()];
 
-        if let Some(reason) = reason {
-            args.push(reason.into());
+            if let Some(reason) = &reason {
+                args.push(Cow::Borrowed(reason.as_ref()));
+            }
+
+            ban_ip::parse_response(&self.run_utf8(args.join(" ")).await?)
         }
-
-        async move { ban_ip::parse_response(&self.run_utf8(args.join(" ")).await?) }
     }
 
     /// Return the entries from the ban list.

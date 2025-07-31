@@ -98,7 +98,7 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    pub async fn add_modifier<'name, U>(
+    pub async fn add_modifier<U>(
         self,
         uuid: Uuid,
         name: U,
@@ -106,7 +106,7 @@ where
         modifier: Modifier,
     ) -> Result<String, Error>
     where
-        U: Into<Cow<'name, str>>,
+        U: AsRef<str>,
     {
         self.client
             .run_utf8(format!(
@@ -114,7 +114,7 @@ where
                 self.target.serialize(),
                 self.attribute.serialize(),
                 uuid.serialize(),
-                name.into(),
+                name.as_ref(),
                 value.serialize(),
                 modifier.serialize(),
             ))

@@ -1,6 +1,5 @@
 //! `Source RCON` client extensions for Minecraft servers.
 
-use std::borrow::Cow;
 use std::future::Future;
 
 #[cfg(feature = "minecraft-bedrock-edition")]
@@ -47,21 +46,23 @@ pub trait Minecraft: RCon + Source {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
-    fn help<'cmd, T>(
+    fn help<T>(
         &mut self,
         command: Option<T>,
     ) -> impl Future<Output = Result<String, crate::Error>> + Send
     where
         Self: Send,
-        T: Into<Cow<'cmd, str>> + Send,
+        T: AsRef<str> + Send,
     {
-        let mut args = vec![Cow::Borrowed("help")];
+        async move {
+            let mut args = vec!["help"];
 
-        if let Some(command) = command {
-            args.push(command.into());
+            if let Some(command) = &command {
+                args.push(command.as_ref());
+            }
+
+            self.run_utf8(args.join(" ")).await
         }
-
-        async move { self.run_utf8(args.join(" ")).await }
     }
 }
 
