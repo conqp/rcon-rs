@@ -19,7 +19,6 @@ pub use unsigned_float::UnsignedFloat;
 use util::parse_response;
 
 use crate::source::Source;
-use crate::RCon;
 
 #[cfg(feature = "minecraft-bedrock-edition")]
 pub mod bedrock_edition;
@@ -38,7 +37,7 @@ mod unsigned_float;
 mod util;
 
 /// Extension trait for `Source RCON` clients for generic Minecraft servers.
-pub trait Minecraft: RCon + Source {
+pub trait Minecraft: Source {
     /// Print information about available commands on the server.
     ///
     /// If the optional parameter `command` is provided, list help about that specific command.
@@ -51,19 +50,23 @@ pub trait Minecraft: RCon + Source {
         command: Option<T>,
     ) -> impl Future<Output = Result<String, crate::Error>> + Send
     where
-        Self: Send,
-        T: AsRef<str> + Send,
-    {
-        async move {
-            let mut args = vec!["help"];
-
-            if let Some(command) = &command {
-                args.push(command.as_ref());
-            }
-
-            self.run_utf8(args.join(" ")).await
-        }
-    }
+        T: AsRef<str> + Send;
 }
 
-impl<T> Minecraft for T where T: RCon + Source {}
+impl<T> Minecraft for T
+where
+    T: Source + Send,
+{
+    async fn help<S>(&mut self, command: Option<S>) -> Result<String, crate::Error>
+    where
+        S: AsRef<str> + Send,
+    {
+        let mut args = vec!["help"];
+
+        if let Some(command) = &command {
+            args.push(command.as_ref());
+        }
+
+        self.run_utf8(args.join(" ")).await
+    }
+}

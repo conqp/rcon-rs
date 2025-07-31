@@ -18,7 +18,7 @@ pub mod bossbar;
 pub mod target_selector;
 
 /// Extension trait for `Source RCON` clients for Minecraft: Java Edition servers.
-pub trait JavaEdition {
+pub trait JavaEdition: Minecraft {
     /// Manage the target's ability.
     ///
     /// # Returns
