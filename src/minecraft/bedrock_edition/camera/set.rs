@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use crate::minecraft::Error;
-use crate::Minecraft;
+use crate::RCon;
 
 /// Camera actions proxy.
 #[derive(Debug)]
@@ -18,7 +18,7 @@ impl<'client, 'preset, T> Proxy<'client, 'preset, T> {
 
 impl<T> Proxy<'_, '_, T>
 where
-    T: Minecraft + Send,
+    T: RCon + Send,
 {
     /// Set the default value.
     ///

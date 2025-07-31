@@ -5,7 +5,7 @@ pub use time::Time;
 
 use crate::minecraft::java_edition::TargetSelector;
 use crate::minecraft::{Entity, Error, Serialize};
-use crate::Minecraft;
+use crate::RCon;
 
 mod color;
 mod set;
@@ -31,7 +31,7 @@ impl<'client, T> Proxy<'client, T> {
 
 impl<T> Proxy<'_, T>
 where
-    T: Minecraft + Send,
+    T: RCon + Send,
 {
     /// Clear the camera view.
     pub async fn clear(self) -> Result<String, Error> {

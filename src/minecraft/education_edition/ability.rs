@@ -1,8 +1,8 @@
 use ability::Ability;
 
 use super::target_selector::TargetSelector;
-use super::EducationEdition;
 use crate::minecraft::{parse_response, Error, Serialize};
+use crate::RCon;
 
 #[allow(clippy::module_inception)]
 mod ability;
@@ -22,7 +22,7 @@ impl<'client, T> Proxy<'client, T> {
 
 impl<T> Proxy<'_, T>
 where
-    T: EducationEdition + Send,
+    T: RCon + Send,
 {
     /// List the target's ability.
     ///
