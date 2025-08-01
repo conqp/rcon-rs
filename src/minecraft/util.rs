@@ -1,6 +1,10 @@
 //! Utilities for the Minecraft extensions.
 
+pub use string::EscapeString;
+
 use crate::minecraft::Error;
+
+mod string;
 
 const UNKNOWN_OR_INCOMPLETE_COMMAND: &str = "Unknown or incomplete command, see below for error";
 
