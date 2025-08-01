@@ -1,6 +1,10 @@
 use std::str::Chars;
 
 /// Escape and quote strings.
+///
+/// This trait is meant to increase correctness when serializing strings as RCON arguments.
+///
+/// IMPORTANT: This trait should not be considered to provide certain safety or security guarantees.
 pub trait EscapeString {
     /// Escapes a string.
     ///
