@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::str::Chars;
 
 /// Escape and quote strings.
@@ -10,9 +9,9 @@ pub trait EscapeString {
 
     /// Returns a quoted string.
     ///
-    /// - If the string contains double quotes, escapes the string.
-    /// - If the string contains whitespace or double quotes, puts the string in outer double quotes.
-    fn quote(&self) -> Cow<'_, str>;
+    /// - Escapes the string.
+    /// - If the string contains whitespace, puts the string in outer double quotes.
+    fn quote(&self) -> String;
 }
 
 impl<T> EscapeString for T
@@ -30,15 +29,13 @@ where
             .collect()
     }
 
-    fn quote(&self) -> Cow<'_, str> {
+    fn quote(&self) -> String {
         let s = self.as_ref();
-        let contains_whitespace = s.chars().any(char::is_whitespace);
-        let contains_double_quotes = s.chars().any(|character| character == '"');
 
-        match (contains_whitespace, contains_double_quotes) {
-            (_, true) => Cow::Owned(format!(r#""{}""#, s.escape())),
-            (true, false) => Cow::Owned(format!(r#""{s}""#)),
-            (false, false) => Cow::Borrowed(s),
+        if s.chars().any(char::is_whitespace) {
+            format!(r#""{}""#, s.escape())
+        } else {
+            s.escape()
         }
     }
 }
