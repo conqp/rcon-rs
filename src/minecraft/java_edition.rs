@@ -3,10 +3,9 @@
 use std::borrow::Cow;
 use std::future::Future;
 
-use advancement::Advancement;
-pub use advancement::Grant;
-use attribute::Attribute;
-use bossbar::Bossbar;
+pub use advancement::{Advancement, Grant};
+pub use attribute::Attribute;
+pub use bossbar::Bossbar;
 pub use target_selector::{Argument, Sort, TargetSelector};
 
 use crate::minecraft::proxy::Proxy;

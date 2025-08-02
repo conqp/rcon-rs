@@ -4,8 +4,7 @@ mod camera;
 
 use std::future::Future;
 
-use camera::Camera;
-pub use camera::Target;
+pub use camera::{Camera, Set, Target};
 
 use crate::minecraft::java_edition::TargetSelector;
 use crate::minecraft::proxy::Proxy;

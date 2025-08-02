@@ -2,8 +2,7 @@ use std::borrow::Cow;
 use std::future::Future;
 
 pub use color::Color;
-use set::Set;
-pub use set::Target;
+pub use set::{Set, Target};
 pub use time::Time;
 
 use crate::minecraft::proxy::Proxy;
