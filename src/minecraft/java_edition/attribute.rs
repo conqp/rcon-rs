@@ -5,8 +5,7 @@ use std::borrow::Cow;
 pub use modifier::Modifier;
 use uuid::Uuid;
 
-use crate::minecraft::java_edition::TargetSelector;
-use crate::minecraft::{Entity, ResourceLocation, Serialize};
+use crate::minecraft::Serialize;
 use crate::{Error, RCon};
 
 mod modifier;
@@ -15,21 +14,12 @@ mod modifier;
 #[derive(Debug)]
 pub struct Proxy<'client, T> {
     client: &'client mut T,
-    target: Entity<TargetSelector>,
-    attribute: ResourceLocation,
+    args: Vec<Cow<'client, str>>,
 }
 
 impl<'client, T> Proxy<'client, T> {
-    pub(crate) const fn new(
-        client: &'client mut T,
-        target: Entity<TargetSelector>,
-        attribute: ResourceLocation,
-    ) -> Self {
-        Self {
-            client,
-            target,
-            attribute,
-        }
+    pub(crate) const fn new(client: &'client mut T, args: Vec<Cow<'client, str>>) -> Self {
+        Self { client, args }
     }
 }
 
@@ -42,19 +32,14 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    pub async fn get(self, scale: Option<f64>) -> Result<String, Error> {
-        let mut args = vec![
-            Cow::Borrowed("attribute"),
-            self.target.serialize(),
-            self.attribute.serialize(),
-            Cow::Borrowed("get"),
-        ];
+    pub async fn get(mut self, scale: Option<f64>) -> Result<String, Error> {
+        self.args.push("get".into());
 
         if let Some(scale) = scale {
-            args.push(Cow::Owned(scale.serialize().to_string()));
+            self.args.push(Cow::Owned(scale.serialize().to_string()));
         }
 
-        self.client.run_utf8(args.join(" ")).await
+        self.client.run_utf8(self.args.join(" ")).await
     }
 
     /// Returns the base value of the specified attribute.
@@ -62,20 +47,14 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    pub async fn base(self, scale: Option<f64>) -> Result<String, Error> {
-        let mut args = vec![
-            Cow::Borrowed("attribute"),
-            self.target.serialize(),
-            self.attribute.serialize(),
-            Cow::Borrowed("base"),
-            Cow::Borrowed("get"),
-        ];
+    pub async fn base(mut self, scale: Option<f64>) -> Result<String, Error> {
+        self.args.extend(["base".into(), "get".into()]);
 
         if let Some(scale) = scale {
-            args.push(scale.serialize());
+            self.args.push(scale.serialize());
         }
 
-        self.client.run_utf8(args.join(" ")).await
+        self.client.run_utf8(self.args.join(" ")).await
     }
 
     /// Overwrites the base value of the specified attribute with the given value.
@@ -83,15 +62,10 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    pub async fn set_base(self, value: f64) -> Result<String, Error> {
-        self.client
-            .run_utf8(format!(
-                "attribute {} {} base set {}",
-                self.target.serialize(),
-                self.attribute.serialize(),
-                value.serialize(),
-            ))
-            .await
+    pub async fn set_base(mut self, value: f64) -> Result<String, Error> {
+        self.args
+            .extend(["base".into(), "get".into(), value.serialize()]);
+        self.client.run_utf8(self.args.join(" ")).await
     }
 
     /// Adds an attribute modifier with the specified properties
@@ -101,7 +75,7 @@ where
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
     pub async fn add_modifier<U>(
-        self,
+        mut self,
         uuid: Uuid,
         name: U,
         value: f64,
@@ -110,17 +84,15 @@ where
     where
         U: AsRef<str>,
     {
-        self.client
-            .run_utf8(format!(
-                "attribute {} {} modifier add {} {} {} {}",
-                self.target.serialize(),
-                self.attribute.serialize(),
-                uuid.serialize(),
-                name.as_ref(),
-                value.serialize(),
-                modifier.serialize(),
-            ))
-            .await
+        self.args.extend([
+            "modifier".into(),
+            "add".into(),
+            uuid.serialize(),
+            name.as_ref().into(),
+            value.serialize(),
+            modifier.serialize(),
+        ]);
+        self.client.run_utf8(self.args.join(" ")).await
     }
 
     /// Removes the attribute modifier with the specified UUID.
@@ -128,15 +100,10 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    pub async fn remove_modifier(self, uuid: Uuid) -> Result<String, Error> {
-        self.client
-            .run_utf8(format!(
-                "attribute {} {} modifier remove {}",
-                self.target.serialize(),
-                self.attribute.serialize(),
-                uuid.serialize(),
-            ))
-            .await
+    pub async fn remove_modifier(mut self, uuid: Uuid) -> Result<String, Error> {
+        self.args
+            .extend(["modifier".into(), "remove".into(), uuid.serialize()]);
+        self.client.run_utf8(self.args.join(" ")).await
     }
 
     /// Returns the value of the modifier with the specified UUID.
@@ -144,21 +111,18 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    pub async fn modifier_value(self, uuid: Uuid, scale: Option<f64>) -> Result<String, Error> {
-        let mut args = vec![
-            Cow::Borrowed("attribute"),
-            self.target.serialize(),
-            self.attribute.serialize(),
-            Cow::Borrowed("modifier"),
-            Cow::Borrowed("value"),
-            Cow::Borrowed("get"),
+    pub async fn modifier_value(mut self, uuid: Uuid, scale: Option<f64>) -> Result<String, Error> {
+        self.args.extend([
+            "modifier".into(),
+            "value".into(),
+            "get".into(),
             uuid.serialize(),
-        ];
+        ]);
 
         if let Some(scale) = scale {
-            args.push(scale.serialize());
+            self.args.push(scale.serialize());
         }
 
-        self.client.run_utf8(args.join(" ")).await
+        self.client.run_utf8(self.args.join(" ")).await
     }
 }

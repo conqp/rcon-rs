@@ -32,7 +32,7 @@ where
     ///
     /// Returns an [`std::io::Error`] if granting the advancement fails.
     pub async fn grant(mut self, grant: Grant) -> Result<String, minecraft::Error> {
-        self.args.extend(["grant".into(), grant.serialize().into()]);
+        self.args.extend(["grant".into(), grant.serialize()]);
         parse_response(self.client.run_utf8(self.args.join(" ")).await?)
     }
 
@@ -42,8 +42,7 @@ where
     ///
     /// Returns an [`std::io::Error`] if revoking the advancement fails.
     pub async fn revoke(mut self, grant: Grant) -> Result<String, minecraft::Error> {
-        self.args
-            .extend(["revoke".into(), grant.serialize().into()]);
+        self.args.extend(["revoke".into(), grant.serialize()]);
         parse_response(self.client.run_utf8(self.args.join(" ")).await?)
     }
 }

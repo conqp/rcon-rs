@@ -29,7 +29,7 @@ pub trait JavaEdition: Minecraft {
     where
         Self: Sized,
     {
-        advancement::Proxy::new(self, vec!["advancement".into(), target.serialize().into()])
+        advancement::Proxy::new(self, vec!["advancement".into(), target.serialize()])
     }
 
     /// Manage a target's attribute.
@@ -46,7 +46,14 @@ pub trait JavaEdition: Minecraft {
     where
         Self: Sized,
     {
-        attribute::Proxy::new(self, target, attribute)
+        attribute::Proxy::new(
+            self,
+            vec![
+                "attribute".into(),
+                target.serialize(),
+                attribute.serialize(),
+            ],
+        )
     }
 
     /// Adds player to banlist.
