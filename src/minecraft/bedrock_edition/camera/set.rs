@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 
+use crate::minecraft::util::EscapeString;
 use crate::minecraft::Error;
 use crate::RCon;
 
@@ -29,7 +30,7 @@ where
         let mut args = vec![Cow::Borrowed("set"), self.preset];
 
         if let Some(default) = default {
-            args.push(default);
+            args.push(default.quote().into());
         }
 
         self.client
