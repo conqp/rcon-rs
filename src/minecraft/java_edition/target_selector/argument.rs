@@ -1,6 +1,7 @@
-pub use sort::Sort;
 use std::borrow::Cow;
 use std::collections::BTreeMap;
+
+pub use sort::Sort;
 
 use crate::minecraft::{GameMode, Negate, Range, Serialize, UnsignedFloat};
 
