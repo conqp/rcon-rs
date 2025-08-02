@@ -7,6 +7,7 @@ use std::future::Future;
 use crate::minecraft::java_edition::TargetSelector;
 use crate::minecraft::{parse_response, Entity, Error, Serialize};
 use crate::Minecraft;
+pub use camera::Target;
 
 /// Extension trait for `Source RCON` clients for the `Minecraft: Bedrock Edition`.
 pub trait BedrockEdition: Minecraft {

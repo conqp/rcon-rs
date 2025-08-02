@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
 pub use color::Color;
+pub use set::Target;
 pub use time::Time;
 
 use crate::minecraft::{Error, Serialize};
@@ -18,7 +19,7 @@ pub struct Proxy<'client, T> {
 }
 
 impl<'client, T> Proxy<'client, T> {
-    pub(crate) fn new(client: &'client mut T, args: Vec<Cow<'client, str>>) -> Self {
+    pub(crate) const fn new(client: &'client mut T, args: Vec<Cow<'client, str>>) -> Self {
         Self { client, args }
     }
 

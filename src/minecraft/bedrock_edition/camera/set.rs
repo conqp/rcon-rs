@@ -1,6 +1,7 @@
-use crate::minecraft::Error;
+use crate::minecraft::{Error, Serialize};
 use crate::RCon;
 use std::borrow::Cow;
+pub use target::Target;
 
 mod target;
 
@@ -33,6 +34,16 @@ where
             self.args.push(default);
         }
 
+        self.client
+            .run_utf8(self.args.join(" "))
+            .await
+            .map_err(Into::into)
+    }
+
+    /// Set camera facing.
+    pub async fn facing(mut self, target: Target) -> Result<String, Error> {
+        self.args
+            .extend([Cow::Borrowed("facing"), target.serialize()]);
         self.client
             .run_utf8(self.args.join(" "))
             .await
