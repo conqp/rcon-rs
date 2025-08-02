@@ -4,9 +4,11 @@ mod camera;
 
 use std::future::Future;
 
+use camera::Camera;
 pub use camera::Target;
 
 use crate::minecraft::java_edition::TargetSelector;
+use crate::minecraft::proxy::Proxy;
 use crate::minecraft::{parse_response, Entity, Error, Serialize};
 use crate::Minecraft;
 
@@ -19,7 +21,7 @@ pub trait BedrockEdition: Minecraft {
     fn always_day(&mut self, lock: bool) -> impl Future<Output = Result<String, Error>> + Send;
 
     /// Modify the player's camera view.
-    fn camera(&mut self, target: Entity<TargetSelector>) -> camera::Proxy<'_, Self>
+    fn camera(&mut self, target: Entity<TargetSelector>) -> impl Camera<'_>
     where
         Self: Sized + Send;
 }
@@ -42,7 +44,7 @@ where
             .and_then(parse_response)
     }
 
-    fn camera(&mut self, target: Entity<TargetSelector>) -> camera::Proxy<'_, Self> {
-        camera::Proxy::new(self, vec![target.serialize()])
+    fn camera(&mut self, target: Entity<TargetSelector>) -> impl Camera<'_> {
+        Proxy::new(self, vec![target.serialize()])
     }
 }

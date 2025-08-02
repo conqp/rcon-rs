@@ -30,6 +30,7 @@ mod game_mode;
 #[cfg(feature = "minecraft-java-edition")]
 pub mod java_edition;
 mod negate;
+mod proxy;
 mod range;
 mod resource_location;
 mod serialize;

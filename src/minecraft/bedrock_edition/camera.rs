@@ -1,9 +1,12 @@
 use std::borrow::Cow;
+use std::future::Future;
 
 pub use color::Color;
+use set::Set;
 pub use set::Target;
 pub use time::Time;
 
+use crate::minecraft::proxy::Proxy;
 use crate::minecraft::{Error, Serialize};
 use crate::RCon;
 
@@ -11,40 +14,35 @@ mod color;
 mod set;
 mod time;
 
-/// Camera actions proxy.
-#[derive(Debug)]
-pub struct Proxy<'client, T> {
-    client: &'client mut T,
-    args: Vec<Cow<'client, str>>,
-}
-
-impl<'client, T> Proxy<'client, T> {
-    pub(crate) const fn new(client: &'client mut T, args: Vec<Cow<'client, str>>) -> Self {
-        Self { client, args }
-    }
-
+/// Camera-related operations.
+pub trait Camera<'client> {
     /// Return a proxy with available set options.
-    pub fn set(mut self, preset: Cow<'client, str>) -> set::Proxy<'client, T> {
-        self.args.extend([Cow::Borrowed("set"), preset]);
-        set::Proxy::new(self.client, self.args)
-    }
+    fn set(self, preset: Cow<'client, str>) -> impl Set;
+
+    /// Clear the camera view.
+    fn clear(&mut self) -> impl Future<Output = Result<String, Error>> + Send;
+
+    /// Fade camera view.
+    fn fade(
+        &mut self,
+        color: Color,
+        time: Option<Time>,
+    ) -> impl Future<Output = Result<String, Error>> + Send;
 }
 
-impl<T> Proxy<'_, T>
+impl<'client, T> Camera<'client> for Proxy<'client, T>
 where
     T: RCon + Send,
 {
-    /// Clear the camera view.
-    pub async fn clear(mut self) -> Result<String, Error> {
-        self.args.push(Cow::Borrowed("clear"));
-        self.client
-            .run_utf8(self.args.join(" "))
-            .await
-            .map_err(Into::into)
+    fn set(self, preset: Cow<'client, str>) -> impl Set {
+        self.delegate(&[Cow::Borrowed("set"), preset])
     }
 
-    /// Fade camera view.
-    pub async fn fade(self, color: Color, time: Option<Time>) -> Result<String, Error> {
+    async fn clear(&mut self) -> Result<String, Error> {
+        self.run_utf8(&["clear".into()]).await
+    }
+
+    async fn fade(&mut self, color: Color, time: Option<Time>) -> Result<String, Error> {
         let mut args = vec![Cow::Borrowed("fade")];
 
         if let Some(time) = time {
@@ -52,9 +50,6 @@ where
         }
 
         args.push(color.serialize());
-        self.client
-            .run_utf8(args.join(" "))
-            .await
-            .map_err(Into::into)
+        self.run_utf8(&args).await
     }
 }

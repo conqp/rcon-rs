@@ -3,9 +3,13 @@
 use std::borrow::Cow;
 use std::future::Future;
 
+use advancement::Advancement;
 pub use advancement::Grant;
+use attribute::Attribute;
+use bossbar::Bossbar;
 pub use target_selector::{Argument, Sort, TargetSelector};
 
+use crate::minecraft::proxy::Proxy;
 use crate::minecraft::{Entity, ResourceLocation, Serialize};
 use crate::Minecraft;
 
@@ -23,38 +27,21 @@ pub trait JavaEdition: Minecraft {
     ///
     /// # Returns
     ///
-    /// Returns an [`advancement::Proxy`] which can be used to execute
+    /// Returns an [`Proxy`] which can be used to execute
     /// advancement-related commands pertaining to the `target`.
-    fn advancement(&mut self, target: Entity<TargetSelector>) -> advancement::Proxy<'_, Self>
-    where
-        Self: Sized,
-    {
-        advancement::Proxy::new(self, vec!["advancement".into(), target.serialize()])
-    }
+    fn advancement(&mut self, target: Entity<TargetSelector>) -> impl Advancement;
 
     /// Manage a target's attribute.
     ///
     /// # Returns
     ///
-    /// Returns an [`attribute::Proxy`] which can be used to execute
+    /// Returns an [`Proxy`] which can be used to execute
     /// advancement-related commands pertaining to the `target`.
     fn attribute(
         &mut self,
         target: Entity<TargetSelector>,
         attribute: ResourceLocation,
-    ) -> attribute::Proxy<'_, Self>
-    where
-        Self: Sized,
-    {
-        attribute::Proxy::new(
-            self,
-            vec![
-                "attribute".into(),
-                target.serialize(),
-                attribute.serialize(),
-            ],
-        )
-    }
+    ) -> impl Attribute;
 
     /// Adds player to banlist.
     ///
@@ -93,24 +80,38 @@ pub trait JavaEdition: Minecraft {
         entry_type: Option<banlist::EntryType>,
     ) -> impl Future<Output = Result<Vec<banlist::Entry>, banlist::Error>> + Send;
 
-    /// Creates, modifies and lists bossbars.
-    fn bossbar(&mut self) -> bossbar::Proxy<'_, Self>
-    where
-        Self: Sized,
-    {
-        bossbar::Proxy::new(self, vec!["bossbar".into()])
-    }
+    /// Manage bossbars.
+    ///
+    /// # Returns
+    ///
+    /// Returns an [`Proxy`] which can be used to execute
+    /// bossbar-related commands.
+    fn bossbar(&mut self) -> impl Bossbar;
 }
 
 impl<T> JavaEdition for T
 where
     T: Minecraft + Send,
 {
-    /// Adds player to banlist.
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`ban::Error`] on errors.
+    fn advancement(&mut self, target: Entity<TargetSelector>) -> impl Advancement {
+        Proxy::new(self, vec!["advancement".into(), target.serialize()])
+    }
+
+    fn attribute(
+        &mut self,
+        target: Entity<TargetSelector>,
+        attribute: ResourceLocation,
+    ) -> impl Attribute {
+        Proxy::new(
+            self,
+            vec![
+                "attribute".into(),
+                target.serialize(),
+                attribute.serialize(),
+            ],
+        )
+    }
+
     async fn ban(
         &mut self,
         target: Entity<TargetSelector>,
@@ -125,14 +126,6 @@ where
         ban::parse_response(&self.run_utf8(args.join(" ")).await?)
     }
 
-    /// Adds IP address to banlist.
-    ///
-    /// Specifies the IP address to be added to the blacklist.
-    /// Can also be a name of an online player, which represents the IP of that player.
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`ban_ip::Error`] on errors.
     async fn ban_ip<S>(
         &mut self,
         target: ban_ip::Target,
@@ -150,11 +143,6 @@ where
         ban_ip::parse_response(&self.run_utf8(args.join(" ")).await?)
     }
 
-    /// Return the entries from the ban list.
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`banlist::Error`] on errors.
     async fn banlist(
         &mut self,
         entry_type: Option<banlist::EntryType>,
@@ -166,5 +154,9 @@ where
         }
 
         banlist::parse_response(&self.run_utf8(args.join(" ")).await?)
+    }
+
+    fn bossbar(&mut self) -> impl Bossbar {
+        Proxy::new(self, vec!["bossbar".into()])
     }
 }
