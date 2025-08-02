@@ -98,7 +98,7 @@ pub trait JavaEdition: Minecraft {
     where
         Self: Sized,
     {
-        bossbar::Proxy::new(self)
+        bossbar::Proxy::new(self, vec!["bossbar".into()])
     }
 }
 

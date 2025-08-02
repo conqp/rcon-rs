@@ -1,4 +1,6 @@
-use std::fmt::{self, Display};
+use std::borrow::Cow;
+
+use crate::minecraft::Serialize;
 
 /// Target types retrievable from the bossbar.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -26,8 +28,8 @@ impl GetTarget {
     }
 }
 
-impl Display for GetTarget {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
+impl Serialize for GetTarget {
+    fn serialize(self) -> Cow<'static, str> {
+        Cow::Borrowed(self.as_str())
     }
 }

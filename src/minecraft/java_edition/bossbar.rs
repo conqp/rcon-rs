@@ -1,5 +1,7 @@
 //! Creates, modifies and lists bossbars.
 
+use std::borrow::Cow;
+
 pub use get_target::GetTarget;
 pub use set_target::{Color, SetTarget, Style};
 
@@ -13,12 +15,13 @@ mod set_target;
 #[derive(Debug)]
 pub struct Proxy<'client, T> {
     client: &'client mut T,
+    args: Vec<Cow<'client, str>>,
 }
 
 impl<'client, T> Proxy<'client, T> {
     #[must_use]
-    pub(crate) const fn new(client: &'client mut T) -> Self {
-        Self { client }
+    pub(crate) const fn new(client: &'client mut T, args: Vec<Cow<'client, str>>) -> Self {
+        Self { client, args }
     }
 }
 
@@ -31,10 +34,10 @@ where
     /// # Errors
     ///
     /// Returns an [`Error`] if any errors occurred.
-    pub async fn add(&mut self, id: ResourceLocation, name: String) -> Result<String, Error> {
-        self.client
-            .run_utf8(format!("bossbar add {id} {name}"))
-            .await
+    pub async fn add(mut self, id: ResourceLocation, name: String) -> Result<String, Error> {
+        self.args
+            .extend(["add".into(), id.serialize(), name.serialize()]);
+        self.client.run_utf8(self.args.join(" ")).await
     }
 
     /// Return the requested setting as a `result` of the command.
@@ -42,10 +45,10 @@ where
     /// # Errors
     ///
     /// Returns an [`Error`] if any errors occurred.
-    pub async fn get(&mut self, id: ResourceLocation, target: GetTarget) -> Result<String, Error> {
-        self.client
-            .run_utf8(format!("bossbar get {id} {target}"))
-            .await
+    pub async fn get(mut self, id: ResourceLocation, target: GetTarget) -> Result<String, Error> {
+        self.args
+            .extend(["get".into(), id.serialize(), target.serialize()]);
+        self.client.run_utf8(self.args.join(" ")).await
     }
 
     /// Display a list of existing bossbars.
@@ -53,9 +56,10 @@ where
     /// # Errors
     ///
     /// Returns an [`Error`] if any errors occurred.
-    pub async fn list(&mut self) -> Result<String, Error> {
+    pub async fn list(mut self) -> Result<String, Error> {
         // TODO: Parse output into bossbar list object.
-        self.client.run_utf8("bossbar list").await
+        self.args.push("list".into());
+        self.client.run_utf8(self.args.join(" ")).await
     }
 
     /// Remove an existing bossbar.
@@ -63,8 +67,9 @@ where
     /// # Errors
     ///
     /// Returns an [`Error`] if any errors occurred.
-    pub async fn remove(&mut self, id: ResourceLocation) -> Result<String, Error> {
-        self.client.run_utf8(format!("bossbar remove {id}")).await
+    pub async fn remove(mut self, id: ResourceLocation) -> Result<String, Error> {
+        self.args.extend(["remove".into(), id.serialize()]);
+        self.client.run_utf8(self.args.join(" ")).await
     }
 
     /// Set the respective value of the bossbar.
@@ -72,9 +77,9 @@ where
     /// # Errors
     ///
     /// Returns an [`Error`] if any errors occurred.
-    pub async fn set(&mut self, id: ResourceLocation, target: SetTarget) -> Result<String, Error> {
-        self.client
-            .run_utf8(format!("bossbar set {id} {}", target.serialize()))
-            .await
+    pub async fn set(mut self, id: ResourceLocation, target: SetTarget) -> Result<String, Error> {
+        self.args
+            .extend(["set".into(), id.serialize(), target.serialize()]);
+        self.client.run_utf8(self.args.join(" ")).await
     }
 }
