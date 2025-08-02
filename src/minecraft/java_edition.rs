@@ -29,7 +29,7 @@ pub trait JavaEdition: Minecraft {
     where
         Self: Sized,
     {
-        advancement::Proxy::new(self, target)
+        advancement::Proxy::new(self, vec!["advancement".into(), target.serialize().into()])
     }
 
     /// Manage a target's attribute.

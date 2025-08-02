@@ -1,9 +1,10 @@
 //! Gives, removes, or checks player advancements.
 
+use std::borrow::Cow;
+
 pub use grant::Grant;
 
-use super::TargetSelector;
-use crate::minecraft::{parse_response, Entity, Serialize};
+use crate::minecraft::{parse_response, Serialize};
 use crate::{minecraft, RCon};
 
 mod grant;
@@ -12,12 +13,12 @@ mod grant;
 #[derive(Debug)]
 pub struct Proxy<'client, T> {
     client: &'client mut T,
-    target: Entity<TargetSelector>,
+    args: Vec<Cow<'client, str>>,
 }
 
 impl<'client, T> Proxy<'client, T> {
-    pub(crate) const fn new(client: &'client mut T, target: Entity<TargetSelector>) -> Self {
-        Proxy { client, target }
+    pub(crate) const fn new(client: &'client mut T, args: Vec<Cow<'client, str>>) -> Self {
+        Proxy { client, args }
     }
 }
 
@@ -30,16 +31,9 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if granting the advancement fails.
-    pub async fn grant(self, grant: Grant) -> Result<String, minecraft::Error> {
-        parse_response(
-            self.client
-                .run_utf8(format!(
-                    "grant {} {}",
-                    self.target.serialize(),
-                    grant.serialize()
-                ))
-                .await?,
-        )
+    pub async fn grant(mut self, grant: Grant) -> Result<String, minecraft::Error> {
+        self.args.extend(["grant".into(), grant.serialize().into()]);
+        parse_response(self.client.run_utf8(self.args.join(" ")).await?)
     }
 
     /// Revoke some advancement.
@@ -47,15 +41,9 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if revoking the advancement fails.
-    pub async fn revoke(self, grant: Grant) -> Result<String, minecraft::Error> {
-        parse_response(
-            self.client
-                .run_utf8(format!(
-                    "revoke {} {}",
-                    self.target.serialize(),
-                    grant.serialize()
-                ))
-                .await?,
-        )
+    pub async fn revoke(mut self, grant: Grant) -> Result<String, minecraft::Error> {
+        self.args
+            .extend(["revoke".into(), grant.serialize().into()]);
+        parse_response(self.client.run_utf8(self.args.join(" ")).await?)
     }
 }
