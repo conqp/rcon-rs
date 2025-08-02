@@ -6,7 +6,7 @@ use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
 use log::error;
-use rcon::minecraft::java_edition::attribute::Attribute;
+use rcon::minecraft::java_edition::Attribute;
 use rcon::minecraft::JavaEdition;
 use rcon::source::Client;
 use rcon::RCon;
