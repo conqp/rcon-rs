@@ -1,23 +1,23 @@
-use std::borrow::Cow;
-
-use crate::minecraft::util::EscapeString;
 use crate::minecraft::Error;
 use crate::RCon;
+use std::borrow::Cow;
+
+mod target;
 
 /// Camera actions proxy.
 #[derive(Debug)]
-pub struct Proxy<'client, 'preset, T> {
+pub struct Proxy<'client, T> {
     client: &'client mut T,
-    preset: Cow<'preset, str>,
+    args: Vec<Cow<'client, str>>,
 }
 
-impl<'client, 'preset, T> Proxy<'client, 'preset, T> {
-    pub(crate) const fn new(client: &'client mut T, preset: Cow<'preset, str>) -> Self {
-        Self { client, preset }
+impl<'client, T> Proxy<'client, T> {
+    pub(crate) const fn new(client: &'client mut T, args: Vec<Cow<'client, str>>) -> Self {
+        Self { client, args }
     }
 }
 
-impl<T> Proxy<'_, '_, T>
+impl<T> Proxy<'_, T>
 where
     T: RCon + Send,
 {
@@ -26,15 +26,15 @@ where
     /// TODO: investigate what this actually is. The wiki is quite sparse on this.
     ///
     /// See: <https://minecraft.fandom.com/wiki/Commands/camera>
-    pub async fn default(self, default: Option<Cow<'_, str>>) -> Result<String, Error> {
-        let mut args = vec![Cow::Borrowed("set"), self.preset];
+    pub async fn default(mut self, default: Option<Cow<'_, str>>) -> Result<String, Error> {
+        self.args.push(Cow::Borrowed("default"));
 
         if let Some(default) = default {
-            args.push(default.quote().into());
+            self.args.push(default);
         }
 
         self.client
-            .run_utf8(args.join(" "))
+            .run_utf8(self.args.join(" "))
             .await
             .map_err(Into::into)
     }

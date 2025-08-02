@@ -3,8 +3,7 @@ use std::borrow::Cow;
 pub use color::Color;
 pub use time::Time;
 
-use crate::minecraft::java_edition::TargetSelector;
-use crate::minecraft::{Entity, Error, Serialize};
+use crate::minecraft::{Error, Serialize};
 use crate::RCon;
 
 mod color;
@@ -15,17 +14,18 @@ mod time;
 #[derive(Debug)]
 pub struct Proxy<'client, T> {
     client: &'client mut T,
-    target: Entity<TargetSelector>,
+    args: Vec<Cow<'client, str>>,
 }
 
 impl<'client, T> Proxy<'client, T> {
-    pub(crate) const fn new(client: &'client mut T, target: Entity<TargetSelector>) -> Self {
-        Self { client, target }
+    pub(crate) fn new(client: &'client mut T, args: Vec<Cow<'client, str>>) -> Self {
+        Self { client, args }
     }
 
     /// Return a proxy with available set options.
-    pub fn set<'preset>(self, preset: Cow<'preset, str>) -> set::Proxy<'client, 'preset, T> {
-        set::Proxy::new(self.client, preset)
+    pub fn set(mut self, preset: Cow<'client, str>) -> set::Proxy<'client, T> {
+        self.args.extend([Cow::Borrowed("set"), preset]);
+        set::Proxy::new(self.client, self.args)
     }
 }
 
@@ -34,9 +34,10 @@ where
     T: RCon + Send,
 {
     /// Clear the camera view.
-    pub async fn clear(self) -> Result<String, Error> {
+    pub async fn clear(mut self) -> Result<String, Error> {
+        self.args.push(Cow::Borrowed("clear"));
         self.client
-            .run_utf8(format!("{} clear", self.target.serialize()))
+            .run_utf8(self.args.join(" "))
             .await
             .map_err(Into::into)
     }

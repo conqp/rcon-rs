@@ -5,7 +5,7 @@ mod camera;
 use std::future::Future;
 
 use crate::minecraft::java_edition::TargetSelector;
-use crate::minecraft::{parse_response, Entity, Error};
+use crate::minecraft::{parse_response, Entity, Error, Serialize};
 use crate::Minecraft;
 
 /// Extension trait for `Source RCON` clients for the `Minecraft: Bedrock Edition`.
@@ -41,6 +41,6 @@ where
     }
 
     fn camera(&mut self, target: Entity<TargetSelector>) -> camera::Proxy<'_, Self> {
-        camera::Proxy::new(self, target)
+        camera::Proxy::new(self, vec![target.serialize()])
     }
 }
