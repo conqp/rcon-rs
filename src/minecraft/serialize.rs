@@ -66,6 +66,16 @@ where
     }
 }
 
+impl Serialize for bool {
+    fn serialize(self) -> Cow<'static, str> {
+        if self {
+            Cow::Borrowed("true")
+        } else {
+            Cow::Borrowed("false")
+        }
+    }
+}
+
 impl Serialize for u64 {
     fn serialize(self) -> Cow<'static, str> {
         Cow::Owned(self.to_string())

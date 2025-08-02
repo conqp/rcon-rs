@@ -2,7 +2,7 @@
 
 use target_selector::TargetSelector;
 
-use crate::minecraft::BedrockEdition;
+use crate::minecraft::{BedrockEdition, Serialize};
 
 mod ability;
 mod target_selector;
@@ -19,7 +19,7 @@ pub trait EducationEdition: BedrockEdition {
     where
         Self: Sized + Send,
     {
-        ability::Proxy::new(self, target)
+        ability::Proxy::new(self, vec!["ability".into(), target.serialize()])
     }
 }
 

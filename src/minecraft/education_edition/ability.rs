@@ -1,6 +1,7 @@
+use std::borrow::Cow;
+
 use ability::Ability;
 
-use super::target_selector::TargetSelector;
 use crate::minecraft::{parse_response, Error, Serialize};
 use crate::RCon;
 
@@ -11,12 +12,12 @@ mod ability;
 #[derive(Debug)]
 pub struct Proxy<'client, T> {
     client: &'client mut T,
-    target: TargetSelector,
+    args: Vec<Cow<'client, str>>,
 }
 
 impl<'client, T> Proxy<'client, T> {
-    pub(crate) const fn new(client: &'client mut T, target: TargetSelector) -> Self {
-        Self { client, target }
+    pub(crate) const fn new(client: &'client mut T, args: Vec<Cow<'client, str>>) -> Self {
+        Self { client, args }
     }
 }
 
@@ -31,7 +32,7 @@ where
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
     pub async fn list(self) -> Result<Vec<String>, Error> {
         self.client
-            .run_utf8(format!("ability {}", self.target.serialize()))
+            .run_utf8(self.args.join(" "))
             .await
             .map_err(Into::into)
             .and_then(parse_response)
@@ -44,13 +45,10 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
-    pub async fn get(self, ability: Ability) -> Result<String, Error> {
+    pub async fn get(mut self, ability: Ability) -> Result<String, Error> {
+        self.args.push(ability.serialize());
         self.client
-            .run_utf8(format!(
-                "ability {} {}",
-                self.target.serialize(),
-                ability.serialize()
-            ))
+            .run_utf8(self.args.join(" "))
             .await
             .map_err(Into::into)
             .and_then(parse_response)
@@ -61,14 +59,10 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
-    pub async fn enable(self, ability: Ability) -> Result<String, Error> {
+    pub async fn enable(mut self, ability: Ability) -> Result<String, Error> {
+        self.args.extend([ability.serialize(), true.serialize()]);
         self.client
-            .run_utf8(format!(
-                "ability {} {} {}",
-                self.target.serialize(),
-                ability.serialize(),
-                true,
-            ))
+            .run_utf8(self.args.join(" "))
             .await
             .map_err(Into::into)
             .and_then(parse_response)
@@ -79,14 +73,10 @@ where
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if fetching the available commands fails.
-    pub async fn disable(self, ability: Ability) -> Result<String, Error> {
+    pub async fn disable(mut self, ability: Ability) -> Result<String, Error> {
+        self.args.extend([ability.serialize(), false.serialize()]);
         self.client
-            .run_utf8(format!(
-                "ability {} {} {}",
-                self.target.serialize(),
-                ability.serialize(),
-                false,
-            ))
+            .run_utf8(self.args.join(" "))
             .await
             .map_err(Into::into)
             .and_then(parse_response)
