@@ -1,7 +1,9 @@
+use std::borrow::Cow;
+
+pub use target::Target;
+
 use crate::minecraft::{Error, Serialize};
 use crate::RCon;
-use std::borrow::Cow;
-pub use target::Target;
 
 mod target;
 
