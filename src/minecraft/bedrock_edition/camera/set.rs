@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 pub use target::Target;
 
+use crate::minecraft::util::EscapeString;
 use crate::minecraft::{Error, Serialize};
 use crate::RCon;
 
@@ -33,7 +34,7 @@ where
         self.args.push(Cow::Borrowed("default"));
 
         if let Some(default) = default {
-            self.args.push(default);
+            self.args.push(default.quote().into());
         }
 
         self.client
