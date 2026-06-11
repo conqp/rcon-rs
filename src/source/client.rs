@@ -81,11 +81,10 @@ impl Client {
         }
     }
 
-    fn collect_buffer(&self) -> Vec<u8> {
+    fn collect_buffer(&mut self) -> Vec<u8> {
         self.buffer
-            .iter()
-            .flat_map(|response| &response.payload)
-            .copied()
+            .drain(..)
+            .flat_map(|response| response.payload)
             .collect()
     }
 }
