@@ -10,7 +10,7 @@ pub struct Ack {
 
 impl Ack {
     #[must_use]
-    pub fn new(seq: u8) -> Self {
+    pub const fn new(seq: u8) -> Self {
         Self {
             header: Header::create(TYPE, &seq.to_le_bytes()),
             seq,

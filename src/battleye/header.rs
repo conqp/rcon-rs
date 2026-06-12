@@ -29,7 +29,7 @@ impl Header {
     }
 
     #[must_use]
-    pub fn create(typ: u8, payload: &[u8]) -> Self {
+    pub const fn create(typ: u8, payload: &[u8]) -> Self {
         Self::new(*PREFIX, crc32(typ, INFIX, payload), INFIX, typ)
     }
 
@@ -55,7 +55,7 @@ impl Header {
         self.typ
     }
 
-    pub fn crc32(self, payload: &[u8]) -> u32 {
+    pub const fn crc32(self, payload: &[u8]) -> u32 {
         crc32(self.typ, self.infix, payload)
     }
 
@@ -91,7 +91,7 @@ impl From<Header> for [u8; Header::SIZE] {
     }
 }
 
-fn crc32(typ: u8, infix: u8, payload: &[u8]) -> u32 {
+const fn crc32(typ: u8, infix: u8, payload: &[u8]) -> u32 {
     let mut crc = CRC32.digest();
     crc.update(&[infix, typ]);
     crc.update(payload);

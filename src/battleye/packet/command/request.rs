@@ -36,7 +36,7 @@ impl Request {
     }
 
     #[must_use]
-    pub fn keepalive(seq: u8) -> Self {
+    pub const fn keepalive(seq: u8) -> Self {
         Self::new(Header::create(TYPE, &[seq]), seq, Vec::new())
     }
 }
