@@ -26,7 +26,7 @@ pub trait RCon {
     /// # Errors
     ///
     /// Returns an [`std::io::Error`] if any I/O errors occurred.
-    fn connect<T>(address: T) -> impl Future<Output = std::io::Result<Self>>
+    fn connect<T>(address: T) -> impl Future<Output = std::io::Result<Self>> + Send
     where
         Self: Sized,
         T: Into<SocketAddr> + Send;
