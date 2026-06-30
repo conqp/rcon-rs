@@ -3,21 +3,20 @@
 use std::future::Future;
 
 #[cfg(feature = "minecraft-bedrock-edition")]
-pub use bedrock_edition::BedrockEdition;
+pub use self::bedrock_edition::BedrockEdition;
 #[cfg(feature = "minecraft-education-edition")]
-pub use education_edition::EducationEdition;
-pub use entity::Entity;
-pub use error::Error;
-pub use game_mode::GameMode;
+pub use self::education_edition::EducationEdition;
+pub use self::entity::Entity;
+pub use self::error::Error;
+pub use self::game_mode::GameMode;
 #[cfg(feature = "minecraft-java-edition")]
-pub use java_edition::JavaEdition;
-pub use negate::Negate;
-pub use range::Range;
-pub use resource_location::ResourceLocation;
-pub use serialize::Serialize;
-pub use unsigned_float::UnsignedFloat;
-use util::parse_response;
-
+pub use self::java_edition::JavaEdition;
+pub use self::negate::Negate;
+pub use self::range::Range;
+pub use self::resource_location::ResourceLocation;
+pub use self::serialize::Serialize;
+pub use self::unsigned_float::UnsignedFloat;
+use self::util::parse_response;
 use crate::source::Source;
 
 #[cfg(feature = "minecraft-bedrock-edition")]

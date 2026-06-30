@@ -12,7 +12,6 @@ use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::battleye::from_server::FromServer;
 use crate::battleye::header::Header;
-use crate::battleye::into_bytes::IntoBytes;
 use crate::battleye::packet::server::{Ack, Message};
 use crate::battleye::packet::{command, login, server, Request, Response};
 
@@ -85,16 +84,14 @@ impl<const BUFFER_SIZE: usize> Handler<BUFFER_SIZE> {
 
         match request {
             Request::Command(request) => {
-                let owner = request.into_bytes();
-                let bytes = owner.as_ref();
+                let bytes: Box<[u8]> = request.into();
                 trace!("Sending bytes: {bytes:#04X?}");
-                self.udp_socket.send(bytes)
+                self.udp_socket.send(&bytes)
             }
             Request::Login(request) => {
-                let owner = request.into_bytes();
-                let bytes = owner.as_ref();
+                let bytes: Box<[u8]> = request.into();
                 trace!("Sending bytes: {bytes:#04X?}");
-                self.udp_socket.send(bytes)
+                self.udp_socket.send(&bytes)
             }
         }
     }
@@ -180,7 +177,7 @@ impl<const BUFFER_SIZE: usize> Handler<BUFFER_SIZE> {
 
         if let Err(error) = self
             .udp_socket
-            .send(Ack::new(message.seq()).into_bytes().as_ref())
+            .send(<[u8; 9]>::from(Ack::new(message.seq())).as_ref())
         {
             error!("Error sending ack: {error}");
         }

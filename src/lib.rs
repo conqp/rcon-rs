@@ -4,10 +4,10 @@ use std::future::Future;
 use std::net::SocketAddr;
 
 #[cfg(feature = "dayz")]
-pub use dayz::DayZ;
-pub use error::Error;
+pub use self::dayz::DayZ;
+pub use self::error::Error;
 #[cfg(feature = "minecraft")]
-pub use minecraft::Minecraft;
+pub use self::minecraft::Minecraft;
 
 #[cfg(feature = "battleye")]
 pub mod battleye;

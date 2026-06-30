@@ -8,6 +8,7 @@ use std::string::FromUtf8Error;
 pub enum Error {
     /// An I/O error occurred.
     Io(std::io::Error),
+
     /// A UTF-8 parsing error occurred.
     Utf8(FromUtf8Error),
 }

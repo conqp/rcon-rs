@@ -12,6 +12,7 @@ use super::util::invalid_data;
 const TERMINATOR: [u8; 2] = [0, 0];
 const OFFSET: usize = 10;
 
+/// A source RCON packet.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Packet {
     pub(crate) id: i32,
@@ -21,6 +22,8 @@ pub struct Packet {
 }
 
 impl Packet {
+    /// Create a new packet.
+    #[must_use]
     pub const fn new(id: i32, typ: ServerData, payload: Vec<u8>, terminator: [u8; 2]) -> Self {
         Self {
             id,
@@ -30,10 +33,14 @@ impl Packet {
         }
     }
 
+    /// Create a login packet.
+    #[must_use]
     pub fn login(id: i32, password: &[u8]) -> Self {
         Self::new(id, ServerData::Auth, password.to_vec(), TERMINATOR)
     }
 
+    /// Create a command packet.
+    #[must_use]
     pub fn command(id: i32, command: &[u8]) -> Self {
         Self::new(
             id,
@@ -43,6 +50,8 @@ impl Packet {
         )
     }
 
+    /// Create a sentinel packet for the current packet.
+    #[must_use]
     pub const fn sentinel(&self) -> Self {
         Self::new(
             self.id.wrapping_add(1),
@@ -52,6 +61,11 @@ impl Packet {
         )
     }
 
+    /// Read the packet from a TCP stream.
+    ///
+    /// # Errors
+    ///
+    /// Return an [`std::io::Error`] if reading from the stream fails at some point.
     pub async fn read_from(source: &mut TcpStream) -> std::io::Result<Self> {
         let mut buffer = [0; size_of::<i32>()];
         debug!("Reading payload size.");
@@ -95,10 +109,19 @@ impl Packet {
         Ok(Self::new(id, typ, payload, terminator))
     }
 
+    /// Return the size of the packet.
+    #[must_use]
     pub const fn size(&self) -> usize {
         self.payload.len() + OFFSET
     }
 
+    /// Validate the packet.
+    ///
+    /// Respects quirks for non-standard implementations.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`std::io::Error`] if the validation fails.
     pub fn validate(&self, id: i32, quirks: Quirks) -> std::io::Result<()> {
         if self.id == id {
             Ok(())

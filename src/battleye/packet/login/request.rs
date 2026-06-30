@@ -1,6 +1,5 @@
 use super::TYPE;
 use crate::battleye::header::Header;
-use crate::battleye::into_bytes::IntoBytes;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Request {
@@ -21,13 +20,13 @@ impl From<&[u8]> for Request {
     }
 }
 
-impl IntoBytes for Request {
-    fn into_bytes(self) -> impl AsRef<[u8]> {
-        let header: [u8; Header::SIZE] = self.header.into();
-        let password_bytes = self.password;
+impl From<Request> for Box<[u8]> {
+    fn from(request: Request) -> Box<[u8]> {
+        let header: [u8; Header::SIZE] = request.header.into();
+        let password_bytes = request.password;
         let mut buffer = Vec::with_capacity(Header::SIZE + password_bytes.iter().len());
         buffer.extend_from_slice(&header);
         buffer.extend_from_slice(&password_bytes);
-        buffer
+        buffer.into_boxed_slice()
     }
 }

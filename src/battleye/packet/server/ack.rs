@@ -1,6 +1,5 @@
 use super::TYPE;
 use crate::battleye::header::Header;
-use crate::battleye::into_bytes::IntoBytes;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Ack {
@@ -18,9 +17,9 @@ impl Ack {
     }
 }
 
-impl IntoBytes for Ack {
-    fn into_bytes(self) -> impl AsRef<[u8]> {
-        let [hdr0, hdr1, hdr2, hdr3, hdr4, hdr5, hdr6, hdr7] = self.header.into();
-        [hdr0, hdr1, hdr2, hdr3, hdr4, hdr5, hdr6, hdr7, self.seq]
+impl From<Ack> for [u8; 9] {
+    fn from(ack: Ack) -> Self {
+        let [hdr0, hdr1, hdr2, hdr3, hdr4, hdr5, hdr6, hdr7] = ack.header.into();
+        [hdr0, hdr1, hdr2, hdr3, hdr4, hdr5, hdr6, hdr7, ack.seq]
     }
 }
