@@ -29,10 +29,6 @@ struct Args {
 enum Command {
     #[command(about = "List players on the server", name = "players")]
     Players,
-    #[command(
-        about = "Send a message directly to all players on the server",
-        name = "say-to-all"
-    )]
     #[command(about = "Send a message to a player", name = "say")]
     Say {
         #[arg(help = "The player to send the message to")]
