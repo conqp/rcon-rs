@@ -21,7 +21,7 @@ impl From<&[u8]> for Request {
 }
 
 impl From<Request> for Box<[u8]> {
-    fn from(request: Request) -> Box<[u8]> {
+    fn from(request: Request) -> Self {
         let header: [u8; Header::SIZE] = request.header.into();
         let password_bytes = request.password;
         let mut buffer = Vec::with_capacity(Header::SIZE + password_bytes.iter().len());
