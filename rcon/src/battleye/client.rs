@@ -34,17 +34,18 @@ pub struct Client {
 impl Client {
     /// Creates a new instance of the client.
     #[must_use]
-    pub fn new<const BUFFER_SIZE: usize>(udp_socket: UdpSocket, channel_size: usize) -> Self {
+    pub fn new(udp_socket: UdpSocket, channel_size: usize, buf_size: usize) -> Self {
         let running = Arc::new(AtomicBool::new(true));
         let (requests_tx, requests_rx) = channel(channel_size);
         let (response_tx, response_rx) = channel(channel_size);
         let seq = Arc::new(AtomicU8::new(0));
-        let handler = Handler::<BUFFER_SIZE>::new(
+        let handler = Handler::new(
             udp_socket,
             seq.clone(),
             running.clone(),
             requests_rx,
             response_tx,
+            buf_size,
         );
         let join_handle = spawn(handler.run());
         Self {
@@ -130,7 +131,7 @@ impl RCon for Client {
         socket.set_read_timeout(DEFAULT_SOCKET_TIMEOUT)?;
         socket.connect(address)?;
 
-        Ok(Self::new::<DEFAULT_BUF_SIZE>(socket, DEFAULT_CHANNEL_SIZE))
+        Ok(Self::new(socket, DEFAULT_CHANNEL_SIZE, DEFAULT_BUF_SIZE))
     }
 
     async fn login<T>(&mut self, password: T) -> std::io::Result<bool>

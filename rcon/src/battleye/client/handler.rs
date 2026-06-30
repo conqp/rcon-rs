@@ -19,24 +19,25 @@ use crate::battleye::packet::{Request, Response, command, login, server};
 const IDLE_TIMEOUT: Duration = Duration::from_secs(45);
 
 #[derive(Debug)]
-pub struct Handler<const BUFFER_SIZE: usize> {
+pub struct Handler {
     udp_socket: UdpSocket,
     seq: Arc<AtomicU8>,
     running: Arc<AtomicBool>,
     requests: Receiver<Request>,
     responses: Sender<std::io::Result<Response>>,
     last_command: Option<SystemTime>,
-    buffer: [u8; BUFFER_SIZE],
+    buffer: Box<[u8]>,
 }
 
-impl<const BUFFER_SIZE: usize> Handler<BUFFER_SIZE> {
+impl Handler {
     #[must_use]
-    pub const fn new(
+    pub fn new(
         udp_socket: UdpSocket,
         seq: Arc<AtomicU8>,
         running: Arc<AtomicBool>,
         requests: Receiver<Request>,
         responses: Sender<std::io::Result<Response>>,
+        buf_size: usize,
     ) -> Self {
         Self {
             udp_socket,
@@ -45,7 +46,7 @@ impl<const BUFFER_SIZE: usize> Handler<BUFFER_SIZE> {
             requests,
             responses,
             last_command: None,
-            buffer: [0; BUFFER_SIZE],
+            buffer: vec![0; buf_size].into_boxed_slice(),
         }
     }
 
