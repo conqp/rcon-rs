@@ -14,7 +14,7 @@ rand = "0.10"
 rcon = { path = "rcon", version = "0.3.0" }
 regex = "1"
 rpassword = "7"
-tokio = "1.52.3"
+tokio = "1"
 thiserror = "2"
 uuid = "1"
 
