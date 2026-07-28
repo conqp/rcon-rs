@@ -1,38 +1,17 @@
-use std::fmt::{Display, Formatter};
 use std::io;
 
+use thiserror::Error;
+
 /// Represents either an I/O error or an invalid ban format.
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum Error {
     /// An I/O error occurred.
-    Io(io::Error),
+    #[error(transparent)]
+    Io(#[from] io::Error),
 
     /// An invalid ban format was provided.
+    #[error("Invalid ban format")]
     InvalidBanFormat,
-}
-
-impl Display for Error {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Io(error) => error.fmt(f),
-            Self::InvalidBanFormat => write!(f, "Invalid ban format"),
-        }
-    }
-}
-
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Self::Io(error) => Some(error),
-            Self::InvalidBanFormat => None,
-        }
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(error: io::Error) -> Self {
-        Self::Io(error)
-    }
 }
 
 impl From<Error> for crate::Error {

@@ -17,6 +17,7 @@ num-traits = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
 regex = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
+thiserror = { workspace = true }
 uuid = { workspace = true, optional = true }
 
 [features]

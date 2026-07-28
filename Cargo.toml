@@ -15,6 +15,7 @@ rcon = { path = "rcon", version = "0.3.0" }
 regex = "1"
 rpassword = "7"
 tokio = "1.52.3"
+thiserror = "2"
 uuid = "1"
 
 [workspace.lints.rust]
