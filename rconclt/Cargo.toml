@@ -9,12 +9,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-clap = { version = "4", features = ["derive"] }
-env_logger = { version = "0.11" }
-log = "0.4"
-rcon = { path = "../rcon", version = "0.3", features = ["battleye", "source"] }
-rpassword = { version = "7" }
-tokio = { version = "1.52.3", features = ["macros", "rt", "rt-multi-thread"] }
+clap = { workspace = true, features = ["derive"] }
+env_logger = { workspace = true }
+log = { workspace = true }
+rcon = { workspace = true, features = ["battleye", "source"] }
+rpassword = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread"] }
 
 [profile.release]
 strip = true
