@@ -1,10 +1,10 @@
 [package]
 name = "rconclt"
-description = "RCon CLI client"
+description = "Command-line client for BattlEye and Source RCon servers"
 license = "MIT"
 repository = "https://github.com/conqp/rcon-rs"
 categories = ["command-line-utilities"]
-keywords = ["rcon", "client", "cli"]
+keywords = ["rcon", "battleye", "source", "cli"]
 version = "0.1.0"
 edition = "2024"
 

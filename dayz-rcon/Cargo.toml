@@ -1,5 +1,10 @@
 [package]
 name = "dayz-rcon"
+description = "Command-line client for DayZ RCon servers"
+license = "MIT"
+repository = "https://github.com/conqp/rcon-rs"
+categories = ["command-line-utilities"]
+keywords = ["rcon", "dayz", "battleye", "cli"]
 version = "0.1.0"
 edition = "2024"
 
